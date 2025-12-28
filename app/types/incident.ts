@@ -7,10 +7,13 @@ export type IncidentType =
 
 export type Incident = {
   id: string;
-  eventId: string; // ✅ add this
+  eventId: string;
   time: string;
   type: IncidentType;
-  modtagetFra: string;
+
+  modtagetFra: string; // reported by (typed)
+  loggetAf: string; // logged by (current user)
+
   haendelse: string;
   loesning: string;
   politiInvolveret: boolean;

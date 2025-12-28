@@ -31,6 +31,10 @@ export default function IncidentListItem({
         <span className="font-medium text-slate-900">Modtaget fra:</span>{" "}
         {i.modtagetFra}
       </p>
+      <p className="mt-2 text-sm text-slate-800">
+        <span className="font-medium text-slate-900">Logged af:</span>{" "}
+        {i.loggetAf}
+      </p>
 
       <p className="mt-1 text-sm text-slate-700">
         <span className="font-medium text-slate-900">Hændelse:</span>{" "}

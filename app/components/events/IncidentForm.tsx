@@ -2,10 +2,9 @@
 
 import * as React from "react";
 import type { Incident, IncidentType } from "@/types/incident";
-import TimeInput from "../ui/TimeInput";
 
 type Props = {
-  eventId: string; // ✅ NEW
+  eventId: string;
   onAddIncident: (incident: Incident) => void;
 };
 
@@ -21,21 +20,33 @@ function makeId() {
   return `inc_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function nowHHmm() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
 export default function IncidentForm({ eventId, onAddIncident }: Props) {
-  const [time, setTime] = React.useState("");
+  const [loggedBy, setLoggedBy] = React.useState<string>(""); // ✅ who is logging it
+
+  React.useEffect(() => {
+    // adjust if you store something else than "role"
+    const role = localStorage.getItem("role") ?? "";
+    setLoggedBy(role);
+  }, []);
+
   const [type, setType] = React.useState<IncidentType>("Fejl");
-  const [modtagetFra, setModtagetFra] = React.useState("");
+  const [modtagetFra, setModtagetFra] = React.useState(""); // reporter (typed)
   const [haendelse, setHaendelse] = React.useState("");
   const [loesning, setLoesning] = React.useState("");
   const [politiInvolveret, setPolitiInvolveret] = React.useState(false);
   const [beredskabInvolveret, setBeredskabInvolveret] = React.useState(false);
   const [files, setFiles] = React.useState<File[]>([]);
-  const [fileInputKey, setFileInputKey] = React.useState(0); // ✅ makes file input reset
-
-  const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  const [fileInputKey, setFileInputKey] = React.useState(0);
 
   const canSubmit =
-    TIME_REGEX.test(time) &&
+    loggedBy.trim().length > 0 && // ✅ must be logged in
     modtagetFra.trim().length > 0 &&
     haendelse.trim().length > 0;
 
@@ -50,10 +61,11 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
 
     const incident: Incident = {
       id: makeId(),
-      eventId, // ✅ NEW
-      time,
+      eventId,
+      time: nowHHmm(),
       type,
       modtagetFra: modtagetFra.trim(),
+      loggetAf: loggedBy.trim(), // ✅ NEW
       haendelse: haendelse.trim(),
       loesning: loesning.trim(),
       politiInvolveret,
@@ -64,8 +76,7 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
 
     onAddIncident(incident);
 
-    // reset form
-    setTime("");
+    // reset form (keep loggedBy)
     setType("Fejl");
     setModtagetFra("");
     setHaendelse("");
@@ -73,7 +84,7 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
     setPolitiInvolveret(false);
     setBeredskabInvolveret(false);
     setFiles([]);
-    setFileInputKey((k) => k + 1); // ✅ clears file picker UI
+    setFileInputKey((k) => k + 1);
   };
 
   return (
@@ -82,9 +93,17 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
       className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Tilføj hændelse
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Tilføj hændelse
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Logget af:{" "}
+            <span className="font-medium text-slate-900">
+              {loggedBy || "Ikke logget ind"}
+            </span>
+          </p>
+        </div>
 
         <button
           type="submit"
@@ -101,14 +120,6 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Time */}
-        <div>
-          <label className="block text-sm font-medium text-slate-900">
-            Tidspunkt
-          </label>
-          <TimeInput value={time} onChange={setTime} placeholder="16:30" />
-        </div>
-
         {/* Type */}
         <div>
           <label className="block text-sm font-medium text-slate-900">
@@ -177,7 +188,7 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
             Upload (billeder)
           </label>
           <input
-            key={fileInputKey} // ✅ reset
+            key={fileInputKey}
             type="file"
             accept="image/*"
             multiple
