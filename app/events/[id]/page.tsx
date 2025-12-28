@@ -236,27 +236,6 @@ export default function EventDetailPage() {
           </ul>
         )}
       </section>
-
-      {/* ✅ RSVP block */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Din tilmelding</h2>
-
-        <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex-1">
-            <EventComment
-              eventId={event.id}
-              value={myRsvp?.comment ?? ""}
-              onChange={onChangeComment}
-            />
-          </div>
-
-          <AttendanceButtons
-            eventId={event.id}
-            value={myRsvp?.attendance}
-            onChangeAttendance={onChangeAttendance}
-          />
-        </div>
-      </section>
     </main>
   );
 }
