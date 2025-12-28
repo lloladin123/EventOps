@@ -7,6 +7,7 @@ import type { EventAttendance } from "@/types/event";
 import type { RSVP, Role } from "@/types/rsvp";
 
 import EventCard from "@/components/events/EventCard";
+import { isEventClosed, isEventOpen } from "@/utils/eventStatus";
 
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -20,8 +21,8 @@ export default function EventList() {
   const [role, setRole] = React.useState<Role | null>(null);
   const [rsvps, setRsvps] = React.useState<RSVP[]>([]);
 
-  const [openMinimized, setOpenMinimized] = React.useState(false);
-  const [closedMinimized, setClosedMinimized] = React.useState(false);
+  // ✅ force rerender when localStorage "closed" changes
+  const [, bump] = React.useState(0);
 
   React.useEffect(() => {
     const storedRole = localStorage.getItem("role") as Role | null;
@@ -37,6 +38,17 @@ export default function EventList() {
         }
       }
     }
+  }, []);
+
+  // ✅ listen for closes
+  React.useEffect(() => {
+    const rerender = () => bump((n) => n + 1);
+    window.addEventListener("events-changed", rerender);
+    window.addEventListener("storage", rerender);
+    return () => {
+      window.removeEventListener("events-changed", rerender);
+      window.removeEventListener("storage", rerender);
+    };
   }, []);
 
   React.useEffect(() => {
@@ -92,99 +104,87 @@ export default function EventList() {
       ? rsvps.find((r) => r.eventId === eventId && r.userRole === role)
       : undefined;
 
-  const openEvents = mockEvents.filter((e) => e.open);
-  const closedEvents = mockEvents.filter((e) => !e.open);
-
   const isAdmin = role === "Admin";
 
+  // ✅ compute lists using your existing helpers
+  const openEvents = mockEvents.filter((e) => isEventOpen(e));
+  const closedEvents = mockEvents.filter((e) => !isEventOpen(e));
+
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
-      {/* Open box */}
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <header className="flex items-center justify-between gap-4 border-b border-slate-200 p-4">
-          <div className="min-w-0">
-            <h2 className="truncate text-lg font-semibold text-slate-900">
+    <main className="mx-auto max-w-4xl space-y-8 p-6">
+      {/* Open */}
+      <section className="space-y-4">
+        <header className="flex items-baseline justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">
               {role === "Admin" ? "Åbne kampe" : "Kampe"}
             </h2>
             <p className="text-sm text-slate-600">({openEvents.length})</p>
           </div>
-
-          <button
-            type="button"
-            onClick={() => setOpenMinimized((v) => !v)}
-            className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-          >
-            {openMinimized ? "Vis" : "Minimer"}
-          </button>
         </header>
 
-        {!openMinimized && (
-          <div className="space-y-4 p-4">
-            {openEvents.length === 0 ? (
-              <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-                Ingen kampe lige nu.
-              </div>
-            ) : (
-              openEvents.map((event) => {
-                const my = myRsvpFor(event.id);
-                return (
-                  <EventCard
-                    key={event.id}
-                    event={event}
-                    attendanceValue={my?.attendance}
-                    commentValue={my?.comment ?? ""}
-                    onChangeAttendance={onChangeAttendance}
-                    onChangeComment={onChangeComment}
-                  />
-                );
-              })
-            )}
+        {openEvents.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+            Ingen kampe lige nu.
           </div>
+        ) : (
+          openEvents.map((event) => {
+            const my = myRsvpFor(event.id);
+
+            // ✅ make sure EventCard sees the effective open status
+            const effectiveEvent = { ...event, open: true };
+
+            return (
+              <EventCard
+                key={event.id}
+                event={effectiveEvent}
+                attendanceValue={my?.attendance}
+                commentValue={my?.comment ?? ""}
+                onChangeAttendance={onChangeAttendance}
+                onChangeComment={onChangeComment}
+              />
+            );
+          })
         )}
       </section>
 
-      {/* Closed box (Admin only) */}
+      {/* Closed (Admin only) */}
       {isAdmin && (
-        <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <header className="flex items-center justify-between gap-4 border-b border-slate-200 p-4">
-            <div className="min-w-0">
-              <h2 className="truncate text-lg font-semibold text-slate-900">
+        <section className="space-y-4">
+          <header className="flex items-baseline justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900">
                 Lukkede kampe
               </h2>
               <p className="text-sm text-slate-600">({closedEvents.length})</p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setClosedMinimized((v) => !v)}
-              className="shrink-0 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-            >
-              {closedMinimized ? "Vis" : "Minimer"}
-            </button>
           </header>
 
-          {!closedMinimized && (
-            <div className="space-y-4 p-4">
-              {closedEvents.length === 0 ? (
-                <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-                  Ingen lukkede kampe.
-                </div>
-              ) : (
-                closedEvents.map((event) => {
-                  const my = myRsvpFor(event.id);
-                  return (
-                    <EventCard
-                      key={event.id}
-                      event={event}
-                      attendanceValue={my?.attendance}
-                      commentValue={my?.comment ?? ""}
-                      onChangeAttendance={onChangeAttendance}
-                      onChangeComment={onChangeComment}
-                    />
-                  );
-                })
-              )}
+          {closedEvents.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+              Ingen lukkede kampe.
             </div>
+          ) : (
+            closedEvents.map((event) => {
+              const my = myRsvpFor(event.id);
+
+              // ✅ closed if either mock is closed or localStorage says closed
+              const effectiveEvent = {
+                ...event,
+                open: event.open && !isEventClosed(event.id),
+              };
+
+              return (
+                <EventCard
+                  key={event.id}
+                  event={effectiveEvent}
+                  attendanceValue={my?.attendance}
+                  commentValue={my?.comment ?? ""}
+                  onChangeAttendance={onChangeAttendance}
+                  onChangeComment={onChangeComment}
+                />
+              );
+            })
           )}
         </section>
       )}

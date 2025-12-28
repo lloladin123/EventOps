@@ -49,7 +49,7 @@ export default function CloseLog({ eventId, disabled, onClosed }: Props) {
 
   return (
     <>
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="rounded-2xl border w-full border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h3 className="text-sm font-semibold text-slate-900">Luk log</h3>
