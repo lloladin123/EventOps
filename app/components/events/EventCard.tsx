@@ -35,7 +35,7 @@ export default function EventCard({
         <div className="flex flex-wrap items-center gap-2">
           <Link
             href={`/events/${event.id}`}
-            className="text-lg font-semibold text-slate-900 hover:underline"
+            className="text-lg font-semibold underline text-slate-900 hover:text-slate-600"
           >
             {event.title}
           </Link>
