@@ -2,9 +2,9 @@ import type { EventAttendance } from "@/types/event";
 import { cn } from "@/components/ui/classNames";
 
 type Props = {
-  id: string;
+  eventId: string;
   value?: EventAttendance;
-  onChangeAttendance: (id: string, attendance: EventAttendance) => void;
+  onChangeAttendance: (eventId: string, attendance: EventAttendance) => void;
 };
 
 function choiceBtnClass(active: boolean) {
@@ -17,32 +17,32 @@ function choiceBtnClass(active: boolean) {
 }
 
 export default function AttendanceButtons({
-  id,
+  eventId,
   value,
   onChangeAttendance,
 }: Props) {
   return (
     <div className="flex shrink-0 flex-col gap-2 sm:self-center">
       <button
-        className={choiceBtnClass(value === "yes")}
-        onClick={() => onChangeAttendance(id, "yes")}
         type="button"
+        className={choiceBtnClass(value === "yes")}
+        onClick={() => onChangeAttendance(eventId, "yes")}
       >
         Jeg ønsker at komme
       </button>
 
       <button
-        className={choiceBtnClass(value === "maybe")}
-        onClick={() => onChangeAttendance(id, "maybe")}
         type="button"
+        className={choiceBtnClass(value === "maybe")}
+        onClick={() => onChangeAttendance(eventId, "maybe")}
       >
         Jeg kan hvis i mangler
       </button>
 
       <button
-        className={choiceBtnClass(value === "no")}
-        onClick={() => onChangeAttendance(id, "no")}
         type="button"
+        className={choiceBtnClass(value === "no")}
+        onClick={() => onChangeAttendance(eventId, "no")}
       >
         No i can&apos;t come
       </button>

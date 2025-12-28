@@ -7,6 +7,5 @@ export type Event = {
   date: string;
   meetingTime: string;
   startTime: string;
-  comment: string; // user editable
-  attendance?: EventAttendance; // user choice
+  description: string; // organizer description
 };
