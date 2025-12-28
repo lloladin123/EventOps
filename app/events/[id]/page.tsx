@@ -14,6 +14,7 @@ import AttendanceButtons from "@/components/events/AttendanceButtons";
 import EventComment from "@/components/events/EventComment";
 import IncidentForm from "@/components/events/IncidentForm";
 import IncidentList from "@/components/events/IncidentList";
+import LoginRedirect from "@/components/layout/LoginRedirect";
 
 function makeRsvpId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -36,7 +37,6 @@ export default function EventDetailPage() {
   const [rsvps, setRsvps] = React.useState<RSVP[]>([]);
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
 
-  // Load role + rsvps + incidents
   React.useEffect(() => {
     const storedRole = localStorage.getItem("role") as Role | null;
     setRole(storedRole);
@@ -62,122 +62,56 @@ export default function EventDetailPage() {
     }
   }, [id]);
 
-  // Persist RSVPs
   React.useEffect(() => {
     if (!role) return;
     localStorage.setItem(rsvpStorageKey(role), JSON.stringify(rsvps));
   }, [role, rsvps]);
 
-  // Persist incidents (per event)
   React.useEffect(() => {
     localStorage.setItem(incidentStorageKey(id), JSON.stringify(incidents));
   }, [id, incidents]);
 
   const event = React.useMemo(() => mockEvents.find((e) => e.id === id), [id]);
 
-  if (!event) {
-    return (
-      <main className="mx-auto max-w-4xl p-6">
-        <h1 className="text-2xl font-bold text-slate-900">Event ikke fundet</h1>
-        <button
-          type="button"
-          onClick={() => router.push("/events")}
-          className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-        >
-          Tilbage til events
-        </button>
-      </main>
-    );
-  }
-
-  if (!role) {
-    return (
-      <main className="mx-auto max-w-2xl p-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-slate-900">
-            Du er ikke logget ind
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Vælg en rolle for at kunne tilmelde dig og tilføje hændelser.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push("/login")}
-            className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-          >
-            Gå til login
-          </button>
-        </div>
-      </main>
-    );
-  }
-
-  const myRsvp = rsvps.find((r) => r.eventId === id && r.userRole === role);
-
-  const upsertRsvp = (patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
-    setRsvps((prev) => {
-      const idx = prev.findIndex(
-        (r) => r.eventId === id && r.userRole === role
-      );
-
-      if (idx !== -1) {
-        const copy = [...prev];
-        copy[idx] = {
-          ...copy[idx],
-          ...patch,
-          updatedAt: new Date().toISOString(),
-        };
-        return copy;
-      }
-
-      return [
-        ...prev,
-        {
-          id: makeRsvpId(),
-          eventId: id,
-          userRole: role,
-          attendance: patch.attendance ?? "maybe",
-          comment: patch.comment ?? "",
-          createdAt: new Date().toISOString(),
-        },
-      ];
-    });
-  };
-
-  const onChangeAttendance = (
-    _eventId: string,
-    attendance: EventAttendance
-  ) => {
-    upsertRsvp({ attendance });
-  };
-
-  const onChangeComment = (_eventId: string, comment: string) => {
-    upsertRsvp({ comment });
-  };
-
   const onAddIncident = (incident: Incident) => {
-    // Optional: add who logged it (fake auth)
     const withMeta: Incident = {
       ...incident,
       // @ts-expect-error optional field if you add later
       createdByRole: role,
     };
-
     setIncidents((prev) => [withMeta, ...prev]);
   };
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 p-6">
-      <EventHeader event={event} />
+    <LoginRedirect
+      allowedRoles={["Admin", "Logfører"]}
+      unauthorizedRedirectTo="/events"
+      description="Du har ikke adgang til denne kamp."
+    >
+      {!event ? (
+        <main className="mx-auto max-w-4xl p-6">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Event ikke fundet
+          </h1>
+          <button
+            type="button"
+            onClick={() => router.push("/events")}
+            className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            Tilbage til events
+          </button>
+        </main>
+      ) : (
+        <main className="mx-auto max-w-4xl space-y-6 p-6">
+          <EventHeader event={event} />
 
-      {/* ✅ Incident form */}
-      <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
+          <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
 
-      {/* ✅ Incident list */}
-
-      <div className="mt-4 space-y-3">
-        <IncidentList incidents={incidents} />
-      </div>
-    </main>
+          <div className="mt-4 space-y-3">
+            <IncidentList incidents={incidents} />
+          </div>
+        </main>
+      )}
+    </LoginRedirect>
   );
 }

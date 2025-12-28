@@ -9,6 +9,11 @@ type Props = {
   title?: string;
   description?: string;
   redirectTo?: string;
+
+  allowedRoles?: Role[];
+  unauthorizedTitle?: string;
+  unauthorizedDescription?: string;
+  unauthorizedRedirectTo?: string;
 };
 
 export default function LoginRedirect({
@@ -16,6 +21,11 @@ export default function LoginRedirect({
   title = "Du er ikke logget ind",
   description = "Vælg en rolle for at kunne fortsætte.",
   redirectTo = "/login",
+
+  allowedRoles,
+  unauthorizedTitle = "Ingen adgang",
+  unauthorizedDescription = "Din rolle har ikke adgang til denne side.",
+  unauthorizedRedirectTo = "/login",
 }: Props) {
   const router = useRouter();
   const [role, setRole] = React.useState<Role | null>(null);
@@ -23,7 +33,9 @@ export default function LoginRedirect({
 
   React.useEffect(() => {
     const read = () => {
-      setRole(localStorage.getItem("role") as Role | null);
+      const raw = localStorage.getItem("role");
+      const next = (raw ? raw.trim() : null) as Role | null;
+      setRole(next);
       setReady(true);
     };
 
@@ -37,9 +49,9 @@ export default function LoginRedirect({
     };
   }, []);
 
-  // avoid a flash before localStorage is read
   if (!ready) return null;
 
+  // 1) Not logged in (same as your working behavior)
   if (!role) {
     return (
       <main className="mx-auto max-w-2xl p-6">
@@ -53,6 +65,31 @@ export default function LoginRedirect({
             className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
           >
             Gå til login
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  // 2) Logged in but wrong role (same render-based gating)
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    return (
+      <main className="mx-auto max-w-2xl p-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900">
+            {unauthorizedTitle}
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            {unauthorizedDescription}{" "}
+            <span className="font-medium">({role})</span>
+          </p>
+
+          <button
+            type="button"
+            onClick={() => router.push(unauthorizedRedirectTo)}
+            className="mt-4 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+          >
+            Videre
           </button>
         </div>
       </main>

@@ -2,8 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-
-type Role = "Kontrollør" | "Admin" | "Logfører" | "Crew";
+import type { Role } from "@/types/rsvp";
 
 const ROLES: Role[] = ["Kontrollør", "Admin", "Logfører", "Crew"];
 
@@ -22,9 +21,12 @@ export default function Page() {
     localStorage.setItem("role", role);
     localStorage.setItem("userId", userId);
 
-    window.dispatchEvent(new Event("auth-changed")); // ✅ NEW
+    // Let listeners react immediately (same-tab)
+    window.dispatchEvent(new Event("auth-changed"));
 
-    router.push("/events");
+    // ✅ Use replace + refresh to avoid back-cache weirdness
+    router.replace("/events");
+    router.refresh();
   };
 
   return (
@@ -56,6 +58,7 @@ export default function Page() {
         </div>
 
         <button
+          type="button"
           onClick={login}
           disabled={!role}
           className={[
