@@ -20,6 +20,11 @@
     ],
     "paths": {
       "@/state/*": ["./store/domains/*"],
+      "@/data/*": ["./app/data/*"],
+      "@/types/*": ["./app/types/*"],
+      "@/components/*": ["./app/components/*"],
+      "@/utils/*": ["./app/components/utils/*"],
+      "@/ui/*": ["./app/components/ui/*"],
       "@/*": ["./*"]
     }
   },
