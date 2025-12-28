@@ -3,6 +3,9 @@
 import * as React from "react";
 import type { Incident, IncidentType } from "@/types/incident";
 
+import CloseLog from "@/components/events/CloseLog";
+import { isEventClosed } from "@/utils/eventStatus";
+
 type Props = {
   eventId: string;
   onAddIncident: (incident: Incident) => void;
@@ -50,13 +53,30 @@ function parseTimeToHHmm(input: string): string | null {
 
 export default function IncidentForm({ eventId, onAddIncident }: Props) {
   const [loggedBy, setLoggedBy] = React.useState<string>("");
+  const [closed, setClosed] = React.useState(false);
 
   React.useEffect(() => {
-    const role = localStorage.getItem("role") ?? "";
-    setLoggedBy(role);
-  }, []);
+    const read = () => {
+      const role = (localStorage.getItem("role") ?? "").trim();
+      setLoggedBy(role);
+      setClosed(isEventClosed(eventId));
+    };
 
-  const [time, setTime] = React.useState<string>(nowHHmm()); // ✅ default device time
+    read();
+    window.addEventListener("auth-changed", read);
+    window.addEventListener("events-changed", read);
+    window.addEventListener("storage", read);
+
+    return () => {
+      window.removeEventListener("auth-changed", read);
+      window.removeEventListener("events-changed", read);
+      window.removeEventListener("storage", read);
+    };
+  }, [eventId]);
+
+  const canClose = loggedBy === "Admin" || loggedBy === "Logfører";
+
+  const [time, setTime] = React.useState<string>(nowHHmm());
   const [type, setType] = React.useState<IncidentType>("Fejl");
   const [modtagetFra, setModtagetFra] = React.useState("");
   const [haendelse, setHaendelse] = React.useState("");
@@ -69,6 +89,7 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
   const normalizedTime = React.useMemo(() => parseTimeToHHmm(time), [time]);
 
   const canSubmit =
+    !closed &&
     loggedBy.trim().length > 0 &&
     !!normalizedTime &&
     modtagetFra.trim().length > 0 &&
@@ -80,7 +101,6 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
   };
 
   const onTimeBlur = () => {
-    // Auto-format on blur if possible (1245 -> 12:45)
     const parsed = parseTimeToHHmm(time);
     if (parsed) setTime(parsed);
   };
@@ -89,10 +109,16 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
     e.preventDefault();
     if (!canSubmit || !normalizedTime) return;
 
+    // extra safety: if log got closed while user had the form open
+    if (isEventClosed(eventId)) {
+      setClosed(true);
+      return;
+    }
+
     const incident: Incident = {
       id: makeId(),
       eventId,
-      time: normalizedTime, // ✅ uses normalized HH:mm
+      time: normalizedTime,
       type,
       modtagetFra: modtagetFra.trim(),
       loggetAf: loggedBy.trim(),
@@ -119,184 +145,189 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
   };
 
   return (
-    <form
-      onSubmit={submit}
-      className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900">
-            Tilføj hændelse
-          </h2>
-          <p className="mt-1 text-sm text-slate-600">
-            Logget af:{" "}
-            <span className="font-medium text-slate-900">
-              {loggedBy || "Ikke logget ind"}
-            </span>
-          </p>
-        </div>
-
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className={[
-            "rounded-xl px-4 py-2 text-sm font-semibold shadow-sm",
-            canSubmit
-              ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
-              : "cursor-not-allowed bg-slate-200 text-slate-500",
-          ].join(" ")}
-        >
-          Tilføj hændelse
-        </button>
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Tidspunkt */}
-        <div>
-          <label className="block text-sm font-medium text-slate-900">
-            Tidspunkt
-          </label>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            onBlur={onTimeBlur}
-            placeholder="12:45 eller 1245"
-            className={[
-              "mt-2 w-full rounded-xl border px-3 py-2 text-sm shadow-sm outline-none",
-              normalizedTime
-                ? "border-slate-200 bg-white text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                : "border-rose-300 bg-rose-50 text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500",
-            ].join(" ")}
-          />
-          {!normalizedTime && time.trim().length > 0 && (
-            <p className="mt-1 text-xs text-rose-700">
-              Skriv tid som HH:mm (fx 12:45) eller 4 tal (fx 1245)
+    <>
+      <form
+        onSubmit={submit}
+        className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Tilføj hændelse
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Logget af:{" "}
+              <span className="font-medium text-slate-900">
+                {loggedBy || "Ikke logget ind"}
+              </span>
             </p>
-          )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className={[
+                "rounded-xl px-4 py-2 text-sm font-semibold shadow-sm",
+                canSubmit
+                  ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
+                  : "cursor-not-allowed bg-slate-200 text-slate-500",
+              ].join(" ")}
+            >
+              Tilføj hændelse
+            </button>
+          </div>
         </div>
 
-        {/* Type */}
-        <div>
-          <label className="block text-sm font-medium text-slate-900">
-            Type
-          </label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as IncidentType)}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-          >
-            {TYPE_OPTIONS.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </div>
+        {closed && (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+            Loggen er lukket. Nye hændelser kan ikke tilføjes.
+          </div>
+        )}
 
-        {/* Modtaget fra */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-900">
-            Modtaget fra
-          </label>
-          <input
-            type="text"
-            value={modtagetFra}
-            onChange={(e) => setModtagetFra(e.target.value)}
-            placeholder="Fx: Vagtleder, dommer, publikum…"
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-            required
-          />
-        </div>
+        {!closed && (
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            {/* Tidspunkt */}
+            <div>
+              <label className="block text-sm font-medium text-slate-900">
+                Tidspunkt
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                onBlur={onTimeBlur}
+                placeholder="12:45 eller 1245"
+                className={[
+                  "mt-2 w-full rounded-xl border px-3 py-2 text-sm shadow-sm outline-none",
+                  normalizedTime
+                    ? "border-slate-200 bg-white text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                    : "border-rose-300 bg-rose-50 text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500",
+                ].join(" ")}
+              />
+              {!normalizedTime && time.trim().length > 0 && (
+                <p className="mt-1 text-xs text-rose-700">
+                  Skriv tid som HH:mm (fx 12:45) eller 4 tal (fx 1245)
+                </p>
+              )}
+            </div>
 
-        {/* Hændelse */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-900">
-            Hændelse
-          </label>
-          <textarea
-            value={haendelse}
-            onChange={(e) => setHaendelse(e.target.value)}
-            rows={3}
-            placeholder="Beskriv hændelsen…"
-            className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-            required
-          />
-        </div>
+            {/* Type */}
+            <div>
+              <label className="block text-sm font-medium text-slate-900">
+                Type
+              </label>
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as IncidentType)}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+              >
+                {TYPE_OPTIONS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-        {/* Løsning */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-900">
-            Løsning
-          </label>
-          <textarea
-            value={loesning}
-            onChange={(e) => setLoesning(e.target.value)}
-            rows={3}
-            placeholder="Hvad blev gjort / hvad er planen?"
-            className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-          />
-        </div>
+            {/* Modtaget fra */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-900">
+                Modtaget fra
+              </label>
+              <input
+                type="text"
+                value={modtagetFra}
+                onChange={(e) => setModtagetFra(e.target.value)}
+                placeholder="Fx: Vagtleder, dommer, publikum…"
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                required
+              />
+            </div>
 
-        {/* Upload */}
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-900">
-            Upload (billeder)
-          </label>
-          <input
-            key={fileInputKey}
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFiles}
-            className="mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-800"
-          />
-          {files.length > 0 && (
-            <p className="mt-2 text-xs text-slate-600">
-              Valgt: {files.length} fil(er)
-            </p>
-          )}
-        </div>
+            {/* Hændelse */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-900">
+                Hændelse
+              </label>
+              <textarea
+                value={haendelse}
+                onChange={(e) => setHaendelse(e.target.value)}
+                rows={3}
+                placeholder="Beskriv hændelsen…"
+                className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                required
+              />
+            </div>
 
-        {/* Checkboxes */}
-        <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row sm:gap-6">
-          <label className="flex items-center gap-2 text-sm text-slate-900">
-            <input
-              type="checkbox"
-              checked={politiInvolveret}
-              onChange={(e) => setPolitiInvolveret(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Politi involveret
-          </label>
+            {/* Løsning */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-900">
+                Løsning
+              </label>
+              <textarea
+                value={loesning}
+                onChange={(e) => setLoesning(e.target.value)}
+                rows={3}
+                placeholder="Hvad blev gjort / hvad er planen?"
+                className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+              />
+            </div>
 
-          <label className="flex items-center gap-2 text-sm text-slate-900">
-            <input
-              type="checkbox"
-              checked={beredskabInvolveret}
-              onChange={(e) => setBeredskabInvolveret(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Beredskab involveret
-          </label>
-        </div>
-      </div>
+            {/* Upload */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-900">
+                Upload (billeder)
+              </label>
+              <input
+                key={fileInputKey}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFiles}
+                className="mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-800"
+              />
+              {files.length > 0 && (
+                <p className="mt-2 text-xs text-slate-600">
+                  Valgt: {files.length} fil(er)
+                </p>
+              )}
+            </div>
 
-      <div className="mt-6 flex justify-end">
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className={[
-            "rounded-xl px-6 py-3 text-sm font-semibold shadow-sm transition",
-            canSubmit
-              ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
-              : "cursor-not-allowed bg-slate-200 text-slate-500",
-          ].join(" ")}
-        >
-          Tilføj hændelse
-        </button>
-      </div>
-    </form>
+            {/* Checkboxes */}
+            <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row sm:gap-6">
+              <label className="flex items-center gap-2 text-sm text-slate-900">
+                <input
+                  type="checkbox"
+                  checked={politiInvolveret}
+                  onChange={(e) => setPolitiInvolveret(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                Politi involveret
+              </label>
+
+              <label className="flex items-center gap-2 text-sm text-slate-900">
+                <input
+                  type="checkbox"
+                  checked={beredskabInvolveret}
+                  onChange={(e) => setBeredskabInvolveret(e.target.checked)}
+                  className="h-4 w-4 rounded border-slate-300"
+                />
+                Beredskab involveret
+              </label>
+            </div>
+          </div>
+        )}
+      </form>
+
+      {canClose && (
+        <CloseLog
+          eventId={eventId}
+          disabled={closed}
+          onClosed={() => setClosed(true)}
+        />
+      )}
+    </>
   );
 }
