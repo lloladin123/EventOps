@@ -7,7 +7,7 @@ import type { EventAttendance } from "@/types/event";
 import type { RSVP, Role } from "@/types/rsvp";
 
 import EventCard from "@/components/events/EventCard";
-import { isEventClosed, isEventOpen } from "@/utils/eventStatus";
+import { isEventOpen } from "@/utils/eventStatus";
 
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -73,7 +73,7 @@ export default function EventList() {
     } catch {}
   }, [closedMinimized]);
 
-  // ✅ listen for closes
+  // ✅ listen for closes / reopens
   React.useEffect(() => {
     const rerender = () => bump((n) => n + 1);
     window.addEventListener("events-changed", rerender);
@@ -84,6 +84,7 @@ export default function EventList() {
     };
   }, []);
 
+  // Persist RSVPs
   React.useEffect(() => {
     if (!role) return;
     localStorage.setItem(storageKey(role), JSON.stringify(rsvps));
@@ -139,6 +140,7 @@ export default function EventList() {
 
   const isAdmin = role === "Admin";
 
+  // ✅ correct grouping (respects both mock open + localStorage closed override)
   const openEvents = mockEvents.filter((e) => isEventOpen(e));
   const closedEvents = mockEvents.filter((e) => !isEventOpen(e));
 
@@ -172,7 +174,9 @@ export default function EventList() {
             ) : (
               openEvents.map((event) => {
                 const my = myRsvpFor(event.id);
-                const effectiveEvent = { ...event, open: true };
+
+                // ✅ EventCard always sees the effective open status
+                const effectiveEvent = { ...event, open: isEventOpen(event) };
 
                 return (
                   <EventCard
@@ -220,10 +224,8 @@ export default function EventList() {
                 closedEvents.map((event) => {
                   const my = myRsvpFor(event.id);
 
-                  const effectiveEvent = {
-                    ...event,
-                    open: event.open && !isEventClosed(event.id),
-                  };
+                  // ✅ same effective open logic here too
+                  const effectiveEvent = { ...event, open: isEventOpen(event) };
 
                   return (
                     <EventCard
