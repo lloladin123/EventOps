@@ -174,22 +174,10 @@ export default function EventDetailPage() {
       <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
 
       {/* ✅ Incident list */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Hændelser</h2>
-          <span className="text-sm text-slate-600">{incidents.length} stk</span>
-        </div>
 
-        {incidents.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-600">
-            Ingen hændelser endnu — tilføj den første 👇
-          </p>
-        ) : (
-          <div className="mt-4 space-y-3">
-            <IncidentList incidents={incidents} />
-          </div>
-        )}
-      </section>
+      <div className="mt-4 space-y-3">
+        <IncidentList incidents={incidents} />
+      </div>
     </main>
   );
 }
