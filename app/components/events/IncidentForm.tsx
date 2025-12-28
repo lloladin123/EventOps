@@ -2,10 +2,9 @@
 
 import * as React from "react";
 import type { Incident, IncidentType } from "@/types/incident";
-import TimeInput from "../ui/TimeInput";
 
 type Props = {
-  eventId: string; // ✅ NEW
+  eventId: string;
   onAddIncident: (incident: Incident) => void;
 };
 
@@ -21,8 +20,43 @@ function makeId() {
   return `inc_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
+function nowHHmm() {
+  const d = new Date();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function parseTimeToHHmm(input: string): string | null {
+  const raw = input.trim();
+
+  // allow 12:45
+  const colonMatch = raw.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
+  if (colonMatch) return raw;
+
+  // allow 1245 (or "12 45", "12-45", etc)
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length !== 4) return null;
+
+  const hh = Number(digits.slice(0, 2));
+  const mm = Number(digits.slice(2, 4));
+
+  if (Number.isNaN(hh) || Number.isNaN(mm)) return null;
+  if (hh < 0 || hh > 23) return null;
+  if (mm < 0 || mm > 59) return null;
+
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
 export default function IncidentForm({ eventId, onAddIncident }: Props) {
-  const [time, setTime] = React.useState("");
+  const [loggedBy, setLoggedBy] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const role = localStorage.getItem("role") ?? "";
+    setLoggedBy(role);
+  }, []);
+
+  const [time, setTime] = React.useState<string>(nowHHmm()); // ✅ default device time
   const [type, setType] = React.useState<IncidentType>("Fejl");
   const [modtagetFra, setModtagetFra] = React.useState("");
   const [haendelse, setHaendelse] = React.useState("");
@@ -30,12 +64,13 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
   const [politiInvolveret, setPolitiInvolveret] = React.useState(false);
   const [beredskabInvolveret, setBeredskabInvolveret] = React.useState(false);
   const [files, setFiles] = React.useState<File[]>([]);
-  const [fileInputKey, setFileInputKey] = React.useState(0); // ✅ makes file input reset
+  const [fileInputKey, setFileInputKey] = React.useState(0);
 
-  const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+  const normalizedTime = React.useMemo(() => parseTimeToHHmm(time), [time]);
 
   const canSubmit =
-    TIME_REGEX.test(time) &&
+    loggedBy.trim().length > 0 &&
+    !!normalizedTime &&
     modtagetFra.trim().length > 0 &&
     haendelse.trim().length > 0;
 
@@ -44,16 +79,23 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
     setFiles(list);
   };
 
+  const onTimeBlur = () => {
+    // Auto-format on blur if possible (1245 -> 12:45)
+    const parsed = parseTimeToHHmm(time);
+    if (parsed) setTime(parsed);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || !normalizedTime) return;
 
     const incident: Incident = {
       id: makeId(),
-      eventId, // ✅ NEW
-      time,
+      eventId,
+      time: normalizedTime, // ✅ uses normalized HH:mm
       type,
       modtagetFra: modtagetFra.trim(),
+      loggetAf: loggedBy.trim(),
       haendelse: haendelse.trim(),
       loesning: loesning.trim(),
       politiInvolveret,
@@ -64,8 +106,8 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
 
     onAddIncident(incident);
 
-    // reset form
-    setTime("");
+    // reset form (keep loggedBy)
+    setTime(nowHHmm());
     setType("Fejl");
     setModtagetFra("");
     setHaendelse("");
@@ -73,7 +115,7 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
     setPolitiInvolveret(false);
     setBeredskabInvolveret(false);
     setFiles([]);
-    setFileInputKey((k) => k + 1); // ✅ clears file picker UI
+    setFileInputKey((k) => k + 1);
   };
 
   return (
@@ -82,9 +124,17 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
       className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Tilføj hændelse
-        </h2>
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Tilføj hændelse
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Logget af:{" "}
+            <span className="font-medium text-slate-900">
+              {loggedBy || "Ikke logget ind"}
+            </span>
+          </p>
+        </div>
 
         <button
           type="submit"
@@ -101,12 +151,30 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Time */}
+        {/* Tidspunkt */}
         <div>
           <label className="block text-sm font-medium text-slate-900">
             Tidspunkt
           </label>
-          <TimeInput value={time} onChange={setTime} placeholder="16:30" />
+          <input
+            type="text"
+            inputMode="numeric"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            onBlur={onTimeBlur}
+            placeholder="12:45 eller 1245"
+            className={[
+              "mt-2 w-full rounded-xl border px-3 py-2 text-sm shadow-sm outline-none",
+              normalizedTime
+                ? "border-slate-200 bg-white text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                : "border-rose-300 bg-rose-50 text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500",
+            ].join(" ")}
+          />
+          {!normalizedTime && time.trim().length > 0 && (
+            <p className="mt-1 text-xs text-rose-700">
+              Skriv tid som HH:mm (fx 12:45) eller 4 tal (fx 1245)
+            </p>
+          )}
         </div>
 
         {/* Type */}
@@ -177,7 +245,7 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
             Upload (billeder)
           </label>
           <input
-            key={fileInputKey} // ✅ reset
+            key={fileInputKey}
             type="file"
             accept="image/*"
             multiple

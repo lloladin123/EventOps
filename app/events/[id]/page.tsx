@@ -13,6 +13,7 @@ import EventHeader from "@/components/events/EventHeader";
 import AttendanceButtons from "@/components/events/AttendanceButtons";
 import EventComment from "@/components/events/EventComment";
 import IncidentForm from "@/components/events/IncidentForm";
+import IncidentList from "@/components/events/IncidentList";
 
 function makeRsvpId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -173,69 +174,10 @@ export default function EventDetailPage() {
       <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
 
       {/* ✅ Incident list */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Hændelser</h2>
-          <span className="text-sm text-slate-600">{incidents.length} stk</span>
-        </div>
 
-        {incidents.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-600">
-            Ingen hændelser endnu — tilføj den første 👇
-          </p>
-        ) : (
-          <ul className="mt-4 space-y-3">
-            {incidents.map((i) => (
-              <li key={i.id} className="rounded-xl border border-slate-200 p-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-slate-900">
-                    {i.time}
-                  </span>
-                  <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-800">
-                    {i.type}
-                  </span>
-
-                  {i.politiInvolveret && (
-                    <span className="rounded-full bg-rose-50 px-2 py-1 text-xs text-rose-700 ring-1 ring-rose-200">
-                      Politi
-                    </span>
-                  )}
-                  {i.beredskabInvolveret && (
-                    <span className="rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700 ring-1 ring-amber-200">
-                      Beredskab
-                    </span>
-                  )}
-                </div>
-
-                <p className="mt-2 text-sm text-slate-800">
-                  <span className="font-medium text-slate-900">
-                    Modtaget fra:
-                  </span>{" "}
-                  {i.modtagetFra}
-                </p>
-
-                <p className="mt-1 text-sm text-slate-700">
-                  <span className="font-medium text-slate-900">Hændelse:</span>{" "}
-                  {i.haendelse}
-                </p>
-
-                {i.loesning && (
-                  <p className="mt-1 text-sm text-slate-700">
-                    <span className="font-medium text-slate-900">Løsning:</span>{" "}
-                    {i.loesning}
-                  </p>
-                )}
-
-                {i.files?.length > 0 && (
-                  <p className="mt-2 text-xs text-slate-600">
-                    Uploads: {i.files.length} billede(r)
-                  </p>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <div className="mt-4 space-y-3">
+        <IncidentList incidents={incidents} />
+      </div>
     </main>
   );
 }
