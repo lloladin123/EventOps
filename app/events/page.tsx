@@ -115,22 +115,77 @@ export default function EventsPage() {
   const myRsvpFor = (eventId: string) =>
     rsvps.find((r) => r.eventId === eventId && r.userRole === role);
 
-  return (
-    <main className="mx-auto max-w-4xl space-y-4 p-6">
-      {mockEvents.map((event: Event) => {
-        const my = myRsvpFor(event.id);
+  // ✅ Split events by open/closed
+  const openEvents = mockEvents.filter((e) => e.open);
+  const closedEvents = mockEvents.filter((e) => !e.open);
 
-        return (
-          <EventCard
-            key={event.id}
-            event={event}
-            attendanceValue={my?.attendance}
-            commentValue={my?.comment ?? ""}
-            onChangeAttendance={onChangeAttendance}
-            onChangeComment={onChangeComment}
-          />
-        );
-      })}
+  return (
+    <main className="mx-auto max-w-4xl space-y-8 p-6">
+      {/* Åbne */}
+      <section className="space-y-4">
+        <header className="flex items-baseline justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Åbne kampe</h2>
+            <p className="text-sm text-slate-600">
+              Tilmelding er åben ({openEvents.length})
+            </p>
+          </div>
+        </header>
+
+        {openEvents.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+            Ingen åbne kampe lige nu.
+          </div>
+        ) : (
+          openEvents.map((event: Event) => {
+            const my = myRsvpFor(event.id);
+            return (
+              <EventCard
+                key={event.id}
+                event={event}
+                attendanceValue={my?.attendance}
+                commentValue={my?.comment ?? ""}
+                onChangeAttendance={onChangeAttendance}
+                onChangeComment={onChangeComment}
+              />
+            );
+          })
+        )}
+      </section>
+
+      {/* Lukkede */}
+      <section className="space-y-4">
+        <header className="flex items-baseline justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Lukkede kampe
+            </h2>
+            <p className="text-sm text-slate-600">
+              Tilmelding er lukket ({closedEvents.length})
+            </p>
+          </div>
+        </header>
+
+        {closedEvents.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+            Ingen lukkede kampe lige nu.
+          </div>
+        ) : (
+          closedEvents.map((event: Event) => {
+            const my = myRsvpFor(event.id);
+            return (
+              <EventCard
+                key={event.id}
+                event={event}
+                attendanceValue={my?.attendance}
+                commentValue={my?.comment ?? ""}
+                onChangeAttendance={onChangeAttendance}
+                onChangeComment={onChangeComment}
+              />
+            );
+          })
+        )}
+      </section>
     </main>
   );
 }
