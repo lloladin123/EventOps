@@ -38,6 +38,7 @@ export default function AdminNav({ className }: AdminNavProps) {
     >
       <AdminNavLink href="/events" label="Events" />
       <AdminNavLink href="/users" label="Users" />
+      <AdminNavLink href="/requests" label="Requests" />
     </nav>
   );
 }
