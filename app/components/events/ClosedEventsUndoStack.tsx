@@ -2,11 +2,18 @@
 
 import * as React from "react";
 import type { Event as AppEvent } from "@/types/event";
-import { setEventClosed } from "@/utils/eventStatus";
+import { setEventClosed, isEventOpen } from "@/utils/eventStatus";
+import { getAllEvents } from "@/utils/eventsStore";
 
 type Props = {
   visible: boolean;
 };
+
+function isCurrentlyOpen(eventId: string) {
+  const ev = getAllEvents().find((e) => e.id === eventId);
+  if (!ev) return false; // deleted / missing -> treat as "not relevant"
+  return isEventOpen(ev);
+}
 
 export default function ClosedEventsUndoStack({ visible }: Props) {
   const [stack, setStack] = React.useState<AppEvent[]>([]);
@@ -14,32 +21,68 @@ export default function ClosedEventsUndoStack({ visible }: Props) {
     null
   );
 
+  // push when closed; prune when opened (same id)
   React.useEffect(() => {
     const onClosed = (ev: Event) => {
       const custom = ev as CustomEvent<AppEvent>;
       if (!custom.detail) return;
-      setStack((prev) => [custom.detail, ...prev]);
+
+      setStack((prev) => {
+        const id = custom.detail.id;
+        // keep unique per event
+        if (prev.some((x) => x.id === id)) return prev;
+        return [custom.detail, ...prev];
+      });
     };
 
-    window.addEventListener("event-closed", onClosed as EventListener);
-    return () =>
-      window.removeEventListener("event-closed", onClosed as EventListener);
+    const onOpened = (ev: Event) => {
+      const custom = ev as CustomEvent<AppEvent>;
+      if (!custom.detail) return;
+      const id = custom.detail.id;
+      // if event is opened via another action, remove from "closed undo" stack
+      setStack((prev) => prev.filter((x) => x.id !== id));
+    };
+
+    window.addEventListener("event-closed", onClosed);
+    window.addEventListener("event-opened", onOpened);
+
+    return () => {
+      window.removeEventListener("event-closed", onClosed);
+      window.removeEventListener("event-opened", onOpened);
+    };
   }, []);
 
+  // global reconciliation: whenever events change, remove items that are no longer closed
+  React.useEffect(() => {
+    const reconcile = () => {
+      setStack((prev) =>
+        prev.filter((e) => {
+          const ev = getAllEvents().find((x) => x.id === e.id);
+          if (!ev) return false; // event deleted -> drop from stack
+          return !isEventOpen(ev); // keep only if still closed
+        })
+      );
+    };
+
+    window.addEventListener("events-changed", reconcile);
+    window.addEventListener("storage", reconcile);
+
+    return () => {
+      window.removeEventListener("events-changed", reconcile);
+      window.removeEventListener("storage", reconcile);
+    };
+  }, []);
+
+  // run reopen side-effect after commit
   React.useEffect(() => {
     if (!pendingReopenId) return;
-    // reopen = closed:false
-    setEventClosed(pendingReopenId, false);
+    setEventClosed(pendingReopenId, false); // reopen
     setPendingReopenId(null);
   }, [pendingReopenId]);
 
-  const undo = React.useCallback(() => {
-    setStack((prev) => {
-      if (prev.length === 0) return prev;
-      const [first, ...rest] = prev;
-      setPendingReopenId(first.id);
-      return rest;
-    });
+  const undoSpecific = React.useCallback((id: string) => {
+    setStack((prev) => prev.filter((e) => e.id !== id));
+    setPendingReopenId(id);
   }, []);
 
   if (!visible || stack.length === 0) return null;
@@ -64,9 +107,10 @@ export default function ClosedEventsUndoStack({ visible }: Props) {
 
           <button
             type="button"
-            onClick={undo}
+            onClick={() => undoSpecific(event.id)}
             className="rounded-xl bg-slate-900 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 active:scale-[0.99]"
             title="Fortryd lukning (åbn igen)"
+            disabled={isCurrentlyOpen(event.id)}
           >
             Fortryd
           </button>
