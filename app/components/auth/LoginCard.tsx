@@ -86,7 +86,7 @@ export default function LoginCard() {
       {/* Actions */}
       <div className="mt-4 flex items-center justify-between text-sm">
         <Link
-          href="/forgot-password"
+          href="/forgotPassword"
           className="text-slate-600 hover:text-slate-900 underline"
         >
           Glemt password?
