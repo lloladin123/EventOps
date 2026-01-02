@@ -25,6 +25,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    // If auth is not available (SSR/build), do nothing.
+    // In the browser it will be defined.
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
     let unsubUserDoc: (() => void) | null = null;
 
     const unsubAuth = onAuthStateChanged(auth, (u) => {
@@ -55,14 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const safeName = u.displayName?.trim() ? u.displayName.trim() : null;
 
           await setDoc(ref, {
-            // ✅ default to null unless you explicitly seed in dev
             role: seeded?.role ?? null,
             subRole: seeded?.subRole ?? null,
-
-            // ✅ don't write empty strings
             email: safeEmail,
             displayName: safeName,
-
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
@@ -85,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = async () => {
+    if (!auth) return;
     await auth.signOut();
   };
 
