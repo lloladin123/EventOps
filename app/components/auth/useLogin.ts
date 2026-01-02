@@ -2,45 +2,65 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { Role } from "@/types/rsvp";
-import type { CrewSubRole } from "./roles";
+import {
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+} from "firebase/auth";
 
-function makeUserId(role: string) {
-  return `${role.toLowerCase()}_${Math.random().toString(16).slice(2, 6)}`;
-}
+import type { Role, CrewSubRole } from "@/types/rsvp";
+import { auth } from "@/app/lib/firebase/client";
+import { getTestCreds } from "./testAccounts";
 
 export function useLogin() {
-  const [role, setRole] = React.useState<Role | "">("");
-  const [crewRole, setCrewRole] = React.useState<CrewSubRole | "">("");
   const router = useRouter();
 
-  const canLogin = !!role && (role !== "Crew" || !!crewRole);
+  const [role, setRole] = React.useState<Role | "">("");
+  const [crewRole, setCrewRole] = React.useState<CrewSubRole | "">("");
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState(false);
 
-  const onChangeRole = (next: Role | "") => {
+  const onChangeRole = (next: Role) => {
     setRole(next);
+    setError(null);
     if (next !== "Crew") setCrewRole("");
   };
 
-  const login = () => {
-    if (!role) return;
-    if (role === "Crew" && !crewRole) return;
+  const canLogin = role !== "" && (role !== "Crew" || crewRole !== "");
 
-    const existingId = localStorage.getItem("userId");
-    const userId = existingId ?? makeUserId(role);
+  const login = async () => {
+    if (!canLogin || busy) return;
 
-    localStorage.setItem("role", role);
-    localStorage.setItem("userId", userId);
+    setBusy(true);
+    setError(null);
 
-    if (role === "Crew") {
-      localStorage.setItem("crewRole", crewRole);
-    } else {
-      localStorage.removeItem("crewRole");
+    try {
+      const creds = getTestCreds(
+        role as Role,
+        (crewRole || null) as CrewSubRole | null
+      );
+
+      // ✅ Make auth persist across refreshes
+      await setPersistence(auth, browserLocalPersistence);
+
+      const result = await signInWithEmailAndPassword(
+        auth,
+        creds.email,
+        creds.password
+      );
+
+      // ✅ Debug proof
+      console.log("SIGNED IN:", result.user.uid, result.user.email);
+      console.log("AUTH currentUser after:", auth.currentUser?.uid);
+
+      // ✅ Get out of the login view
+      router.push("/events");
+    } catch (e: any) {
+      console.error(e);
+      setError(e?.message ?? "Login failed");
+    } finally {
+      setBusy(false);
     }
-
-    window.dispatchEvent(new Event("auth-changed"));
-
-    router.replace("/events");
-    router.refresh();
   };
 
   return {
@@ -50,5 +70,7 @@ export function useLogin() {
     onChangeRole,
     canLogin,
     login,
+    busy,
+    error,
   };
 }

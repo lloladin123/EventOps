@@ -1,13 +1,20 @@
 import { EventAttendance } from "./event";
 
-export type Role = "Kontrollør" | "Admin" | "Logfører" | "Crew";
+export const ROLES = ["Kontrollør", "Admin", "Logfører", "Crew"] as const;
+
+export type Role = (typeof ROLES)[number];
+
+export const CREW_SUBROLES = ["Scanning", "Billet salg", "Boldbørn"] as const;
+
+export type CrewSubRole = (typeof CREW_SUBROLES)[number];
 
 export type RSVP = {
   id: string;
   eventId: string;
-  userRole: Role; // fake “user id” for now
-  attendance: EventAttendance; // yes | maybe | no
-  comment: string; // “10 min late”, “no gluten”, etc.
+  userRole: Role;
+  userSubRole?: CrewSubRole | null;
+  attendance: EventAttendance;
+  comment: string;
   createdAt: string;
   updatedAt?: string;
 };
