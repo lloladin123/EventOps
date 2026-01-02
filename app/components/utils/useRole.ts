@@ -3,13 +3,20 @@
 import * as React from "react";
 import type { Role } from "@/types/rsvp";
 
+function readRole(): Role | null {
+  const raw = localStorage.getItem("role");
+  const value = raw ? raw.trim() : "";
+  return (value || null) as Role | null;
+}
+
 export function useRole() {
   const [role, setRole] = React.useState<Role | null>(null);
+  const [ready, setReady] = React.useState(false);
 
   React.useEffect(() => {
     const read = () => {
-      const raw = localStorage.getItem("role");
-      setRole((raw ? raw.trim() : null) as Role | null);
+      setRole(readRole());
+      setReady(true);
     };
 
     read();
@@ -22,5 +29,12 @@ export function useRole() {
     };
   }, []);
 
-  return role;
+  return {
+    role,
+    ready,
+    isAdmin: role === "Admin",
+    isLogfører: role === "Logfører",
+    isKontrollør: role === "Kontrollør",
+    isCrew: role === "Crew",
+  };
 }
