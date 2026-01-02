@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import type { Role } from "@/types/rsvp";
 import { ROLES, CREW_SUBROLES, type CrewSubRole } from "@/types/rsvp";
 import { useLogin } from "./useLogin";
@@ -81,6 +82,23 @@ export default function LoginCard() {
       </button>
 
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+
+      {/* Actions */}
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <Link
+          href="/forgot-password"
+          className="text-slate-600 hover:text-slate-900 underline"
+        >
+          Glemt password?
+        </Link>
+
+        <Link
+          href="/signUp"
+          className="font-medium text-slate-900 hover:text-slate-700 underline"
+        >
+          Opret bruger
+        </Link>
+      </div>
     </div>
   );
 }

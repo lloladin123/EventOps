@@ -30,7 +30,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubAuth = onAuthStateChanged(auth, (u) => {
       setLoading(true);
 
-      // cleanup previous user doc subscription
       if (unsubUserDoc) {
         unsubUserDoc();
         unsubUserDoc = null;
@@ -49,24 +48,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const ref = doc(db, "users", u.uid);
 
       unsubUserDoc = onSnapshot(ref, async (snap) => {
-        // ✅ create doc ONLY if missing (first login)
         if (!snap.exists()) {
           const seeded = devRoleFromEmail(u.email);
 
+          const safeEmail = u.email ?? null;
+          const safeName = u.displayName?.trim() ? u.displayName.trim() : null;
+
           await setDoc(ref, {
-            role: seeded?.role ?? "Crew",
+            // ✅ default to null unless you explicitly seed in dev
+            role: seeded?.role ?? null,
             subRole: seeded?.subRole ?? null,
-            email: u.email ?? "",
-            displayName: u.displayName ?? "",
+
+            // ✅ don't write empty strings
+            email: safeEmail,
+            displayName: safeName,
+
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
           });
 
-          // Don't set state from snap here; next snapshot will fire with data
           return;
         }
 
-        // ✅ read ONLY (no writes here, avoids overwrite loop)
         const data = snap.data() as any;
 
         setRole((data?.role ?? null) as Role | null);
