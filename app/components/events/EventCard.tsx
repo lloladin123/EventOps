@@ -20,7 +20,7 @@ type Props = {
   commentValue: string;
   onChangeAttendance: (eventId: string, attendance: EventAttendance) => void;
   onChangeComment: (eventId: string, comment: string) => void;
-  onDelete?: (event: Event) => void; // ✅ new
+  onDelete?: (event: Event) => void; // ✅ delete hook (admin only)
 };
 
 const CAN_OPEN_DETAILS: Role[] = ["Admin", "Logfører"];
@@ -37,6 +37,20 @@ export default function EventCard({
   const { role, ready, isAdmin } = useRole();
 
   const canOpenDetails = !!ready && !!role && CAN_OPEN_DETAILS.includes(role);
+
+  const closeNow = () => {
+    setEventClosed(event.id, true);
+    window.dispatchEvent(
+      new CustomEvent<Event>("event-closed", { detail: event })
+    );
+  };
+
+  const openNow = () => {
+    setEventClosed(event.id, false);
+    window.dispatchEvent(
+      new CustomEvent<Event>("event-opened", { detail: event })
+    );
+  };
 
   return (
     <div className="relative flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-stretch">
@@ -107,7 +121,7 @@ export default function EventCard({
           {event.open ? (
             <button
               type="button"
-              onClick={() => setEventClosed(event.id, true)}
+              onClick={closeNow}
               className="rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 active:scale-[0.99]"
               title="Luk event"
             >
@@ -116,7 +130,7 @@ export default function EventCard({
           ) : (
             <button
               type="button"
-              onClick={() => setEventClosed(event.id, false)}
+              onClick={openNow}
               className="rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 active:scale-[0.99]"
               title="Åbn event"
             >
