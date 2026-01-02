@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
-import type { EventAttendance } from "@/types/event";
+import type { EventAttendance, Event } from "@/types/event";
 
 import EventCard from "@/components/events/EventCard";
 import EventSection from "@/components/events/EventSection";
+import DeletedEventsUndoStack from "@/components/events/DeletedEventsUndoStack";
 import { isEventOpen } from "@/utils/eventStatus";
+import { setEventDeleted } from "@/utils/eventDeleted";
 import { useRole } from "@/utils/useRole";
 import { useRsvps } from "@/utils/useRsvps";
 import { useUiToggle } from "@/utils/useUiToggle";
@@ -14,21 +16,17 @@ import { getAllEvents } from "@/utils/eventsStore";
 export default function EventList() {
   const { role, isAdmin } = useRole();
 
-  // minimizers
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
 
-  // RSVP state + handlers
   const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps(role);
 
-  // ✅ events are state now
-  const [events, setEvents] = React.useState(() => getAllEvents());
+  const [events, setEvents] = React.useState<Event[]>(() => getAllEvents());
 
-  // ✅ reload on close/reopen/add
   React.useEffect(() => {
     const reload = () => setEvents(getAllEvents());
 
-    reload(); // initial
+    reload();
     window.addEventListener("events-changed", reload);
     window.addEventListener("storage", reload);
 
@@ -38,12 +36,23 @@ export default function EventList() {
     };
   }, []);
 
-  // grouped lists
+  const onDeleteEvent = React.useCallback((event: Event) => {
+    // persist deletion (gone after refresh)
+    setEventDeleted(event.id, true);
+
+    // keep undo data in memory (until refresh) via CustomEvent
+    window.dispatchEvent(
+      new CustomEvent<Event>("event-deleted", { detail: event })
+    );
+  }, []);
+
   const openEvents = events.filter((e) => isEventOpen(e));
   const closedEvents = events.filter((e) => !isEventOpen(e));
 
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-6">
+      <DeletedEventsUndoStack visible={isAdmin} />
+
       <EventSection
         title={isAdmin ? "Åbne kampe" : "Kampe"}
         count={openEvents.length}
@@ -67,6 +76,7 @@ export default function EventList() {
                 commentValue={my?.comment ?? ""}
                 onChangeAttendance={onChangeAttendance}
                 onChangeComment={onChangeComment}
+                onDelete={isAdmin ? onDeleteEvent : undefined}
               />
             );
           })
@@ -99,6 +109,7 @@ export default function EventList() {
                   commentValue={my?.comment ?? ""}
                   onChangeAttendance={onChangeAttendance}
                   onChangeComment={onChangeComment}
+                  onDelete={onDeleteEvent}
                 />
               );
             })

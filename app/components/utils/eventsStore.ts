@@ -1,5 +1,6 @@
 import type { Event } from "@/types/event";
 import { mockEvents } from "@/data/event";
+import { isEventDeleted } from "@/utils/eventDeleted";
 
 const KEY = "events:custom";
 
@@ -21,7 +22,10 @@ export function addCustomEvent(event: Event) {
 }
 
 export function getAllEvents(): Event[] {
-  return [...mockEvents, ...getCustomEvents()];
+  const all = [...mockEvents, ...getCustomEvents()];
+
+  // ✅ filter out permanently deleted events
+  return all.filter((event) => !isEventDeleted(event.id));
 }
 
 export function makeEventId() {

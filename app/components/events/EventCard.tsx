@@ -20,6 +20,7 @@ type Props = {
   commentValue: string;
   onChangeAttendance: (eventId: string, attendance: EventAttendance) => void;
   onChangeComment: (eventId: string, comment: string) => void;
+  onDelete?: (event: Event) => void; // ✅ new
 };
 
 const CAN_OPEN_DETAILS: Role[] = ["Admin", "Logfører"];
@@ -30,15 +31,28 @@ export default function EventCard({
   commentValue,
   onChangeAttendance,
   onChangeComment,
+  onDelete,
 }: Props) {
   const b = attendanceBadge(attendanceValue);
-
   const { role, ready, isAdmin } = useRole();
 
   const canOpenDetails = !!ready && !!role && CAN_OPEN_DETAILS.includes(role);
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-stretch">
+    <div className="relative flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-stretch">
+      {/* Admin delete X */}
+      {isAdmin && onDelete && (
+        <button
+          type="button"
+          onClick={() => onDelete(event)}
+          className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-900 active:scale-[0.98]"
+          title="Slet event"
+          aria-label="Slet event"
+        >
+          ×
+        </button>
+      )}
+
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {canOpenDetails ? (
