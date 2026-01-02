@@ -12,8 +12,7 @@ import { useUiToggle } from "@/utils/useUiToggle";
 import { getAllEvents } from "@/utils/eventsStore";
 
 export default function EventList() {
-  const role = useRole();
-  const isAdmin = role === "Admin";
+  const { role, isAdmin } = useRole();
 
   // minimizers
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
