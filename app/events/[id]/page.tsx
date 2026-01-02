@@ -14,6 +14,7 @@ import LoginRedirect from "@/components/layout/LoginRedirect";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { getAllEvents } from "@/utils/eventsStore";
 import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
+import ApprovedUsers from "@/components/events/ApprovedUsers";
 
 function incidentStorageKey(eventId: string, uid: string) {
   return `incidents:${eventId}:uid:${uid}`;
@@ -99,7 +100,9 @@ export default function EventDetailPage() {
         </main>
       ) : (
         <main className="mx-auto max-w-4xl space-y-6 p-6">
-          <EventHeader event={event} />
+          <EventHeader event={event}>
+            <ApprovedUsers eventId={event.id}></ApprovedUsers>
+          </EventHeader>
 
           <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
 

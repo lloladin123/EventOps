@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 import {
   getAllLocalRsvps,
   isApproved,
   setApproved,
 } from "@/components/utils/rsvpIndex";
 import { getEventsWithOverrides } from "@/components/utils/eventsStore";
-import { useAuth } from "@/app/components/auth/AuthProvider";
 import type { Event } from "@/types/event";
+import LoginRedirect from "@/components/layout/LoginRedirect";
 
 type RSVPAttendance = "yes" | "maybe" | "no";
 
@@ -24,14 +25,20 @@ type RSVPRow = {
 
 export default function RequestsPage() {
   const { role, loading } = useAuth();
+
   const [tick, setTick] = useState(0);
+
   const [statusFilter, setStatusFilter] = useState<
     "pending" | "approved" | "all"
   >("all");
 
   const [attendanceFilter, setAttendanceFilter] = useState<
     RSVPAttendance | "all"
-  >("yes");
+  >("all");
+
+  // ✅ state that is loaded AFTER mount (prevents hydration mismatch)
+  const [eventsById, setEventsById] = useState<Map<string, Event>>(new Map());
+  const [rows, setRows] = useState<RSVPRow[]>([]);
 
   // 🔁 re-render on localStorage changes
   useEffect(() => {
@@ -44,23 +51,21 @@ export default function RequestsPage() {
     };
   }, []);
 
-  // 🔎 index events
-  const eventsById = useMemo(() => {
+  // 📥 hydrate events + rsvps from localStorage AFTER mount / tick changes
+  useEffect(() => {
     const map = new Map<string, Event>();
     for (const e of getEventsWithOverrides()) {
       map.set(e.id, e);
     }
-    return map;
-  }, [tick]);
+    setEventsById(map);
 
-  // 🔎 normalize RSVPs
-  const rows: RSVPRow[] = useMemo(() => {
-    return getAllLocalRsvps().map((r) => ({
+    const nextRows: RSVPRow[] = getAllLocalRsvps().map((r) => ({
       ...r,
       approved: isApproved(r.eventId, r.uid),
-      event: eventsById.get(r.eventId),
+      event: map.get(r.eventId),
     }));
-  }, [eventsById, tick]);
+    setRows(nextRows);
+  }, [tick]);
 
   // 🎛️ filtering + sorting
   const visible = useMemo(() => {
@@ -108,114 +113,122 @@ export default function RequestsPage() {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="flex flex-wrap gap-3 items-end justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Requests</h1>
-          <p className="opacity-70 text-sm">
-            Local RSVP requests (this browser only)
-          </p>
+    <LoginRedirect
+      allowedRoles={["Admin"]}
+      unauthorizedRedirectTo="/login"
+      description="Du har ikke adgang til Requests."
+    >
+      <div className="p-4 space-y-4">
+        <div className="flex flex-wrap gap-3 items-end justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Requests</h1>
+            <p className="opacity-70 text-sm">
+              Local RSVP requests (this browser only)
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <select
+              className="border rounded px-2 py-1"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+            >
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="all">All</option>
+            </select>
+
+            <select
+              className="border rounded px-2 py-1"
+              value={attendanceFilter}
+              onChange={(e) => setAttendanceFilter(e.target.value as any)}
+            >
+              <option value="all">All</option>
+              <option value="yes">Yes</option>
+              <option value="maybe">Maybe</option>
+              <option value="no">No</option>
+            </select>
+          </div>
         </div>
 
-        <div className="flex gap-2">
-          <select
-            className="border rounded px-2 py-1"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-          >
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="all">All</option>
-          </select>
+        {grouped.size === 0 ? (
+          <div className="border rounded p-4 opacity-70">
+            No requests found.
+          </div>
+        ) : (
+          Array.from(grouped.entries()).map(([eventId, list]) => {
+            const event = eventsById.get(eventId);
 
-          <select
-            className="border rounded px-2 py-1"
-            value={attendanceFilter}
-            onChange={(e) => setAttendanceFilter(e.target.value as any)}
-          >
-            <option value="yes">Yes</option>
-            <option value="maybe">Maybe</option>
-            <option value="no">No</option>
-            <option value="all">All</option>
-          </select>
-        </div>
-      </div>
-
-      {grouped.size === 0 ? (
-        <div className="border rounded p-4 opacity-70">No requests found.</div>
-      ) : (
-        Array.from(grouped.entries()).map(([eventId, list]) => {
-          const event = eventsById.get(eventId);
-
-          return (
-            <div key={eventId} className="border rounded-lg p-3 space-y-3">
-              <div className="flex justify-between flex-wrap gap-2">
-                <div>
-                  <div className="font-semibold text-lg">
-                    {event?.title ?? "Unknown event"}
-                  </div>
-                  {event && (
-                    <div className="text-sm opacity-70">
-                      {event.date} • {event.location}
+            return (
+              <div key={eventId} className="border rounded-lg p-3 space-y-3">
+                <div className="flex justify-between flex-wrap gap-2">
+                  <div>
+                    <div className="font-semibold text-lg">
+                      {event?.title ?? "Unknown event"}
                     </div>
-                  )}
+                    {event && (
+                      <div className="text-sm opacity-70">
+                        {event.date} • {event.location}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    className="border rounded px-3 py-1"
+                    onClick={() => copyApproved(eventId)}
+                  >
+                    Copy approved
+                  </button>
                 </div>
 
-                <button
-                  className="border rounded px-3 py-1"
-                  onClick={() => copyApproved(eventId)}
-                >
-                  Copy approved
-                </button>
-              </div>
-
-              <table className="w-full text-sm">
-                <thead className="opacity-60">
-                  <tr>
-                    <th className="text-left py-1">User</th>
-                    <th className="text-left py-1">Attendance</th>
-                    <th className="text-left py-1">Comment</th>
-                    <th className="text-left py-1">Approved</th>
-                    <th className="text-left py-1">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {list.map((r) => (
-                    <tr key={`${r.eventId}:${r.uid}`} className="border-t">
-                      <td className="py-2 font-mono">{r.uid}</td>
-                      <td className="py-2">{r.attendance}</td>
-                      <td className="py-2 opacity-80">{r.comment || "—"}</td>
-                      <td className="py-2">{r.approved ? "✅" : "—"}</td>
-                      <td className="py-2">
-                        <button
-                          className="border rounded px-2 py-1 mr-2"
-                          disabled={r.approved}
-                          onClick={() => setApproved(r.eventId, r.uid, true)}
-                        >
-                          Approve
-                        </button>
-                        <button
-                          className="border rounded px-2 py-1"
-                          disabled={!r.approved}
-                          onClick={() => setApproved(r.eventId, r.uid, false)}
-                        >
-                          Unapprove
-                        </button>
-                      </td>
+                <table className="w-full text-sm">
+                  <thead className="opacity-60">
+                    <tr>
+                      <th className="text-left py-1">User</th>
+                      <th className="text-left py-1">Attendance</th>
+                      <th className="text-left py-1">Comment</th>
+                      <th className="text-left py-1">Approved</th>
+                      <th className="text-left py-1">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {list.map((r) => (
+                      <tr key={`${r.eventId}:${r.uid}`} className="border-t">
+                        <td className="py-2 font-mono">{r.uid}</td>
+                        <td className="py-2">{r.attendance}</td>
+                        <td className="py-2 opacity-80">{r.comment || "—"}</td>
+                        <td className="py-2">{r.approved ? "✅" : "—"}</td>
+                        <td className="py-2">
+                          <button
+                            className="border rounded px-2 py-1 mr-2"
+                            disabled={r.approved}
+                            onClick={() => setApproved(r.eventId, r.uid, true)}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="border rounded px-2 py-1"
+                            disabled={!r.approved}
+                            onClick={() => setApproved(r.eventId, r.uid, false)}
+                          >
+                            Unapprove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
 
-              <div className="text-xs opacity-60">
-                Tip: If you want “deny”, add a{" "}
-                <code>event:denied:&lt;eventId&gt;:&lt;uid&gt;</code> flag the
-                same way.
+                <div className="text-xs opacity-60">
+                  Tip: If you want “deny”, add a{" "}
+                  <code>event:denied:&lt;eventId&gt;:&lt;uid&gt;</code> flag the
+                  same way.
+                </div>
               </div>
-            </div>
-          );
-        })
-      )}
-    </div>
+            );
+          })
+        )}
+      </div>
+    </LoginRedirect>
   );
 }
