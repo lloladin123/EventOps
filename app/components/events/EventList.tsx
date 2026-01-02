@@ -1,6 +1,6 @@
 "use client";
 
-import { mockEvents } from "@/data/event";
+import * as React from "react";
 import type { EventAttendance } from "@/types/event";
 
 import EventCard from "@/components/events/EventCard";
@@ -9,14 +9,11 @@ import { isEventOpen } from "@/utils/eventStatus";
 import { useRole } from "@/utils/useRole";
 import { useRsvps } from "@/utils/useRsvps";
 import { useUiToggle } from "@/utils/useUiToggle";
-import { useEventsChangedRerender } from "@/utils/useEventsChangedRerender";
+import { getAllEvents } from "@/utils/eventsStore";
 
 export default function EventList() {
   const role = useRole();
   const isAdmin = role === "Admin";
-
-  // rerender on close/reopen
-  useEventsChangedRerender();
 
   // minimizers
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
@@ -25,9 +22,26 @@ export default function EventList() {
   // RSVP state + handlers
   const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps(role);
 
+  // ✅ events are state now
+  const [events, setEvents] = React.useState(() => getAllEvents());
+
+  // ✅ reload on close/reopen/add
+  React.useEffect(() => {
+    const reload = () => setEvents(getAllEvents());
+
+    reload(); // initial
+    window.addEventListener("events-changed", reload);
+    window.addEventListener("storage", reload);
+
+    return () => {
+      window.removeEventListener("events-changed", reload);
+      window.removeEventListener("storage", reload);
+    };
+  }, []);
+
   // grouped lists
-  const openEvents = mockEvents.filter((e) => isEventOpen(e));
-  const closedEvents = mockEvents.filter((e) => !isEventOpen(e));
+  const openEvents = events.filter((e) => isEventOpen(e));
+  const closedEvents = events.filter((e) => !isEventOpen(e));
 
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-6">
