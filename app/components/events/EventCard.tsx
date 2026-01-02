@@ -11,6 +11,8 @@ import EventComment from "./EventComment";
 import AttendanceButtons from "./AttendanceButtons";
 import { attendanceBadge } from "./attendanceBadge";
 import { cn } from "@/components/ui/classNames";
+import { useRole } from "@/utils/useRole";
+import { setEventClosed } from "@/utils/eventStatus";
 
 type Props = {
   event: Event;
@@ -31,30 +33,12 @@ export default function EventCard({
 }: Props) {
   const b = attendanceBadge(attendanceValue);
 
-  const [role, setRole] = React.useState<Role | null>(null);
-  const [ready, setReady] = React.useState(false);
+  const { role, ready, isAdmin } = useRole();
 
-  React.useEffect(() => {
-    const read = () => {
-      const raw = localStorage.getItem("role");
-      setRole((raw ? raw.trim() : null) as Role | null);
-      setReady(true);
-    };
-
-    read();
-    window.addEventListener("auth-changed", read);
-    window.addEventListener("storage", read);
-    return () => {
-      window.removeEventListener("auth-changed", read);
-      window.removeEventListener("storage", read);
-    };
-  }, []);
-
-  const canOpenDetails = ready && role && CAN_OPEN_DETAILS.includes(role);
-  const isAdmin = role === "Admin";
+  const canOpenDetails = !!ready && !!role && CAN_OPEN_DETAILS.includes(role);
 
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row">
+    <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-stretch">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {canOpenDetails ? (
@@ -83,6 +67,7 @@ export default function EventCard({
               {b.text}
             </span>
           )}
+
           {!event.open && (
             <span className="inline-flex items-center rounded-full bg-slate-900 px-2 py-1 text-xs font-medium text-white">
               Lukket
@@ -102,7 +87,30 @@ export default function EventCard({
         )}
       </div>
 
-      {!isAdmin && (
+      {/* Right side controls */}
+      {isAdmin ? (
+        <div className="flex shrink-0 flex-col justify-center gap-2 sm:items-end">
+          {event.open ? (
+            <button
+              type="button"
+              onClick={() => setEventClosed(event.id, true)}
+              className="rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 active:scale-[0.99]"
+              title="Luk event"
+            >
+              Luk
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEventClosed(event.id, false)}
+              className="rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 active:scale-[0.99]"
+              title="Åbn event"
+            >
+              Åbn
+            </button>
+          )}
+        </div>
+      ) : (
         <AttendanceButtons
           eventId={event.id}
           value={attendanceValue}

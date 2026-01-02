@@ -45,7 +45,7 @@ export default function EventList() {
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-6">
       <EventSection
-        title={role === "Admin" ? "Åbne kampe" : "Kampe"}
+        title={isAdmin ? "Åbne kampe" : "Kampe"}
         count={openEvents.length}
         minimized={openMinimized}
         setMinimized={setOpenMinimized}
