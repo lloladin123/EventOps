@@ -13,6 +13,7 @@ import LoginRedirect from "@/components/layout/LoginRedirect";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { getAllEvents } from "@/utils/eventsStore";
+import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
 
 function incidentStorageKey(eventId: string, uid: string) {
   return `incidents:${eventId}:uid:${uid}`;
@@ -104,6 +105,7 @@ export default function EventDetailPage() {
 
           <div className="mt-4 space-y-3">
             <IncidentList incidents={incidents} />
+            <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
           </div>
         </main>
       )}
