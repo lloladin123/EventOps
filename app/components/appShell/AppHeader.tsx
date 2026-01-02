@@ -2,33 +2,18 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { Role } from "@/types/rsvp";
 
 import UserBadge from "@/components/layout/UserBadge";
 import Breadcrumbs from "@/components/appShell/Breadcrumbs";
 import AdminNav from "@/components/appShell/AdminNav";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 
 export default function AppHeader() {
   const router = useRouter();
-  const [role, setRole] = React.useState<Role | null>(null);
+  const { user, role, loading, logout } = useAuth();
 
-  React.useEffect(() => {
-    const read = () => setRole(localStorage.getItem("role") as Role | null);
-
-    read();
-    window.addEventListener("auth-changed", read);
-    window.addEventListener("storage", read);
-
-    return () => {
-      window.removeEventListener("auth-changed", read);
-      window.removeEventListener("storage", read);
-    };
-  }, []);
-
-  const logout = () => {
-    localStorage.removeItem("role");
-    localStorage.removeItem("userId");
-    window.dispatchEvent(new Event("auth-changed"));
+  const onLogout = async () => {
+    await logout();
     router.push("/login");
   };
 
@@ -45,19 +30,19 @@ export default function AppHeader() {
               Event Log
             </button>
 
-            {role === "Admin" && <AdminNav />}
+            {!loading && role === "Admin" && <AdminNav />}
           </div>
 
           <Breadcrumbs />
         </div>
 
         <div className="flex items-center gap-3">
-          {role ? (
+          {loading ? null : user ? (
             <>
               <UserBadge />
               <button
                 type="button"
-                onClick={logout}
+                onClick={onLogout}
                 className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
               >
                 Log ud

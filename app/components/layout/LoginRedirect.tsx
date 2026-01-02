@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { Role } from "@/types/rsvp";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 
 type Props = {
   children: React.ReactNode;
@@ -28,31 +29,13 @@ export default function LoginRedirect({
   unauthorizedRedirectTo = "/login",
 }: Props) {
   const router = useRouter();
-  const [role, setRole] = React.useState<Role | null>(null);
-  const [ready, setReady] = React.useState(false);
+  const { user, role, loading } = useAuth();
 
-  React.useEffect(() => {
-    const read = () => {
-      const raw = localStorage.getItem("role");
-      const next = (raw ? raw.trim() : null) as Role | null;
-      setRole(next);
-      setReady(true);
-    };
+  // wait for firebase auth + role load
+  if (loading) return null;
 
-    read();
-    window.addEventListener("auth-changed", read);
-    window.addEventListener("storage", read);
-
-    return () => {
-      window.removeEventListener("auth-changed", read);
-      window.removeEventListener("storage", read);
-    };
-  }, []);
-
-  if (!ready) return null;
-
-  // 1) Not logged in (same as your working behavior)
-  if (!role) {
+  // 1) Not logged in
+  if (!user) {
     return (
       <main className="mx-auto max-w-2xl p-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -71,7 +54,19 @@ export default function LoginRedirect({
     );
   }
 
-  // 2) Logged in but wrong role (same render-based gating)
+  // If logged in but role not loaded yet (doc missing / rules), block with a soft message
+  if (!role) {
+    return (
+      <main className="mx-auto max-w-2xl p-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h1 className="text-xl font-semibold text-slate-900">Loading…</h1>
+          <p className="mt-2 text-sm text-slate-600">Henter brugerrolle…</p>
+        </div>
+      </main>
+    );
+  }
+
+  // 2) Logged in but wrong role
   if (allowedRoles && !allowedRoles.includes(role)) {
     return (
       <main className="mx-auto max-w-2xl p-6">

@@ -11,8 +11,8 @@ import EventComment from "./EventComment";
 import AttendanceButtons from "./AttendanceButtons";
 import { attendanceBadge } from "./attendanceBadge";
 import { cn } from "@/components/ui/classNames";
-import { useRole } from "@/utils/useRole";
 import { setEventClosed } from "@/utils/eventStatus";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 
 type Props = {
   event: Event;
@@ -34,9 +34,11 @@ export default function EventCard({
   onDelete,
 }: Props) {
   const b = attendanceBadge(attendanceValue);
-  const { role, ready, isAdmin } = useRole();
 
-  const canOpenDetails = !!ready && !!role && CAN_OPEN_DETAILS.includes(role);
+  const { user, role, loading } = useAuth();
+  const isAdmin = role === "Admin";
+  const canOpenDetails =
+    !!user && !loading && !!role && CAN_OPEN_DETAILS.includes(role);
 
   const closeNow = () => {
     setEventClosed(event.id, true);
@@ -79,7 +81,9 @@ export default function EventCard({
           ) : (
             <span
               className="text-lg font-semibold text-slate-900"
-              title={!ready ? "" : "Kun Admin/Logfører kan åbne detaljer"}
+              title={
+                !user || loading ? "" : "Kun Admin/Logfører kan åbne detaljer"
+              }
             >
               {event.title}
             </span>

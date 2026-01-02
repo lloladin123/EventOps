@@ -2,78 +2,116 @@
 
 import * as React from "react";
 import type { EventAttendance } from "@/types/event";
-import type { RSVP, Role } from "@/types/rsvp";
+import type { RSVP, Role, CrewSubRole } from "@/types/rsvp";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
-function storageKey(role: Role) {
+function uidKey(uid: string) {
+  return `rsvps:uid:${uid}`;
+}
+
+// legacy (old) key
+function legacyRoleKey(role: Role) {
   return `rsvps:${role}`;
 }
 
-export function useRsvps(role: Role | null) {
+export function useRsvps(_roleIgnored?: Role | null) {
+  const { user, role, subRole, loading } = useAuth();
+
+  const uid = user?.uid ?? null;
+  const effectiveRole = role ?? null;
+  const effectiveSubRole = (subRole ?? null) as CrewSubRole | null;
+
   const [rsvps, setRsvps] = React.useState<RSVP[]>([]);
 
-  // load on role change
+  // load on uid change ONLY (don't let role/subRole re-load wipe state)
   React.useEffect(() => {
-    if (!role) {
+    if (loading) return;
+
+    if (!uid) {
       setRsvps([]);
       return;
     }
 
-    const raw = localStorage.getItem(storageKey(role));
-    if (!raw) {
-      setRsvps([]);
-      return;
+    // 1) load from new key
+    const raw = localStorage.getItem(uidKey(uid));
+    if (raw) {
+      try {
+        setRsvps(JSON.parse(raw) as RSVP[]);
+        return;
+      } catch {
+        // fall through
+      }
     }
 
-    try {
-      setRsvps(JSON.parse(raw) as RSVP[]);
-    } catch {
-      setRsvps([]);
+    // 2) migrate legacy role-based RSVPs once (best effort)
+    if (effectiveRole) {
+      const legacyRaw = localStorage.getItem(legacyRoleKey(effectiveRole));
+      if (legacyRaw) {
+        try {
+          const legacy = JSON.parse(legacyRaw) as RSVP[];
+          localStorage.setItem(uidKey(uid), JSON.stringify(legacy));
+          setRsvps(legacy);
+          return;
+        } catch {
+          // ignore
+        }
+      }
     }
-  }, [role]);
 
-  // persist
-  React.useEffect(() => {
-    if (!role) return;
-    localStorage.setItem(storageKey(role), JSON.stringify(rsvps));
-  }, [role, rsvps]);
+    setRsvps([]);
+  }, [uid, loading]); // ✅ removed effectiveRole dependency
 
   const upsertRsvp = React.useCallback(
     (eventId: string, patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
-      if (!role) return;
+      if (!uid) return;
 
       setRsvps((prev) => {
-        const idx = prev.findIndex(
-          (r) => r.eventId === eventId && r.userRole === role
-        );
+        const idx = prev.findIndex((r) => r.eventId === eventId);
+
+        let next: RSVP[];
 
         if (idx !== -1) {
-          const copy = [...prev];
-          copy[idx] = {
-            ...copy[idx],
+          const existing = prev[idx];
+          next = [...prev];
+          next[idx] = {
+            ...existing,
             ...patch,
+            userRole: (effectiveRole ?? existing.userRole ?? "Crew") as any,
+            userSubRole:
+              (effectiveRole ?? existing.userRole) === "Crew"
+                ? effectiveSubRole ?? existing.userSubRole ?? null
+                : null,
             updatedAt: new Date().toISOString(),
           };
-          return copy;
-        }
-
-        return [
-          ...prev,
-          {
+        } else {
+          const created: RSVP = {
             id: makeId(),
             eventId,
-            userRole: role,
-            attendance: patch.attendance ?? ("maybe" as EventAttendance),
+            userRole: (effectiveRole ?? "Crew") as any,
+            userSubRole:
+              effectiveRole === "Crew" ? effectiveSubRole ?? null : null,
+            attendance: (patch.attendance ?? "maybe") as EventAttendance,
             comment: patch.comment ?? "",
             createdAt: new Date().toISOString(),
-          },
-        ];
+          };
+          next = [...prev, created];
+        }
+
+        // ✅ persist immediately so any re-load sees the latest data
+        try {
+          localStorage.setItem(uidKey(uid), JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+
+        return next;
       });
     },
-    [role]
+    [uid, effectiveRole, effectiveSubRole]
   );
 
   const onChangeAttendance = React.useCallback(
@@ -91,11 +129,8 @@ export function useRsvps(role: Role | null) {
   );
 
   const myRsvpFor = React.useCallback(
-    (eventId: string) =>
-      role
-        ? rsvps.find((r) => r.eventId === eventId && r.userRole === role)
-        : undefined,
-    [role, rsvps]
+    (eventId: string) => rsvps.find((r) => r.eventId === eventId),
+    [rsvps]
   );
 
   return { rsvps, onChangeAttendance, onChangeComment, myRsvpFor };

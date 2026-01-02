@@ -1,13 +1,22 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import type { Role } from "@/types/rsvp";
-import { ROLES, CREW_SUBROLES, type CrewSubRole } from "./roles";
+import { ROLES, CREW_SUBROLES, type CrewSubRole } from "@/types/rsvp";
 import { useLogin } from "./useLogin";
 
 export default function LoginCard() {
-  const { role, crewRole, setCrewRole, onChangeRole, canLogin, login } =
-    useLogin();
+  const {
+    role,
+    crewRole,
+    setCrewRole,
+    onChangeRole,
+    canLogin,
+    login,
+    busy,
+    error,
+  } = useLogin();
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -61,16 +70,35 @@ export default function LoginCard() {
       <button
         type="button"
         onClick={login}
-        disabled={!canLogin}
+        disabled={!canLogin || busy}
         className={[
           "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
-          canLogin
+          canLogin && !busy
             ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
             : "cursor-not-allowed bg-slate-200 text-slate-500",
         ].join(" ")}
       >
-        Login
+        {busy ? "Logger ind…" : "Login"}
       </button>
+
+      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+
+      {/* Actions */}
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <Link
+          href="/forgot-password"
+          className="text-slate-600 hover:text-slate-900 underline"
+        >
+          Glemt password?
+        </Link>
+
+        <Link
+          href="/signUp"
+          className="font-medium text-slate-900 hover:text-slate-700 underline"
+        >
+          Opret bruger
+        </Link>
+      </div>
     </div>
   );
 }

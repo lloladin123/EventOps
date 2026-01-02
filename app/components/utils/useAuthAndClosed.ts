@@ -1,32 +1,45 @@
 "use client";
 
 import * as React from "react";
-import { isEventClosed } from "@/utils/eventStatus";
+import { useAuth } from "@/app/components/auth/AuthProvider";
+import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
+import type { Role } from "@/types/rsvp";
+
+const CAN_CLOSE: Role[] = ["Admin", "Logfører"];
 
 export function useAuthAndClosed(eventId: string) {
-  const [loggedBy, setLoggedBy] = React.useState("");
-  const [closed, setClosed] = React.useState(false);
+  const { user, role, loading } = useAuth();
 
+  // keep "closed" in localStorage via your existing eventStatus utils
+  const [closed, setClosedState] = React.useState<boolean>(() =>
+    isEventClosed(eventId)
+  );
+
+  // keep in sync if other tabs / components change it
   React.useEffect(() => {
-    const read = () => {
-      const role = (localStorage.getItem("role") ?? "").trim();
-      setLoggedBy(role);
-      setClosed(isEventClosed(eventId));
-    };
-
-    read();
-    window.addEventListener("auth-changed", read);
-    window.addEventListener("events-changed", read);
-    window.addEventListener("storage", read);
-
+    const sync = () => setClosedState(isEventClosed(eventId));
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener("events-changed", sync);
     return () => {
-      window.removeEventListener("auth-changed", read);
-      window.removeEventListener("events-changed", read);
-      window.removeEventListener("storage", read);
+      window.removeEventListener("storage", sync);
+      window.removeEventListener("events-changed", sync);
     };
   }, [eventId]);
 
-  const canClose = loggedBy === "Admin" || loggedBy === "Logfører";
+  const setClosed = React.useCallback(
+    (next: boolean) => {
+      setEventClosed(eventId, next);
+      setClosedState(next);
+      window.dispatchEvent(new CustomEvent("events-changed"));
+    },
+    [eventId]
+  );
+
+  // Prefer displayName; fall back to email; fall back to "—"
+  const loggedBy = loading || !user ? "" : user.displayName || user.email || "";
+
+  const canClose = !loading && !!role && CAN_CLOSE.includes(role);
 
   return { loggedBy, closed, setClosed, canClose };
 }

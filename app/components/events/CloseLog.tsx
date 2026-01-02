@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
-import type { Role } from "@/types/rsvp";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 
 type Props = {
   eventId: string;
@@ -22,8 +22,8 @@ export default function CloseLog({
   onReopened,
 }: Props) {
   const router = useRouter();
+  const { role, loading } = useAuth();
 
-  const [role, setRole] = React.useState<Role | null>(null);
   const [closed, setClosed] = React.useState(false);
 
   const [openCloseModal, setOpenCloseModal] = React.useState(false);
@@ -31,19 +31,17 @@ export default function CloseLog({
 
   const [secondsLeft, setSecondsLeft] = React.useState(WAIT_SECONDS);
 
+  // keep closed state in sync (localStorage-based)
   React.useEffect(() => {
     const read = () => {
-      setRole((localStorage.getItem("role") ?? "").trim() as Role);
       setClosed(isEventClosed(eventId));
     };
 
     read();
-    window.addEventListener("auth-changed", read);
     window.addEventListener("events-changed", read);
     window.addEventListener("storage", read);
 
     return () => {
-      window.removeEventListener("auth-changed", read);
       window.removeEventListener("events-changed", read);
       window.removeEventListener("storage", read);
     };
@@ -51,6 +49,7 @@ export default function CloseLog({
 
   const isAdmin = role === "Admin";
 
+  // countdown for close-confirm modal
   React.useEffect(() => {
     if (!openCloseModal) return;
 
@@ -71,24 +70,26 @@ export default function CloseLog({
 
   const closeLog = () => {
     setEventClosed(eventId, true);
-    setClosed(true); // ✅ instant UI update
+    setClosed(true); // instant UI update
+    window.dispatchEvent(new CustomEvent("events-changed"));
     onClosed?.();
     setOpenCloseModal(false);
-
     router.push("/events");
   };
 
   const reopenLog = () => {
     setEventClosed(eventId, false);
-    setClosed(false); // ✅ instant UI update
+    setClosed(false); // instant UI update
+    window.dispatchEvent(new CustomEvent("events-changed"));
     onReopened?.();
     setOpenReopenModal(false);
-
-    // ✅ do the same as close so the list updates visually right away
     router.push("/events");
   };
 
   const canConfirmClose = secondsLeft === 0;
+
+  // Optional: while auth is loading, don’t show admin-only actions incorrectly
+  const showReopen = !loading && closed && isAdmin;
 
   return (
     <>
@@ -122,7 +123,7 @@ export default function CloseLog({
               </button>
             )}
 
-            {closed && isAdmin && (
+            {showReopen && (
               <button
                 type="button"
                 onClick={() => setOpenReopenModal(true)}
