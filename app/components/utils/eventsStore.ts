@@ -1,6 +1,7 @@
 import type { Event } from "@/types/event";
 import { mockEvents } from "@/data/event";
 import { isEventDeleted } from "@/utils/eventDeleted";
+import { isEventClosed } from "@/utils/eventStatus";
 
 const KEY = "events:custom";
 
@@ -26,6 +27,19 @@ export function getAllEvents(): Event[] {
 
   // ✅ filter out permanently deleted events
   return all.filter((event) => !isEventDeleted(event.id));
+}
+
+/**
+ * 🔑 This is what the Requests page (and others) should use.
+ * Applies localStorage open/close overrides.
+ */
+export function getEventsWithOverrides(): Event[] {
+  const base = getAllEvents();
+
+  return base.map((event) => ({
+    ...event,
+    open: !isEventClosed(event.id),
+  }));
 }
 
 export function makeEventId() {
