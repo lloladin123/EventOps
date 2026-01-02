@@ -45,13 +45,24 @@ export default function AttendanceButtons({
   open,
   onChangeAttendance,
 }: Props) {
+  const handle = (attendance: EventAttendance) => {
+    console.debug("[AttendanceButtons] click", {
+      eventId,
+      open,
+      attendance,
+      value,
+    });
+    if (!open) return;
+    onChangeAttendance(eventId, attendance);
+  };
+
   return (
     <div className="flex shrink-0 flex-col gap-2 sm:self-center">
       <button
         type="button"
         disabled={!open}
         className={choiceBtnClass(value === "yes", "yes", !open)}
-        onClick={() => open && onChangeAttendance(eventId, "yes")}
+        onClick={() => handle("yes")}
       >
         Jeg kommer
       </button>
@@ -60,7 +71,7 @@ export default function AttendanceButtons({
         type="button"
         disabled={!open}
         className={choiceBtnClass(value === "maybe", "maybe", !open)}
-        onClick={() => open && onChangeAttendance(eventId, "maybe")}
+        onClick={() => handle("maybe")}
       >
         Jeg kan måske
       </button>
@@ -69,7 +80,7 @@ export default function AttendanceButtons({
         type="button"
         disabled={!open}
         className={choiceBtnClass(value === "no", "no", !open)}
-        onClick={() => open && onChangeAttendance(eventId, "no")}
+        onClick={() => handle("no")}
       >
         Jeg kan ikke komme
       </button>

@@ -27,7 +27,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
 
   const [rsvps, setRsvps] = React.useState<RSVP[]>([]);
 
-  // load on uid change (firebase identity)
+  // load on uid change ONLY (don't let role/subRole re-load wipe state)
   React.useEffect(() => {
     if (loading) return;
 
@@ -47,8 +47,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
       }
     }
 
-    // 2) migrate legacy role-based RSVPs (optional but nice)
-    // If you had old data stored per role, grab it once and move it to uid storage.
+    // 2) migrate legacy role-based RSVPs once (best effort)
     if (effectiveRole) {
       const legacyRaw = localStorage.getItem(legacyRoleKey(effectiveRole));
       if (legacyRaw) {
@@ -64,13 +63,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
     }
 
     setRsvps([]);
-  }, [uid, loading, effectiveRole]);
-
-  // persist to uid-based storage
-  React.useEffect(() => {
-    if (!uid) return;
-    localStorage.setItem(uidKey(uid), JSON.stringify(rsvps));
-  }, [uid, rsvps]);
+  }, [uid, loading]); // ✅ removed effectiveRole dependency
 
   const upsertRsvp = React.useCallback(
     (eventId: string, patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
@@ -79,33 +72,43 @@ export function useRsvps(_roleIgnored?: Role | null) {
       setRsvps((prev) => {
         const idx = prev.findIndex((r) => r.eventId === eventId);
 
+        let next: RSVP[];
+
         if (idx !== -1) {
-          const copy = [...prev];
-          copy[idx] = {
-            ...copy[idx],
+          const existing = prev[idx];
+          next = [...prev];
+          next[idx] = {
+            ...existing,
             ...patch,
-            // keep these in sync with current auth context
-            userRole: (effectiveRole ?? copy[idx].userRole) as any,
+            userRole: (effectiveRole ?? existing.userRole ?? "Crew") as any,
             userSubRole:
-              effectiveRole === "Crew" ? effectiveSubRole ?? null : null,
+              (effectiveRole ?? existing.userRole) === "Crew"
+                ? effectiveSubRole ?? existing.userSubRole ?? null
+                : null,
             updatedAt: new Date().toISOString(),
           };
-          return copy;
-        }
-
-        return [
-          ...prev,
-          {
+        } else {
+          const created: RSVP = {
             id: makeId(),
             eventId,
             userRole: (effectiveRole ?? "Crew") as any,
             userSubRole:
               effectiveRole === "Crew" ? effectiveSubRole ?? null : null,
-            attendance: patch.attendance ?? ("maybe" as EventAttendance),
+            attendance: (patch.attendance ?? "maybe") as EventAttendance,
             comment: patch.comment ?? "",
             createdAt: new Date().toISOString(),
-          },
-        ];
+          };
+          next = [...prev, created];
+        }
+
+        // ✅ persist immediately so any re-load sees the latest data
+        try {
+          localStorage.setItem(uidKey(uid), JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+
+        return next;
       });
     },
     [uid, effectiveRole, effectiveSubRole]
