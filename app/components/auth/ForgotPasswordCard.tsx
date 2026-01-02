@@ -19,6 +19,10 @@ export default function ForgotPasswordCard() {
     setBusy(true);
 
     try {
+      if (!auth) {
+        throw new Error("Auth not available");
+      }
+
       await sendPasswordResetEmail(auth, email.trim());
       setSent(true);
     } catch (e: any) {

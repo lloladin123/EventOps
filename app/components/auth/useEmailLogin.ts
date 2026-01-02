@@ -15,7 +15,12 @@ export function useEmailLogin() {
   const login = async () => {
     setError(null);
     setBusy(true);
+
     try {
+      if (!auth) {
+        throw new Error("Auth not available");
+      }
+
       await signInWithEmailAndPassword(auth, email.trim(), password);
     } catch (e: any) {
       setError(e?.message || "Kunne ikke logge ind.");

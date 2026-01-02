@@ -22,6 +22,10 @@ export default function SignupCard() {
     setBusy(true);
 
     try {
+      if (!auth) {
+        throw new Error("Auth not available");
+      }
+
       const cred = await createUserWithEmailAndPassword(
         auth,
         email.trim(),

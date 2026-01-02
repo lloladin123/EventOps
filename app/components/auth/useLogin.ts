@@ -35,12 +35,16 @@ export function useLogin() {
     setError(null);
 
     try {
+      if (!auth) {
+        throw new Error("Auth not available");
+      }
+
       const creds = getTestCreds(
         role as Role,
         (crewRole || null) as CrewSubRole | null
       );
 
-      // ✅ Make auth persist across refreshes
+      // ✅ persist across refreshes (browser only; auth guard above guarantees it)
       await setPersistence(auth, browserLocalPersistence);
 
       const result = await signInWithEmailAndPassword(
@@ -53,7 +57,6 @@ export function useLogin() {
       console.log("SIGNED IN:", result.user.uid, result.user.email);
       console.log("AUTH currentUser after:", auth.currentUser?.uid);
 
-      // ✅ Get out of the login view
       router.push("/events");
     } catch (e: any) {
       console.error(e);
