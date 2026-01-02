@@ -11,22 +11,26 @@ import OpenedEventsUndoStack from "@/components/events/OpenedEventsUndoStack";
 
 import { isEventOpen } from "@/utils/eventStatus";
 import { setEventDeleted } from "@/utils/eventDeleted";
-import { useRole } from "@/utils/useRole";
 import { useRsvps } from "@/utils/useRsvps";
 import { useUiToggle } from "@/utils/useUiToggle";
 import { getAllEvents } from "@/utils/eventsStore";
 
+import { useAuth } from "@/app/components/auth/AuthProvider";
+
 export default function EventList() {
-  const { role, isAdmin } = useRole();
+  const { role, loading } = useAuth();
+  const isAdmin = role === "Admin";
 
   // minimizers
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
 
-  // RSVP state + handlers
-  const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps(role);
+  // RSVP state + handlers (keep your existing hook; give it a safe fallback)
+  const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps(
+    (role ?? "Crew") as any
+  );
 
-  // events state
+  // events state (still localStorage)
   const [events, setEvents] = React.useState<Event[]>(() => getAllEvents());
 
   // reload on close/reopen/add/delete
@@ -54,6 +58,9 @@ export default function EventList() {
   // grouped lists
   const openEvents = events.filter((e) => isEventOpen(e));
   const closedEvents = events.filter((e) => !isEventOpen(e));
+
+  // Optional: prevent flicker while auth loads (keeps UI stable)
+  if (loading) return null;
 
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-6">

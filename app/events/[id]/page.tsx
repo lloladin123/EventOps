@@ -3,29 +3,19 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import { mockEvents } from "@/data/event";
 import type { Event } from "@/types/event";
-import type { EventAttendance } from "@/types/event";
-import type { RSVP, Role } from "@/types/rsvp";
 import type { Incident } from "@/types/incident";
 
 import EventHeader from "@/components/events/EventHeader";
-import AttendanceButtons from "@/components/events/AttendanceButtons";
-import EventComment from "@/components/events/EventComment";
 import IncidentForm from "@/components/events/IncidentForm";
 import IncidentList from "@/components/events/IncidentList";
 import LoginRedirect from "@/components/layout/LoginRedirect";
 
-function makeRsvpId() {
-  return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
-}
+import { useAuth } from "@/app/components/auth/AuthProvider";
+import { getAllEvents } from "@/utils/eventsStore";
 
-function rsvpStorageKey(role: Role) {
-  return `rsvps:${role}`;
-}
-
-function incidentStorageKey(eventId: string) {
-  return `incidents:${eventId}`;
+function incidentStorageKey(eventId: string, uid: string) {
+  return `incidents:${eventId}:uid:${uid}`;
 }
 
 export default function EventDetailPage() {
@@ -33,52 +23,57 @@ export default function EventDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
 
-  const [role, setRole] = React.useState<Role | null>(null);
-  const [rsvps, setRsvps] = React.useState<RSVP[]>([]);
+  const { user, role, loading } = useAuth();
+
+  const uid = user?.uid ?? null;
+
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
+  const [hydrated, setHydrated] = React.useState(false);
 
+  // Use the same event source as the list (localStorage store)
+  const event: Event | undefined = React.useMemo(() => {
+    return getAllEvents().find((e) => e.id === id);
+  }, [id]);
+
+  // Load incidents ONCE per (eventId + uid)
   React.useEffect(() => {
-    const storedRole = localStorage.getItem("role") as Role | null;
-    setRole(storedRole);
+    if (loading) return;
+    if (!uid) return; // page is gated anyway; don't use anon key
 
-    if (storedRole) {
-      const raw = localStorage.getItem(rsvpStorageKey(storedRole));
-      if (raw) {
-        try {
-          setRsvps(JSON.parse(raw) as RSVP[]);
-        } catch {
-          setRsvps([]);
-        }
-      }
-    }
+    const key = incidentStorageKey(id, uid);
+    const raw = localStorage.getItem(key);
 
-    const rawInc = localStorage.getItem(incidentStorageKey(id));
-    if (rawInc) {
+    if (raw) {
       try {
-        setIncidents(JSON.parse(rawInc) as Incident[]);
+        setIncidents(JSON.parse(raw) as Incident[]);
       } catch {
         setIncidents([]);
       }
+    } else {
+      setIncidents([]);
     }
-  }, [id]);
 
+    setHydrated(true);
+  }, [id, uid, loading]);
+
+  // Persist incidents ONLY after initial load finished for that uid
   React.useEffect(() => {
-    if (!role) return;
-    localStorage.setItem(rsvpStorageKey(role), JSON.stringify(rsvps));
-  }, [role, rsvps]);
+    if (loading) return;
+    if (!uid) return;
+    if (!hydrated) return;
 
-  React.useEffect(() => {
-    localStorage.setItem(incidentStorageKey(id), JSON.stringify(incidents));
-  }, [id, incidents]);
-
-  const event = React.useMemo(() => mockEvents.find((e) => e.id === id), [id]);
+    const key = incidentStorageKey(id, uid);
+    localStorage.setItem(key, JSON.stringify(incidents));
+  }, [id, uid, loading, hydrated, incidents]);
 
   const onAddIncident = (incident: Incident) => {
     const withMeta: Incident = {
       ...incident,
-      // @ts-expect-error optional field if you add later
-      createdByRole: role,
+      // @ts-expect-error optional meta fields
+      createdByUid: uid,
+      createdByRole: role ?? null,
     };
+
     setIncidents((prev) => [withMeta, ...prev]);
   };
 
