@@ -124,7 +124,7 @@ export default function SignupCard() {
         </Link>
 
         <Link
-          href="/forgot-password"
+          href="/forgotPassword"
           className="text-slate-600 hover:text-slate-900 underline"
         >
           Glemt password?
