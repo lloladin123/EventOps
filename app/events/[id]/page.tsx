@@ -16,7 +16,11 @@ import { getAllEvents } from "@/utils/eventsStore";
 import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
 import ApprovedUsers from "@/components/events/ApprovedUsers";
 
-function incidentStorageKey(eventId: string, uid: string) {
+function incidentStorageKey(eventId: string) {
+  return `incidents:${eventId}`;
+}
+
+function legacyIncidentStorageKey(eventId: string, uid: string) {
   return `incidents:${eventId}:uid:${uid}`;
 }
 
@@ -26,29 +30,50 @@ export default function EventDetailPage() {
   const id = params.id;
 
   const { user, role, loading } = useAuth();
-
   const uid = user?.uid ?? null;
 
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
   const [hydrated, setHydrated] = React.useState(false);
 
-  // Use the same event source as the list (localStorage store)
   const event: Event | undefined = React.useMemo(() => {
     return getAllEvents().find((e) => e.id === id);
   }, [id]);
 
-  // Load incidents ONCE per (eventId + uid)
+  // ✅ Load incidents ONCE per eventId (shared log)
+  // Includes legacy migration from per-user key -> shared key
   React.useEffect(() => {
     if (loading) return;
-    if (!uid) return; // page is gated anyway; don't use anon key
 
-    const key = incidentStorageKey(id, uid);
-    const raw = localStorage.getItem(key);
+    const sharedKey = incidentStorageKey(id);
+    const rawShared = localStorage.getItem(sharedKey);
 
-    if (raw) {
+    // 1) Preferred: shared event log
+    if (rawShared) {
       try {
-        setIncidents(JSON.parse(raw) as Incident[]);
+        setIncidents(JSON.parse(rawShared) as Incident[]);
       } catch {
+        setIncidents([]);
+      }
+      setHydrated(true);
+      return;
+    }
+
+    // 2) Legacy: per-user log (migrate if present)
+    if (uid) {
+      const legacyKey = legacyIncidentStorageKey(id, uid);
+      const rawLegacy = localStorage.getItem(legacyKey);
+
+      if (rawLegacy) {
+        try {
+          const legacyIncidents = JSON.parse(rawLegacy) as Incident[];
+          setIncidents(legacyIncidents);
+
+          // migrate to shared key so everyone sees it
+          localStorage.setItem(sharedKey, JSON.stringify(legacyIncidents));
+        } catch {
+          setIncidents([]);
+        }
+      } else {
         setIncidents([]);
       }
     } else {
@@ -58,15 +83,14 @@ export default function EventDetailPage() {
     setHydrated(true);
   }, [id, uid, loading]);
 
-  // Persist incidents ONLY after initial load finished for that uid
+  // ✅ Persist shared incidents after initial hydration
   React.useEffect(() => {
     if (loading) return;
-    if (!uid) return;
     if (!hydrated) return;
 
-    const key = incidentStorageKey(id, uid);
+    const key = incidentStorageKey(id);
     localStorage.setItem(key, JSON.stringify(incidents));
-  }, [id, uid, loading, hydrated, incidents]);
+  }, [id, loading, hydrated, incidents]);
 
   const onAddIncident = (incident: Incident) => {
     const withMeta: Incident = {
@@ -77,6 +101,10 @@ export default function EventDetailPage() {
     };
 
     setIncidents((prev) => [withMeta, ...prev]);
+  };
+
+  const onDeleteIncident = (incidentId: string) => {
+    setIncidents((prev) => prev.filter((x) => x.id !== incidentId));
   };
 
   return (
@@ -101,13 +129,21 @@ export default function EventDetailPage() {
       ) : (
         <main className="mx-auto max-w-4xl space-y-6 p-6">
           <EventHeader event={event}>
-            <ApprovedUsers eventId={event.id}></ApprovedUsers>
+            <ApprovedUsers eventId={event.id} />
           </EventHeader>
 
           <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
 
           <div className="mt-4 space-y-3">
-            <IncidentList incidents={incidents} />
+            <IncidentList
+              incidents={incidents}
+              onEdit={(incident) => {
+                console.log("Edit incident:", incident);
+                alert("TODO: open edit UI for this incident");
+              }}
+              onDelete={onDeleteIncident}
+            />
+
             <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
           </div>
         </main>
