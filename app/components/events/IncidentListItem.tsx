@@ -1,29 +1,68 @@
 import type { Incident } from "@/types/incident";
 
+type Props = {
+  incident: Incident;
+  canEdit?: boolean;
+  canDelete?: boolean;
+  onEdit?: (incident: Incident) => void;
+  onDelete?: (incidentId: string) => void;
+};
+
 export default function IncidentListItem({
   incident: i,
-}: {
-  incident: Incident;
-}) {
+  canEdit = false,
+  canDelete = false,
+  onEdit,
+  onDelete,
+}: Props) {
+  const showEdit = canEdit && !!onEdit;
+  const showDelete = canDelete && !!onDelete;
+
   return (
     <li className="rounded-xl border border-slate-200 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-semibold text-slate-900">{i.time}</span>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold text-slate-900">{i.time}</span>
 
-        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-800">
-          {i.type}
-        </span>
-
-        {i.politiInvolveret && (
-          <span className="rounded-full bg-rose-50 px-2 py-1 text-xs text-rose-700 ring-1 ring-rose-200">
-            Politi
+          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-800">
+            {i.type}
           </span>
-        )}
 
-        {i.beredskabInvolveret && (
-          <span className="rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700 ring-1 ring-amber-200">
-            Beredskab
-          </span>
+          {i.politiInvolveret && (
+            <span className="rounded-full bg-rose-50 px-2 py-1 text-xs text-rose-700 ring-1 ring-rose-200">
+              Politi
+            </span>
+          )}
+
+          {i.beredskabInvolveret && (
+            <span className="rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-700 ring-1 ring-amber-200">
+              Beredskab
+            </span>
+          )}
+        </div>
+
+        {(showEdit || showDelete) && (
+          <div className="flex items-center gap-2">
+            {showEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit?.(i)}
+                className="rounded-lg border px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Update
+              </button>
+            )}
+
+            {showDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete?.(i.id)}
+                className="rounded-lg border border-rose-300 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50"
+              >
+                Delete
+              </button>
+            )}
+          </div>
         )}
       </div>
 
