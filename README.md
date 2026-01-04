@@ -1,95 +1,161 @@
-EventOps – Football Event Operations Platform
+<h1>⚽ EventOps – Football Event Operations Platform</h1>
 
-EventOps is a web-based operations platform built in collaboration with real football event organizers.
-It is designed to replace Messenger-based coordination and introduce structured incident reporting during live football events.
+<p>
+<strong>EventOps</strong> is a web-based operations platform built
+<strong>in collaboration with real football event organizers</strong>.
+It replaces Messenger-based coordination and introduces
+<strong>structured incident reporting</strong> during live football events.
+</p>
 
-The system is currently in active development and scheduled for use at upcoming events.
+<p>
+🚧 <em>Actively in development</em> — scheduled for use at upcoming events.
+</p>
 
-The Problem
+<hr />
 
-Football event operations commonly rely on:
+<h2>❌ The Problem</h2>
 
-Messenger groups for coordinating staff, judges, and crew
+<p>Football event operations commonly rely on:</p>
 
-Ad-hoc messages or verbal communication for reporting incidents
+<ul>
+  <li>Messenger groups for coordinating staff, judges, and crew</li>
+  <li>Ad-hoc messages or verbal communication for reporting incidents</li>
+</ul>
 
-This results in:
+<p>This leads to:</p>
 
-Fragmented communication
+<ul>
+  <li>Fragmented communication</li>
+  <li>Unclear responsibilities</li>
+  <li>Lost or undocumented incidents</li>
+  <li>No structured overview during or after events</li>
+</ul>
 
-Unclear responsibilities
+<hr />
 
-Lost or undocumented incidents
+<h2>✅ The Solution</h2>
 
-No structured overview during or after events
+<p>
+EventOps addresses <strong>two concrete operational problems</strong>:
+</p>
 
-The Solution
+<h3>1️⃣ Replace Messenger-Based Coordination</h3>
 
-EventOps addresses two concrete operational problems:
+<ul>
+  <li>Role-based user access for staff, judges, and crew</li>
+  <li>Centralized event communication and control</li>
+  <li>Admin-managed roles and permissions</li>
+</ul>
 
-1. Replace Messenger-Based Coordination
+<h3>2️⃣ Centralized Incident Reporting</h3>
 
-Role-based user access for staff, judges, and crew
+<ul>
+  <li>Structured incident logging during live events</li>
+  <li>Timestamps, severity levels, and notes</li>
+  <li>Persistent incident history for post-event review</li>
+</ul>
 
-Centralized event communication and control
+<hr />
 
-Admin-managed roles and permissions
+<h2>✨ Key Features</h2>
 
-2. Centralized Incident Reporting
+<ul>
+  <li>Role-based authentication and access control</li>
+  <li>Admin dashboard for managing users and events</li>
+  <li>Live incident reporting during events</li>
+  <li>Firebase-backed data model structured for production use</li>
+  <li>Clean, responsive UI focused on fast on-site usage</li>
+</ul>
 
-Structured incident logging during live events
+<hr />
 
-Timestamps, severity levels, and notes
+<h2>🧰 Tech Stack</h2>
 
-Persistent incident history for post-event review
+<ul>
+  <li><strong>Frontend:</strong> Next.js, React, TypeScript</li>
+  <li><strong>Styling:</strong> Tailwind CSS</li>
+  <li><strong>Backend:</strong> Firebase (Authentication, Firestore)</li>
+  <li><strong>Deployment:</strong> Vercel</li>
+</ul>
 
-Key Features
+<hr />
 
-Role-based authentication and access control
+<h2>📦 Project Status</h2>
 
-Admin dashboard for managing users and events
+<p>
+🚧 <strong>Actively in development</strong>
+</p>
 
-Live incident reporting during events
+<p>
+Core workflows are implemented. Features are prioritized based on feedback
+from event organizers ahead of live deployment.
+</p>
 
-Firebase-backed data model structured for production use
+<p>
+<strong>This is not a demo or tutorial project</strong>, but a real operational
+system being prepared for use at football events.
+</p>
 
-Clean, responsive UI focused on fast on-site usage
+<hr />
 
-Tech Stack
+<h2>🌍 Demo</h2>
 
-Frontend: Next.js, React, TypeScript
+<p>
+<a href="https://event-ops-mu.vercel.app/users" target="_blank">
+👉 Vercel demo
+</a>
+</p>
 
-Styling: Tailwind CSS
+<hr />
 
-Backend: Firebase (Authentication, Firestore)
+<h2>🧠 Product Design & Early Planning</h2>
 
-Deployment: Vercel
+<p>
+Early domain model and feature planning created together with the product owner
+to define roles, responsibilities, and incident workflows before implementation.
+</p>
 
-Project Status
+<h4>Domain Model (Early Planning)</h4>
+<p>
+Defines user roles, permissions, and core entities discussed with the product owner.
+</p>
 
-🚧 Actively in development
+<img
+  src="https://github.com/user-attachments/assets/a3fd5d0c-3691-4e31-b4ed-7af526c5c858"
+  alt="Early domain model"
+  width="500"
+/>
 
-Core workflows are implemented.
-Features are prioritized based on feedback from event organizers ahead of live deployment.
+<h4>Feature Breakdown & Priorities</h4>
+<p>
+Bullet-point planning used to align scope and event-day requirements before development.
+</p>
 
-This is not a demo or tutorial project, but a real operational system being prepared for use at football events.
+<img
+  src="https://github.com/user-attachments/assets/30660429-5f9c-4e15-b30f-3858b704625d"
+  alt="Feature breakdown"
+  width="500"
+/>
 
-Demo
+<hr />
 
-Vercel demo: https://event-ops-mu.vercel.app/users
+<h2>💻 Development</h2>
 
-Screenshots
-<img width="1536" height="2048" alt="image" src="https://github.com/user-attachments/assets/a3fd5d0c-3691-4e31-b4ed-7af526c5c858" />
-<img width="1536" height="2048" alt="image" src="https://github.com/user-attachments/assets/30660429-5f9c-4e15-b30f-3858b704625d" />
-
-
-Development
+<pre>
 npm install
 npm run dev
+</pre>
 
+<p>
+Runs locally at <code>http://localhost:3000</code>
+</p>
 
-Runs the app locally at http://localhost:3000
+<hr />
 
-Why This Project Exists
+<h2>🎯 Why This Project Exists</h2>
 
-EventOps was built to solve real organizational problems observed during football events — not as a technology showcase, but as a practical tool designed for use under real-world conditions.
+<p>
+EventOps was built to solve real organizational problems observed during football
+events — not as a technology showcase, but as a practical tool designed for use
+under real-world conditions.
+</p>
