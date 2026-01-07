@@ -2,8 +2,9 @@
 
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
-import { getDecision, setDecision } from "@/components/utils/rsvpIndex";
+import { getAllLocalRsvps, setDecision } from "@/components/utils/rsvpIndex";
 import StateButton from "../ui/StateButton";
+import { getDecision } from "../utils/rsvpIndex/decision";
 
 export default function RequestsEventGroup({
   eventId,
