@@ -2,7 +2,11 @@
 
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
-import { getAllLocalRsvps, setDecision } from "@/components/utils/rsvpIndex";
+import {
+  DECISION,
+  getAllLocalRsvps,
+  setDecision,
+} from "@/components/utils/rsvpIndex";
 import StateButton from "../ui/StateButton";
 import { getDecision } from "../utils/rsvpIndex/decision";
 
@@ -51,9 +55,9 @@ export default function RequestsEventGroup({
         <tbody>
           {list.map((r) => {
             const decision = getDecision(r.eventId, r.uid); // ✅ real 3-state
-            const isApproved = decision === "approved";
-            const isPending = decision === "pending";
-            const isUnapproved = decision === "unapproved";
+            const isApproved = decision === DECISION.Approved;
+            const isPending = decision === DECISION.Pending;
+            const isUnapproved = decision === DECISION.Unapproved;
 
             return (
               <tr key={`${r.eventId}:${r.uid}`} className="border-t">
@@ -70,26 +74,30 @@ export default function RequestsEventGroup({
                 <td className="py-2">
                   <div className="flex flex-wrap gap-2">
                     <StateButton
-                      variant="approved"
+                      variant={DECISION.Approved}
                       active={isApproved}
-                      onClick={() => setDecision(r.eventId, r.uid, "approved")}
+                      onClick={() =>
+                        setDecision(r.eventId, r.uid, DECISION.Approved)
+                      }
                     >
                       Approved
                     </StateButton>
 
                     <StateButton
-                      variant="pending"
+                      variant={DECISION.Pending}
                       active={isPending}
-                      onClick={() => setDecision(r.eventId, r.uid, "pending")}
+                      onClick={() =>
+                        setDecision(r.eventId, r.uid, DECISION.Pending)
+                      }
                     >
                       Pending
                     </StateButton>
 
                     <StateButton
-                      variant="unapproved"
+                      variant={DECISION.Unapproved}
                       active={isUnapproved}
                       onClick={() =>
-                        setDecision(r.eventId, r.uid, "unapproved")
+                        setDecision(r.eventId, r.uid, DECISION.Unapproved)
                       }
                     >
                       Unapproved

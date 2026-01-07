@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getAllLocalRsvps, isApproved } from "@/components/utils/rsvpIndex";
+import {
+  DECISION,
+  getAllLocalRsvps,
+  isApproved,
+} from "@/components/utils/rsvpIndex";
 import { getEventsWithOverrides } from "@/components/utils/eventsStore";
 import type { Event } from "@/types/event";
 
@@ -47,8 +51,8 @@ export default function RequestsClient() {
       .filter((r) => {
         if (attendanceFilter !== "all" && r.attendance !== attendanceFilter)
           return false;
-        if (statusFilter === "pending" && r.approved) return false;
-        if (statusFilter === "approved" && !r.approved) return false;
+        if (statusFilter === DECISION.Pending && r.approved) return false;
+        if (statusFilter === DECISION.Approved && !r.approved) return false;
         return true;
       })
       .sort((a, b) => {

@@ -1,9 +1,17 @@
 "use client";
 
-import { RSVP_ATTENDANCE, RSVP_ATTENDANCE_LABEL } from "@/types/rsvpIndex";
+import {
+  DECISION,
+  RSVP_ATTENDANCE,
+  RSVP_ATTENDANCE_LABEL,
+} from "@/types/rsvpIndex";
 import type { AttendanceFilter, StatusFilter } from "@/types/requests";
 
-const STATUS_OPTIONS: StatusFilter[] = ["pending", "approved", "all"];
+const STATUS_OPTIONS: StatusFilter[] = [
+  DECISION.Pending,
+  DECISION.Approved,
+  "all",
+];
 
 export default function RequestsFilters({
   statusFilter,
