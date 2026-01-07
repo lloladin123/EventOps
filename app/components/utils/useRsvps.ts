@@ -19,15 +19,24 @@ function legacyRoleKey(role: Role) {
 }
 
 export function useRsvps(_roleIgnored?: Role | null) {
-  const { user, role, subRole, loading } = useAuth();
+  // ✅ allow AuthProvider to optionally supply displayName from Firestore profile
+  const authAny = useAuth() as any;
+  const { user, role, subRole, loading } = authAny;
+  const profileDisplayName: string | null =
+    typeof authAny?.displayName === "string" ? authAny.displayName : null;
 
   const uid = user?.uid ?? null;
   const effectiveRole = role ?? null;
   const effectiveSubRole = (subRole ?? null) as CrewSubRole | null;
 
+  // ✅ Prefer Firestore profile displayName, then Firebase Auth displayName.
+  // ❌ Never fall back to email.
+  const userDisplayName =
+    profileDisplayName?.trim() || user?.displayName?.trim() || "Ukendt bruger";
+  const hasRealName = userDisplayName !== "Ukendt bruger";
+
   const [rsvps, setRsvps] = React.useState<RSVP[]>([]);
 
-  // load on uid change ONLY (don't let role/subRole re-load wipe state)
   React.useEffect(() => {
     if (loading) return;
 
@@ -36,7 +45,6 @@ export function useRsvps(_roleIgnored?: Role | null) {
       return;
     }
 
-    // 1) load from new key
     const raw = localStorage.getItem(uidKey(uid));
     if (raw) {
       try {
@@ -47,7 +55,6 @@ export function useRsvps(_roleIgnored?: Role | null) {
       }
     }
 
-    // 2) migrate legacy role-based RSVPs once (best effort)
     if (effectiveRole) {
       const legacyRaw = localStorage.getItem(legacyRoleKey(effectiveRole));
       if (legacyRaw) {
@@ -63,7 +70,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
     }
 
     setRsvps([]);
-  }, [uid, loading]); // ✅ removed effectiveRole dependency
+  }, [uid, loading]); // keep as-is
 
   const upsertRsvp = React.useCallback(
     (eventId: string, patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
@@ -71,37 +78,49 @@ export function useRsvps(_roleIgnored?: Role | null) {
 
       setRsvps((prev) => {
         const idx = prev.findIndex((r) => r.eventId === eventId);
+        const resolvedRole = (effectiveRole ?? "Crew") as Role;
 
         let next: RSVP[];
 
         if (idx !== -1) {
           const existing = prev[idx];
+          const nextRole = (effectiveRole ??
+            existing.userRole ??
+            "Crew") as Role;
+
           next = [...prev];
           next[idx] = {
             ...existing,
             ...patch,
-            userRole: (effectiveRole ?? existing.userRole ?? "Crew") as any,
+            userRole: nextRole,
             userSubRole:
-              (effectiveRole ?? existing.userRole) === "Crew"
+              nextRole === "Crew"
                 ? effectiveSubRole ?? existing.userSubRole ?? null
                 : null,
+
+            // ✅ Replace bad snapshot ("Ukendt bruger") once we have a real name
+            userDisplayName:
+              existing.userDisplayName === "Ukendt bruger" && hasRealName
+                ? userDisplayName
+                : existing.userDisplayName || userDisplayName,
+
             updatedAt: new Date().toISOString(),
           };
         } else {
           const created: RSVP = {
             id: makeId(),
             eventId,
-            userRole: (effectiveRole ?? "Crew") as any,
+            userRole: resolvedRole,
             userSubRole:
-              effectiveRole === "Crew" ? effectiveSubRole ?? null : null,
+              resolvedRole === "Crew" ? effectiveSubRole ?? null : null,
             attendance: (patch.attendance ?? "maybe") as EventAttendance,
             comment: patch.comment ?? "",
+            userDisplayName,
             createdAt: new Date().toISOString(),
           };
           next = [...prev, created];
         }
 
-        // ✅ persist immediately so any re-load sees the latest data
         try {
           localStorage.setItem(uidKey(uid), JSON.stringify(next));
         } catch {
@@ -111,7 +130,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
         return next;
       });
     },
-    [uid, effectiveRole, effectiveSubRole]
+    [uid, effectiveRole, effectiveSubRole, userDisplayName, hasRealName]
   );
 
   const onChangeAttendance = React.useCallback(

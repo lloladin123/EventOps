@@ -5,6 +5,7 @@ export type RSVPAttendance = "yes" | "maybe" | "no";
 export type RSVPRecord = {
   eventId: string;
   uid: string;
+  userDisplayName?: string;
   attendance: RSVPAttendance;
   comment?: string;
   updatedAt?: string;
@@ -15,6 +16,7 @@ const KEY_PATTERNS = {
   perEvent: /^rsvps:([^:]+)$/i, // rsvps:<eventId>
   legacyPerEvent: /^rsvp:([^:]+)$/i, // rsvp:<eventId>
   perRole: /^rsvps:(.+)$/i, // rsvps:<role>
+  perUidList: /^rsvps:uid:(.+)$/i,
 };
 
 const KNOWN_ROLES = new Set(["Admin", "Logfører", "Kontrollør", "Crew"]);
@@ -48,19 +50,25 @@ export function getAllLocalRsvps(): RSVPRecord[] {
     // ─────────────────────────────────────────────
     // Pattern A: rsvp:<eventId>:<uid>
     // ─────────────────────────────────────────────
-    const mPerUser = key.match(KEY_PATTERNS.perUser);
-    if (mPerUser) {
-      const [, eventId, uid] = mPerUser;
-      const data = safeJsonParse<any>(localStorage.getItem(key));
-      if (!data?.attendance) continue;
+    const mPerUidList = key.match(KEY_PATTERNS.perUidList);
+    if (mPerUidList) {
+      const [, uid] = mPerUidList;
+      const arr = safeJsonParse<any[]>(localStorage.getItem(key));
+      if (!Array.isArray(arr)) continue;
 
-      push({
-        eventId,
-        uid,
-        attendance: data.attendance,
-        comment: data.comment ?? "",
-        updatedAt: data.updatedAt ?? data.updated_at ?? "",
-      });
+      for (const r of arr) {
+        if (!r?.eventId || !r?.attendance) continue;
+
+        push({
+          eventId: String(r.eventId),
+          uid: String(uid),
+          userDisplayName:
+            r.userDisplayName ?? r.userDisplayName?.trim() ?? undefined,
+          attendance: r.attendance,
+          comment: r.comment ?? "",
+          updatedAt: r.updatedAt ?? r.createdAt ?? "",
+        });
+      }
       continue;
     }
 

@@ -11,10 +11,15 @@ export type CrewSubRole = (typeof CREW_SUBROLES)[number];
 export type RSVP = {
   id: string;
   eventId: string;
+
   userRole: Role;
   userSubRole?: CrewSubRole | null;
+
   attendance: EventAttendance;
   comment: string;
+
+  userDisplayName: string; // ✅ ADD THIS
+
   createdAt: string;
   updatedAt?: string;
 };
