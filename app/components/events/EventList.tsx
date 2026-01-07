@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { EventAttendance, Event } from "@/types/event";
+import type { Event } from "@/types/event";
 
 import EventCard from "@/components/events/EventCard";
 import EventSection from "@/components/events/EventSection";
@@ -17,6 +17,7 @@ import { getAllEvents } from "@/utils/eventsStore";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { ROLE } from "@/types/rsvp";
+import { RSVPAttendance } from "@/types/rsvpIndex";
 
 export default function EventList() {
   const { role, loading } = useAuth();
@@ -90,7 +91,7 @@ export default function EventList() {
               <EventCard
                 key={event.id}
                 event={effectiveEvent}
-                attendanceValue={my?.attendance as EventAttendance | undefined}
+                attendanceValue={my?.attendance as RSVPAttendance | undefined}
                 commentValue={my?.comment ?? ""}
                 onChangeAttendance={onChangeAttendance}
                 onChangeComment={onChangeComment}
@@ -124,9 +125,7 @@ export default function EventList() {
                 <EventCard
                   key={event.id}
                   event={effectiveEvent}
-                  attendanceValue={
-                    my?.attendance as EventAttendance | undefined
-                  }
+                  attendanceValue={my?.attendance as RSVPAttendance | undefined}
                   commentValue={my?.comment ?? ""}
                   onChangeAttendance={onChangeAttendance}
                   onChangeComment={onChangeComment}

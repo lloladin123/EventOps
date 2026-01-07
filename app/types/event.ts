@@ -1,5 +1,3 @@
-export type EventAttendance = "yes" | "maybe" | "no";
-
 export type Event = {
   id: string;
   title: string;

@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import type { Event } from "@/types/event";
-import type { EventAttendance } from "@/types/event";
 import { ROLE, type Role } from "@/types/rsvp";
 
 import EventMeta from "./EventMeta";
@@ -15,12 +14,13 @@ import { setEventClosed } from "@/utils/eventStatus";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
+import { RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = {
   event: Event;
-  attendanceValue?: EventAttendance;
+  attendanceValue?: RSVPAttendance;
   commentValue: string;
-  onChangeAttendance: (eventId: string, attendance: EventAttendance) => void;
+  onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
   onChangeComment: (eventId: string, comment: string) => void;
   onDelete?: (event: Event) => void; // ✅ delete hook (admin only)
 };

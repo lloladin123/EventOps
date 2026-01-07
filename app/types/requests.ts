@@ -1,6 +1,6 @@
 import type { Event } from "@/types/event";
+import { RSVPAttendance } from "./rsvpIndex";
 
-export type RSVPAttendance = "yes" | "maybe" | "no";
 export type StatusFilter = "pending" | "approved" | "all";
 export type AttendanceFilter = RSVPAttendance | "all";
 

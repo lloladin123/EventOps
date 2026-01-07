@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import type { EventAttendance } from "@/types/event";
 import { type RSVP, type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { RSVP_ATTENDANCE, RSVPAttendance } from "./rsvpIndex";
 
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -113,7 +113,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
             userRole: resolvedRole,
             userSubRole:
               resolvedRole === ROLE.Crew ? effectiveSubRole ?? null : null,
-            attendance: (patch.attendance ?? "maybe") as EventAttendance,
+            attendance: patch.attendance ?? RSVP_ATTENDANCE.Maybe,
             comment: patch.comment ?? "",
             userDisplayName,
             createdAt: new Date().toISOString(),
@@ -134,7 +134,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
   );
 
   const onChangeAttendance = React.useCallback(
-    (eventId: string, attendance: EventAttendance) => {
+    (eventId: string, attendance: RSVPAttendance) => {
       upsertRsvp(eventId, { attendance });
     },
     [upsertRsvp]

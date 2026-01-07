@@ -1,14 +1,11 @@
 "use client";
 
+import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import * as React from "react";
 
 export type StateVariant =
-  | "approved"
-  | "pending"
-  | "unapproved"
-  | "yes"
-  | "maybe"
-  | "no";
+  | (typeof DECISION)[keyof typeof DECISION]
+  | (typeof RSVP_ATTENDANCE)[keyof typeof RSVP_ATTENDANCE];
 
 const VARIANT_STYLES: Record<
   StateVariant,

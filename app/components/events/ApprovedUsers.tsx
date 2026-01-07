@@ -5,6 +5,7 @@ import * as React from "react";
 import {
   getAllLocalRsvps,
   isApproved,
+  RSVP_ATTENDANCE,
   type RSVPRecord,
 } from "@/components/utils/rsvpIndex/index";
 
@@ -25,19 +26,19 @@ function labelFromUid(uid: string) {
 
 function attendancePill(a: RSVPRecord["attendance"]) {
   switch (a) {
-    case "yes":
+    case RSVP_ATTENDANCE.Yes:
       return (
         <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
           Ja
         </span>
       );
-    case "maybe":
+    case RSVP_ATTENDANCE.Maybe:
       return (
         <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
           Måske
         </span>
       );
-    case "no":
+    case RSVP_ATTENDANCE.No:
       return (
         <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
           Nej
@@ -76,9 +77,9 @@ export default function ApprovedUsers({ eventId }: Props) {
       const name = labelFromUid(r.uid);
       const note = r.comment ? ` — ${r.comment}` : "";
       const a =
-        r.attendance === "yes"
+        r.attendance === RSVP_ATTENDANCE.Yes
           ? "Ja"
-          : r.attendance === "maybe"
+          : r.attendance === RSVP_ATTENDANCE.Maybe
           ? "Måske"
           : "Nej";
       return `- ${name} (${a})${note}`;

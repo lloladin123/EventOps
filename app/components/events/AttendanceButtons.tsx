@@ -1,11 +1,11 @@
-import type { EventAttendance } from "@/types/event";
 import StateButton from "@/app/components/ui/StateButton";
+import { RSVP_ATTENDANCE, RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = {
   eventId: string;
-  value?: EventAttendance;
+  value?: RSVPAttendance;
   open: boolean;
-  onChangeAttendance: (eventId: string, attendance: EventAttendance) => void;
+  onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
 };
 
 export default function AttendanceButtons({
@@ -14,7 +14,7 @@ export default function AttendanceButtons({
   open,
   onChangeAttendance,
 }: Props) {
-  const handle = (attendance: EventAttendance) => {
+  const handle = (attendance: RSVPAttendance) => {
     console.debug("[AttendanceButtons] click", {
       eventId,
       open,
@@ -29,30 +29,30 @@ export default function AttendanceButtons({
     <div className="flex shrink-0 flex-col gap-2 sm:self-center">
       <StateButton
         type="button"
-        variant="yes"
-        active={value === "yes"}
+        variant={RSVP_ATTENDANCE.Yes}
+        active={value === RSVP_ATTENDANCE.Yes}
         disabled={!open}
-        onClick={() => handle("yes")}
+        onClick={() => handle(RSVP_ATTENDANCE.Yes)}
       >
         Jeg kommer
       </StateButton>
 
       <StateButton
         type="button"
-        variant="maybe"
-        active={value === "maybe"}
+        variant={RSVP_ATTENDANCE.Maybe}
+        active={value === RSVP_ATTENDANCE.Maybe}
         disabled={!open}
-        onClick={() => handle("maybe")}
+        onClick={() => handle(RSVP_ATTENDANCE.Maybe)}
       >
         Jeg kan måske
       </StateButton>
 
       <StateButton
         type="button"
-        variant="no"
-        active={value === "no"}
+        variant={RSVP_ATTENDANCE.No}
+        active={value === RSVP_ATTENDANCE.No}
         disabled={!open}
-        onClick={() => handle("no")}
+        onClick={() => handle(RSVP_ATTENDANCE.No)}
       >
         Jeg kan ikke komme
       </StateButton>
