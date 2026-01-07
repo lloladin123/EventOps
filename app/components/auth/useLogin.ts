@@ -8,7 +8,7 @@ import {
   browserLocalPersistence,
 } from "firebase/auth";
 
-import { type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
+import { ROLE, type Role, type CrewSubRole } from "@/types/rsvp";
 import { auth } from "@/app/lib/firebase/client";
 import { getTestCreds } from "./testAccounts";
 
@@ -31,6 +31,11 @@ export function useLogin() {
   const login = async () => {
     if (!canLogin || busy) return;
 
+    // Narrow once so we don't cast later
+    const selectedRole = role; // Role (because canLogin implies role !== "")
+    const selectedCrewRole =
+      selectedRole === ROLE.Crew ? (crewRole as CrewSubRole) : null;
+
     setBusy(true);
     setError(null);
 
@@ -39,10 +44,7 @@ export function useLogin() {
         throw new Error("Auth not available");
       }
 
-      const creds = getTestCreds(
-        role as Role,
-        (crewRole || null) as CrewSubRole | null
-      );
+      const creds = getTestCreds(selectedRole, selectedCrewRole);
 
       // ✅ persist across refreshes (browser only; auth guard above guarantees it)
       await setPersistence(auth, browserLocalPersistence);
@@ -58,9 +60,10 @@ export function useLogin() {
       console.log("AUTH currentUser after:", auth.currentUser?.uid);
 
       router.push("/events");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      setError(e?.message ?? "Login failed");
+      const message = e instanceof Error ? e.message : "Login failed";
+      setError(message);
     } finally {
       setBusy(false);
     }

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
+import { ROLE } from "@/types/rsvp";
+import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/utils/users.firestore";
 
 type Props = {
@@ -62,8 +63,9 @@ export default function UserListTable({
             </tr>
           ) : (
             users.map(({ uid, data }) => {
-              const r = (data.role ?? null) as Role | null;
-              const sr = (data.subRole ?? null) as CrewSubRole | null;
+              const role = (data.role ?? null) as Role | null;
+              const subRole = (data.subRole ?? null) as CrewSubRole | null;
+              const isCrew = role === ROLE.Crew;
 
               return (
                 <tr key={uid} className="border-t">
@@ -81,7 +83,7 @@ export default function UserListTable({
                   <td className="px-4 py-2">
                     <select
                       className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm"
-                      value={r ?? ""}
+                      value={role ?? ""}
                       onChange={(e) => setUserRole(uid, e.target.value as Role)}
                     >
                       <option value="" disabled>
@@ -96,12 +98,17 @@ export default function UserListTable({
                   </td>
 
                   <td className="px-4 py-2">
-                    {r === ROLE.Crew ? (
+                    {isCrew ? (
                       <select
                         className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm"
-                        value={sr ?? ""}
+                        value={subRole ?? ""}
                         onChange={(e) =>
-                          setUserSubRole(uid, (e.target.value || null) as any)
+                          setUserSubRole(
+                            uid,
+                            e.target.value
+                              ? (e.target.value as CrewSubRole)
+                              : null
+                          )
                         }
                       >
                         <option value="">(none)</option>
