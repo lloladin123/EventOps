@@ -4,6 +4,7 @@ import * as React from "react";
 import type { Incident } from "@/types/incident";
 import IncidentListItem from "./IncidentListItem";
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { ROLE } from "@/types/rsvp";
 
 type Props = {
   incidents?: Incident[]; // ✅ allow undefined
@@ -40,7 +41,7 @@ export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
   const safeIncidents: Incident[] = Array.isArray(incidents) ? incidents : [];
 
   const { role, user } = useAuth();
-  const isAdmin = role === "Admin";
+  const isAdmin = role === ROLE.Admin;
   const uid = user?.uid ?? null;
   const now = useNow(15_000);
 

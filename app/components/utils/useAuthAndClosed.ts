@@ -3,9 +3,9 @@
 import * as React from "react";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
-import type { Role } from "@/types/rsvp";
+import { ROLE, type Role } from "@/types/rsvp";
 
-const CAN_CLOSE: Role[] = ["Admin", "Logfører"];
+const CAN_CLOSE: Role[] = [ROLE.Admin, ROLE.Logfører];
 
 export function useAuthAndClosed(eventId: string) {
   const { user, role, loading } = useAuth();

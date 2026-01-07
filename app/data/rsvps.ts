@@ -1,10 +1,10 @@
-import type { RSVP } from "@/types/rsvp";
+import { ROLE, type RSVP } from "@/types/rsvp";
 
 export const mockRsvps: RSVP[] = [
   {
     id: "r1",
     eventId: "e1",
-    userRole: "Crew",
+    userRole: ROLE.Crew,
     attendance: "yes",
     userDisplayName: "bob",
     comment: "Jeg kommer ca. 10 min senere.",
@@ -13,7 +13,7 @@ export const mockRsvps: RSVP[] = [
   {
     id: "r2",
     eventId: "e1",
-    userRole: "Kontrollør",
+    userRole: ROLE.Kontrollør,
     attendance: "maybe",
     userDisplayName: "John",
     comment: "Jeg kan ikke spise gluten.",

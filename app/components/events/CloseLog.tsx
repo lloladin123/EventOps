@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { ROLE } from "@/types/rsvp";
 
 type Props = {
   eventId: string;
@@ -47,7 +48,7 @@ export default function CloseLog({
     };
   }, [eventId]);
 
-  const isAdmin = role === "Admin";
+  const isAdmin = role === ROLE.Admin;
 
   // countdown for close-confirm modal
   React.useEffect(() => {

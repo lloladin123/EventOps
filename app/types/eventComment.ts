@@ -1,7 +1,9 @@
+import type { Role } from "./rsvp";
+
 export type EventComment = {
   id: string;
   eventId: string;
-  userRole: "Kontrollør" | "Admin" | "Logfører" | "Crew";
+  userRole: Role;
   message: string;
   createdAt: string;
 };

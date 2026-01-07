@@ -1,4 +1,4 @@
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import { type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
 
 type Creds = { email: string; password: string };
 
@@ -13,7 +13,7 @@ const BASE: Record<string, Creds> = {
 };
 
 export function getTestCreds(role: Role, subRole?: CrewSubRole | null): Creds {
-  if (role === "Crew") {
+  if (role === ROLE.Crew) {
     if (!subRole) throw new Error("Crew subrole required");
     const key = `Crew:${subRole}`;
     const creds = BASE[key];

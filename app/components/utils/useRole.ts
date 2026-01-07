@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Role } from "@/types/rsvp";
+import { ROLE, type Role } from "@/types/rsvp";
 
 function readRole(): Role | null {
   const raw = localStorage.getItem("role");
@@ -32,9 +32,9 @@ export function useRole() {
   return {
     role,
     ready,
-    isAdmin: role === "Admin",
-    isLogfører: role === "Logfører",
-    isKontrollør: role === "Kontrollør",
-    isCrew: role === "Crew",
+    isAdmin: role === ROLE.Admin,
+    isLogfører: role === ROLE.Logfører,
+    isKontrollør: role === ROLE.Kontrollør,
+    isCrew: role === ROLE.Crew,
   };
 }

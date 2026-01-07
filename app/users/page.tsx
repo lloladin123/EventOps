@@ -7,10 +7,11 @@ import { useRoleCatalog } from "@/utils/useRoleCatalog";
 import { useUsersAdmin } from "@/utils/useUsersAdmin";
 
 import UserListTable from "@/components/users/UserListTable";
+import { ROLE } from "@/types/rsvp";
 
 export default function UsersPage() {
   const { role: myRole, loading } = useAuth();
-  const isAdmin = !loading && myRole === "Admin";
+  const isAdmin = !loading && myRole === ROLE.Admin;
 
   const { roles, crewSubRoles } = useRoleCatalog();
   const { users, busy, setUserRole, setUserSubRole } = useUsersAdmin(isAdmin);

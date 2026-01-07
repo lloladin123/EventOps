@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { ROLE } from "@/types/rsvp";
 
 export default function UserBadge() {
   const { user, role, subRole, loading } = useAuth();
@@ -33,7 +34,7 @@ export default function UserBadge() {
       <span className="font-medium text-slate-900">Rolle</span>
       <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
         {role ?? "—"}
-        {role === "Crew" && subRole ? ` – ${subRole}` : ""}
+        {role === ROLE.Crew && subRole ? ` – ${subRole}` : ""}
       </span>
     </div>
   );

@@ -7,6 +7,7 @@ import UserBadge from "@/components/layout/UserBadge";
 import Breadcrumbs from "@/components/appShell/Breadcrumbs";
 import AdminNav from "@/components/appShell/AdminNav";
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { ROLE } from "@/types/rsvp";
 
 export default function AppHeader() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function AppHeader() {
               Event Log
             </button>
 
-            {!loading && role === "Admin" && <AdminNav />}
+            {!loading && role === ROLE.Admin && <AdminNav />}
           </div>
 
           <Breadcrumbs />

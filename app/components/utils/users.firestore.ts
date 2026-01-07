@@ -8,7 +8,7 @@ import {
 } from "firebase/firestore";
 
 import { db } from "@/app/lib/firebase/client";
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import { type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
 
 export type UserDoc = {
   email?: string;
@@ -52,7 +52,7 @@ export function subscribeUsers(
 export async function updateUserRole(uid: string, nextRole: Role) {
   await updateDoc(doc(db, "users", uid), {
     role: nextRole,
-    subRole: nextRole === "Crew" ? null : null,
+    subRole: nextRole === ROLE.Crew ? null : null,
   });
 }
 

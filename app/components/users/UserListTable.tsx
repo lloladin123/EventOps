@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import { type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
 import type { UserDoc } from "@/utils/users.firestore";
 
 type Props = {
@@ -96,7 +96,7 @@ export default function UserListTable({
                   </td>
 
                   <td className="px-4 py-2">
-                    {r === "Crew" ? (
+                    {r === ROLE.Crew ? (
                       <select
                         className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm"
                         value={sr ?? ""}

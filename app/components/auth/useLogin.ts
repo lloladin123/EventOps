@@ -8,7 +8,7 @@ import {
   browserLocalPersistence,
 } from "firebase/auth";
 
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import { type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
 import { auth } from "@/app/lib/firebase/client";
 import { getTestCreds } from "./testAccounts";
 
@@ -23,10 +23,10 @@ export function useLogin() {
   const onChangeRole = (next: Role) => {
     setRole(next);
     setError(null);
-    if (next !== "Crew") setCrewRole("");
+    if (next !== ROLE.Crew) setCrewRole("");
   };
 
-  const canLogin = role !== "" && (role !== "Crew" || crewRole !== "");
+  const canLogin = role !== "" && (role !== ROLE.Crew || crewRole !== "");
 
   const login = async () => {
     if (!canLogin || busy) return;

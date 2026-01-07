@@ -4,12 +4,13 @@ import LoginRedirect from "@/components/layout/LoginRedirect";
 import EventList from "@/components/events/EventList";
 import AddEventForm from "@/components/events/AddEventForm";
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { ROLE } from "@/types/rsvp";
 
 export default function EventsPage() {
   const { user, role, loading } = useAuth();
 
   const ready = !loading;
-  const isAdmin = role === "Admin";
+  const isAdmin = role === ROLE.Admin;
 
   return (
     <LoginRedirect description="Vælg en rolle for at kunne tilmelde dig og skrive kommentarer.">

@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import type { Event } from "@/types/event";
 import type { EventAttendance } from "@/types/event";
-import type { Role } from "@/types/rsvp";
+import { ROLE, type Role } from "@/types/rsvp";
 
 import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
@@ -25,7 +25,7 @@ type Props = {
   onDelete?: (event: Event) => void; // ✅ delete hook (admin only)
 };
 
-const CAN_OPEN_DETAILS: Role[] = ["Admin", "Logfører"];
+const CAN_OPEN_DETAILS: Role[] = [ROLE.Admin, ROLE.Logfører];
 
 export default function EventCard({
   event,
@@ -38,7 +38,7 @@ export default function EventCard({
   const b = attendanceBadge(attendanceValue);
 
   const { user, role, loading } = useAuth();
-  const isAdmin = role === "Admin";
+  const isAdmin = role === ROLE.Admin;
   const canOpenDetails =
     !!user && !loading && !!role && CAN_OPEN_DETAILS.includes(role);
 

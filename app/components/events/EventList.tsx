@@ -16,10 +16,11 @@ import { useUiToggle } from "@/utils/useUiToggle";
 import { getAllEvents } from "@/utils/eventsStore";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { ROLE } from "@/types/rsvp";
 
 export default function EventList() {
   const { role, loading } = useAuth();
-  const isAdmin = role === "Admin";
+  const isAdmin = role === ROLE.Admin;
 
   // minimizers
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
@@ -27,7 +28,7 @@ export default function EventList() {
 
   // RSVP state + handlers (keep your existing hook; give it a safe fallback)
   const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps(
-    (role ?? "Crew") as any
+    (role ?? ROLE.Crew) as any
   );
 
   // events state (still localStorage)

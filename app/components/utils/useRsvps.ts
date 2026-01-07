@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { EventAttendance } from "@/types/event";
-import type { RSVP, Role, CrewSubRole } from "@/types/rsvp";
+import { type RSVP, type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
 function makeId() {
@@ -78,7 +78,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
 
       setRsvps((prev) => {
         const idx = prev.findIndex((r) => r.eventId === eventId);
-        const resolvedRole = (effectiveRole ?? "Crew") as Role;
+        const resolvedRole = (effectiveRole ?? ROLE.Crew) as Role;
 
         let next: RSVP[];
 
@@ -86,7 +86,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
           const existing = prev[idx];
           const nextRole = (effectiveRole ??
             existing.userRole ??
-            "Crew") as Role;
+            ROLE.Crew) as Role;
 
           next = [...prev];
           next[idx] = {
@@ -94,7 +94,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
             ...patch,
             userRole: nextRole,
             userSubRole:
-              nextRole === "Crew"
+              nextRole === ROLE.Crew
                 ? effectiveSubRole ?? existing.userSubRole ?? null
                 : null,
 
@@ -112,7 +112,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
             eventId,
             userRole: resolvedRole,
             userSubRole:
-              resolvedRole === "Crew" ? effectiveSubRole ?? null : null,
+              resolvedRole === ROLE.Crew ? effectiveSubRole ?? null : null,
             attendance: (patch.attendance ?? "maybe") as EventAttendance,
             comment: patch.comment ?? "",
             userDisplayName,
