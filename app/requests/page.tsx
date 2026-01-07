@@ -16,6 +16,7 @@ type RSVPAttendance = "yes" | "maybe" | "no";
 type RSVPRow = {
   eventId: string;
   uid: string;
+  userDisplayName?: string;
   attendance: RSVPAttendance;
   comment?: string;
   updatedAt?: string;
@@ -194,7 +195,15 @@ export default function RequestsPage() {
                   <tbody>
                     {list.map((r) => (
                       <tr key={`${r.eventId}:${r.uid}`} className="border-t">
-                        <td className="py-2 font-mono">{r.uid}</td>
+                        <td className="py-2">
+                          <div className="font-medium">
+                            {r.userDisplayName?.trim() || "Ukendt navn"}
+                          </div>
+                          <div className="font-mono text-xs opacity-70">
+                            {r.uid}
+                          </div>
+                        </td>
+
                         <td className="py-2">{r.attendance}</td>
                         <td className="py-2 opacity-80">{r.comment || "—"}</td>
                         <td className="py-2">{r.approved ? "✅" : "—"}</td>

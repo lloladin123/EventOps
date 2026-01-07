@@ -12,6 +12,7 @@ type AuthState = {
   user: User | null;
   role: Role | null;
   subRole: CrewSubRole | null;
+  displayName: string | null; // ✅ ADD
   loading: boolean;
   logout: () => Promise<void>;
 };
@@ -22,11 +23,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [role, setRole] = React.useState<Role | null>(null);
   const [subRole, setSubRole] = React.useState<CrewSubRole | null>(null);
+  const [displayName, setDisplayName] = React.useState<string | null>(null); // ✅ ADD
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    // If auth is not available (SSR/build), do nothing.
-    // In the browser it will be defined.
     if (!auth) {
       setLoading(false);
       return;
@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setRole(null);
         setSubRole(null);
+        setDisplayName(null); // ✅ ADD
         setLoading(false);
         return;
       }
@@ -70,6 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             updatedAt: serverTimestamp(),
           });
 
+          // ✅ expose something immediately (even before next snapshot tick)
+          setRole((seeded?.role ?? null) as Role | null);
+          setSubRole((seeded?.subRole ?? null) as CrewSubRole | null);
+          setDisplayName(safeName); // ✅ ADD
+          setLoading(false);
           return;
         }
 
@@ -77,6 +83,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         setRole((data?.role ?? null) as Role | null);
         setSubRole((data?.subRole ?? null) as CrewSubRole | null);
+
+        // ✅ Prefer Firestore displayName, fallback to Firebase Auth displayName
+        const nameFromDoc =
+          typeof data?.displayName === "string" ? data.displayName.trim() : "";
+        const nameFromAuth = u.displayName?.trim() ?? "";
+
+        setDisplayName(nameFromDoc || nameFromAuth || null);
+
         setLoading(false);
       });
     });
@@ -93,7 +107,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, subRole, loading, logout }}>
+    <AuthContext.Provider
+      value={{ user, role, subRole, displayName, loading, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
