@@ -14,6 +14,8 @@ import { cn } from "@/components/ui/classNames";
 import { setEventClosed } from "@/utils/eventStatus";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
+import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
+
 type Props = {
   event: Event;
   attendanceValue?: EventAttendance;
@@ -122,24 +124,19 @@ export default function EventCard({
       {/* Right side controls */}
       {isAdmin ? (
         <div className="flex shrink-0 flex-col justify-center gap-2 sm:items-end">
+          {/* ✅ Use shared StateButton (green=open, red=closed) */}
           {event.open ? (
-            <button
-              type="button"
+            <OpenCloseButton
+              target="close"
               onClick={closeNow}
-              className="rounded-xl bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 active:scale-[0.99]"
               title="Luk event"
-            >
-              Luk
-            </button>
+            />
           ) : (
-            <button
-              type="button"
+            <OpenCloseButton
+              target="open"
               onClick={openNow}
-              className="rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 active:scale-[0.99]"
               title="Åbn event"
-            >
-              Åbn
-            </button>
+            />
           )}
         </div>
       ) : (

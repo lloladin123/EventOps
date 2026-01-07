@@ -12,11 +12,11 @@ export type RSVPRecord = {
 };
 
 const KEY_PATTERNS = {
+  perUidList: /^rsvps:uid:(.+)$/i, // rsvps:uid:<uid>
   perUser: /^rsvp:([^:]+):([^:]+)$/i, // rsvp:<eventId>:<uid>
   perEvent: /^rsvps:([^:]+)$/i, // rsvps:<eventId>
   legacyPerEvent: /^rsvp:([^:]+)$/i, // rsvp:<eventId>
   perRole: /^rsvps:(.+)$/i, // rsvps:<role>
-  perUidList: /^rsvps:uid:(.+)$/i,
 };
 
 const KNOWN_ROLES = new Set(["Admin", "Logfører", "Kontrollør", "Crew"]);
@@ -34,12 +34,12 @@ export function getAllLocalRsvps(): RSVPRecord[] {
   if (typeof window === "undefined") return [];
 
   const out: RSVPRecord[] = [];
-  const seen = new Set<string>(); // 🔑 de-dupe key: eventId|uid
+  const seen = new Set<string>(); // eventId|uid
 
   const push = (r: RSVPRecord) => {
-    const key = `${r.eventId}|${r.uid}`;
-    if (seen.has(key)) return;
-    seen.add(key);
+    const k = `${r.eventId}|${r.uid}`;
+    if (seen.has(k)) return;
+    seen.add(k);
     out.push(r);
   };
 
@@ -48,7 +48,8 @@ export function getAllLocalRsvps(): RSVPRecord[] {
     if (!key) continue;
 
     // ─────────────────────────────────────────────
-    // Pattern A: rsvp:<eventId>:<uid>
+    // Pattern NEW: rsvps:uid:<uid> (your current format)
+    // value: RSVP[] (array)
     // ─────────────────────────────────────────────
     const mPerUidList = key.match(KEY_PATTERNS.perUidList);
     if (mPerUidList) {
@@ -63,12 +64,37 @@ export function getAllLocalRsvps(): RSVPRecord[] {
           eventId: String(r.eventId),
           uid: String(uid),
           userDisplayName:
-            r.userDisplayName ?? r.userDisplayName?.trim() ?? undefined,
+            typeof r.userDisplayName === "string"
+              ? r.userDisplayName
+              : undefined,
           attendance: r.attendance,
           comment: r.comment ?? "",
           updatedAt: r.updatedAt ?? r.createdAt ?? "",
         });
       }
+      continue;
+    }
+
+    // ─────────────────────────────────────────────
+    // Pattern A: rsvp:<eventId>:<uid>
+    // ─────────────────────────────────────────────
+    const mPerUser = key.match(KEY_PATTERNS.perUser);
+    if (mPerUser) {
+      const [, eventId, uid] = mPerUser;
+      const data = safeJsonParse<any>(localStorage.getItem(key));
+      if (!data?.attendance) continue;
+
+      push({
+        eventId,
+        uid,
+        userDisplayName:
+          typeof data.userDisplayName === "string"
+            ? data.userDisplayName
+            : undefined,
+        attendance: data.attendance,
+        comment: data.comment ?? "",
+        updatedAt: data.updatedAt ?? data.updated_at ?? "",
+      });
       continue;
     }
 
@@ -86,7 +112,11 @@ export function getAllLocalRsvps(): RSVPRecord[] {
 
         push({
           eventId: r.eventId,
-          uid: r.id ?? `${role}:${r.eventId}`, // synthetic uid
+          uid: r.id ?? `${role}:${r.eventId}`, // legacy/synthetic
+          userDisplayName:
+            typeof r.userDisplayName === "string"
+              ? r.userDisplayName
+              : undefined,
           attendance: r.attendance,
           comment: r.comment ?? "",
           updatedAt: r.updatedAt ?? r.createdAt ?? "",
@@ -96,8 +126,7 @@ export function getAllLocalRsvps(): RSVPRecord[] {
     }
 
     // ─────────────────────────────────────────────
-    // Pattern B: rsvps:<eventId>
-    // (skip role-based keys already handled)
+    // Pattern B: rsvps:<eventId> (skip role keys already handled)
     // ─────────────────────────────────────────────
     const mPerEvent = key.match(KEY_PATTERNS.perEvent);
     if (mPerEvent) {
@@ -113,6 +142,10 @@ export function getAllLocalRsvps(): RSVPRecord[] {
         push({
           eventId,
           uid: String(r.uid),
+          userDisplayName:
+            typeof r.userDisplayName === "string"
+              ? r.userDisplayName
+              : undefined,
           attendance: r.attendance,
           comment: r.comment ?? "",
           updatedAt: r.updatedAt ?? r.updated_at ?? "",
@@ -136,6 +169,10 @@ export function getAllLocalRsvps(): RSVPRecord[] {
         push({
           eventId,
           uid: String(r.uid),
+          userDisplayName:
+            typeof r.userDisplayName === "string"
+              ? r.userDisplayName
+              : undefined,
           attendance: r.attendance,
           comment: r.comment ?? "",
           updatedAt: r.updatedAt ?? r.updated_at ?? "",
@@ -148,18 +185,62 @@ export function getAllLocalRsvps(): RSVPRecord[] {
   return out;
 }
 
-/** Admin approval helpers (localStorage only) */
-export function isApproved(eventId: string, uid: string) {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(`event:approved:${eventId}:${uid}`) === "1";
+/** Decision helpers (localStorage only)
+ * New key: event:decision:<eventId>:<uid> = "approved" | "unapproved"
+ * Pending: key missing
+ * Backward compat: event:approved:<eventId>:<uid> = "1"
+ */
+function decisionKey(eventId: string, uid: string) {
+  return `event:decision:${eventId}:${uid}`;
+}
+function legacyApprovedKey(eventId: string, uid: string) {
+  return `event:approved:${eventId}:${uid}`;
 }
 
-export function setApproved(eventId: string, uid: string, approved: boolean) {
+export function getDecision(
+  eventId: string,
+  uid: string
+): "approved" | "unapproved" | "pending" {
+  if (typeof window === "undefined") return "pending";
+
+  const v = localStorage.getItem(decisionKey(eventId, uid));
+  if (v === "approved" || v === "unapproved") return v;
+
+  // legacy support
+  if (localStorage.getItem(legacyApprovedKey(eventId, uid)) === "1")
+    return "approved";
+
+  return "pending";
+}
+
+export function isApproved(eventId: string, uid: string) {
+  return getDecision(eventId, uid) === "approved";
+}
+
+export function isUnapproved(eventId: string, uid: string) {
+  return getDecision(eventId, uid) === "unapproved";
+}
+
+export function setDecision(
+  eventId: string,
+  uid: string,
+  decision: "approved" | "unapproved" | "pending"
+) {
   if (typeof window === "undefined") return;
 
-  const k = `event:approved:${eventId}:${uid}`;
-  if (approved) localStorage.setItem(k, "1");
-  else localStorage.removeItem(k);
+  const k = decisionKey(eventId, uid);
+
+  if (decision === "pending") {
+    localStorage.removeItem(k);
+    // also clear legacy approved flag so it doesn't resurrect "approved"
+    localStorage.removeItem(legacyApprovedKey(eventId, uid));
+  } else {
+    localStorage.setItem(k, decision);
+    // keep legacy key in sync (optional but helps older code paths)
+    if (decision === "approved")
+      localStorage.setItem(legacyApprovedKey(eventId, uid), "1");
+    else localStorage.removeItem(legacyApprovedKey(eventId, uid));
+  }
 
   window.dispatchEvent(new Event("events-changed"));
   window.dispatchEvent(new Event("requests-changed"));
