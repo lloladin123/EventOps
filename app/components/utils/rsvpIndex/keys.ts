@@ -8,13 +8,6 @@ export const KEY_PATTERNS = {
   perRole: /^rsvps:(.+)$/i, // rsvps:<role>
 };
 
-export const KNOWN_ROLES = new Set([
-  ROLE.Admin,
-  ROLE.Logfører,
-  ROLE.Kontrollør,
-  ROLE.Crew,
-]);
-
 export function decisionKey(eventId: string, uid: string) {
   return `event:decision:${eventId}:${uid}`;
 }

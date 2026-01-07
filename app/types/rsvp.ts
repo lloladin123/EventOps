@@ -1,4 +1,4 @@
-import type { EventAttendance } from "./event";
+import { RSVPAttendance } from "./rsvpIndex";
 
 /** C#-ish enum style, but safe for TS + runtime */
 export const ROLE = {
@@ -29,7 +29,7 @@ export type RSVP = {
   userRole: Role;
   userSubRole?: CrewSubRole | null;
 
-  attendance: EventAttendance;
+  attendance: RSVPAttendance;
   comment: string;
 
   userDisplayName: string;

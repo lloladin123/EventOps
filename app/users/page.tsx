@@ -3,17 +3,15 @@
 import * as React from "react";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
-import { useRoleCatalog } from "@/utils/useRoleCatalog";
 import { useUsersAdmin } from "@/utils/useUsersAdmin";
 
 import UserListTable from "@/components/users/UserListTable";
-import { ROLE } from "@/types/rsvp";
+import { ROLE, ROLES, CREW_SUBROLES } from "@/types/rsvp";
 
 export default function UsersPage() {
   const { role: myRole, loading } = useAuth();
   const isAdmin = !loading && myRole === ROLE.Admin;
 
-  const { roles, crewSubRoles } = useRoleCatalog();
   const { users, busy, setUserRole, setUserSubRole } = useUsersAdmin(isAdmin);
 
   if (loading) {
@@ -45,8 +43,8 @@ export default function UsersPage() {
       <UserListTable
         users={users}
         busy={busy}
-        roles={roles}
-        crewSubRoles={crewSubRoles}
+        roles={ROLES}
+        crewSubRoles={CREW_SUBROLES}
         setUserRole={setUserRole}
         setUserSubRole={setUserSubRole}
       />
