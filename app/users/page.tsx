@@ -1,18 +1,17 @@
 "use client";
 
-import * as React from "react";
-
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { useUsersAdmin } from "@/utils/useUsersAdmin";
 
 import UserListTable from "@/components/users/UserListTable";
-import { ROLE, ROLES, CREW_SUBROLES } from "@/types/rsvp";
+import { ROLE, ROLES, CREW_SUBROLES, isAdmin } from "@/types/rsvp";
 
 export default function UsersPage() {
   const { role: myRole, loading } = useAuth();
-  const isAdmin = !loading && myRole === ROLE.Admin;
 
-  const { users, busy, setUserRole, setUserSubRole } = useUsersAdmin(isAdmin);
+  const { users, busy, setUserRole, setUserSubRole } = useUsersAdmin(
+    isAdmin(myRole)
+  );
 
   if (loading) {
     return (

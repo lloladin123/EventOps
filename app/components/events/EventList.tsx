@@ -16,21 +16,19 @@ import { useUiToggle } from "@/utils/useUiToggle";
 import { getAllEvents } from "@/utils/eventsStore";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
-import { ROLE } from "@/types/rsvp";
-import { RSVPAttendance } from "@/types/rsvpIndex";
+import { isAdmin } from "@/types/rsvp";
+import type { RSVPAttendance } from "@/types/rsvpIndex";
 
 export default function EventList() {
   const { role, loading } = useAuth();
-  const isAdmin = role === ROLE.Admin;
+  const admin = isAdmin(role);
 
   // minimizers
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
 
-  // RSVP state + handlers (keep your existing hook; give it a safe fallback)
-  const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps(
-    (role ?? ROLE.Crew) as any
-  );
+  // RSVP state + handlers (role comes from AuthProvider inside the hook)
+  const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps();
 
   // events state (still localStorage)
   const [events, setEvents] = React.useState<Event[]>(() => getAllEvents());
@@ -67,16 +65,16 @@ export default function EventList() {
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-6">
       {/* Global delete undo stack (admin only) */}
-      <DeletedEventsUndoStack visible={isAdmin} />
+      <DeletedEventsUndoStack visible={admin} />
 
       <EventSection
-        title={isAdmin ? "Åbne kampe" : "Kampe"}
+        title={admin ? "Åbne kampe" : "Kampe"}
         count={openEvents.length}
         minimized={openMinimized}
         setMinimized={setOpenMinimized}
       >
         {/* Undo stack for accidental closes */}
-        <ClosedEventsUndoStack visible={isAdmin} />
+        <ClosedEventsUndoStack visible={admin} />
 
         {openEvents.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
@@ -95,14 +93,14 @@ export default function EventList() {
                 commentValue={my?.comment ?? ""}
                 onChangeAttendance={onChangeAttendance}
                 onChangeComment={onChangeComment}
-                onDelete={isAdmin ? onDeleteEvent : undefined}
+                onDelete={admin ? onDeleteEvent : undefined}
               />
             );
           })
         )}
       </EventSection>
 
-      {isAdmin && (
+      {admin && (
         <EventSection
           title="Lukkede kampe"
           count={closedEvents.length}
@@ -110,7 +108,7 @@ export default function EventList() {
           setMinimized={setClosedMinimized}
         >
           {/* Undo stack for accidental opens */}
-          <OpenedEventsUndoStack visible={isAdmin} />
+          <OpenedEventsUndoStack visible={admin} />
 
           {closedEvents.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">

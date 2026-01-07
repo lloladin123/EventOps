@@ -1,9 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { type RSVP, type Role, type CrewSubRole, ROLE } from "@/types/rsvp";
+import { ROLE, type RSVP, type Role, type CrewSubRole } from "@/types/rsvp";
 import { useAuth } from "@/app/components/auth/AuthProvider";
-import { RSVP_ATTENDANCE, RSVPAttendance } from "./rsvpIndex";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "./rsvpIndex";
 
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -18,7 +18,7 @@ function legacyRoleKey(role: Role) {
   return `rsvps:${role}`;
 }
 
-export function useRsvps(_roleIgnored?: Role | null) {
+export function useRsvps() {
   // ✅ allow AuthProvider to optionally supply displayName from Firestore profile
   const authAny = useAuth() as any;
   const { user, role, subRole, loading } = authAny;

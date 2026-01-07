@@ -15,7 +15,9 @@ import { useAuth } from "@/app/components/auth/AuthProvider";
 import { getAllEvents } from "@/utils/eventsStore";
 import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
 import ApprovedUsers from "@/components/events/ApprovedUsers";
-import { ROLE } from "@/types/rsvp";
+import { ROLE, type Role } from "@/types/rsvp";
+
+const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
 
 function incidentStorageKey(eventId: string) {
   return `incidents:${eventId}`;
@@ -110,7 +112,7 @@ export default function EventDetailPage() {
 
   return (
     <LoginRedirect
-      allowedRoles={[ROLE.Admin, ROLE.Logfører]}
+      allowedRoles={ALLOWED_ROLES}
       unauthorizedRedirectTo="/events"
       description="Du har ikke adgang til denne kamp."
     >

@@ -4,7 +4,7 @@ import * as React from "react";
 import type { Incident } from "@/types/incident";
 import IncidentListItem from "./IncidentListItem";
 import { useAuth } from "@/app/components/auth/AuthProvider";
-import { ROLE } from "@/types/rsvp";
+import { isAdmin as isAdminRole } from "@/types/rsvp";
 
 type Props = {
   incidents?: Incident[]; // ✅ allow undefined
@@ -41,7 +41,7 @@ export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
   const safeIncidents: Incident[] = Array.isArray(incidents) ? incidents : [];
 
   const { role, user } = useAuth();
-  const isAdmin = role === ROLE.Admin;
+  const admin = isAdminRole(role);
   const uid = user?.uid ?? null;
   const now = useNow(15_000);
 
@@ -87,14 +87,14 @@ export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
         <ul className="mt-4 space-y-3">
           {safeIncidents.map((i) => {
             const canEdit =
-              isAdmin || (isOwner(i, uid) && canEditWithinWindow(i, now));
+              admin || (isOwner(i, uid) && canEditWithinWindow(i, now));
 
             return (
               <IncidentListItem
                 key={i.id}
                 incident={i}
                 canEdit={canEdit}
-                canDelete={isAdmin}
+                canDelete={admin}
                 onEdit={onEdit}
                 onDelete={onDelete}
               />
@@ -119,7 +119,7 @@ export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
             <tbody>
               {safeIncidents.map((i) => {
                 const canEdit =
-                  isAdmin || (isOwner(i, uid) && canEditWithinWindow(i, now));
+                  admin || (isOwner(i, uid) && canEditWithinWindow(i, now));
 
                 return (
                   <tr key={i.id} className="border-b last:border-0 align-top">
@@ -152,7 +152,7 @@ export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
                           </span>
                         )}
 
-                        {isAdmin && onDelete ? (
+                        {admin && onDelete ? (
                           <button
                             type="button"
                             onClick={() => onDelete(i.id)}

@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import type { Role } from "@/types/rsvp";
-import { ROLES, CREW_SUBROLES, type CrewSubRole, ROLE } from "@/types/rsvp";
+import { ROLE, ROLES, CREW_SUBROLES } from "@/types/rsvp";
+import type { Role, CrewSubRole } from "@/types/rsvp";
 import { useLogin } from "./useLogin";
 
 export default function LoginCard() {

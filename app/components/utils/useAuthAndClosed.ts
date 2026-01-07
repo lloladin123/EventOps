@@ -3,9 +3,11 @@
 import * as React from "react";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
-import { ROLE, type Role } from "@/types/rsvp";
+import { ROLE } from "@/types/rsvp";
 
-const CAN_CLOSE: Role[] = [ROLE.Admin, ROLE.Logfører];
+type Role = (typeof ROLE)[keyof typeof ROLE];
+
+const CAN_CLOSE = new Set<Role>([ROLE.Admin, ROLE.Logfører]);
 
 export function useAuthAndClosed(eventId: string) {
   const { user, role, loading } = useAuth();
@@ -36,10 +38,10 @@ export function useAuthAndClosed(eventId: string) {
     [eventId]
   );
 
-  // Prefer displayName; fall back to email; fall back to "—"
+  // Prefer displayName; fall back to email; else empty string
   const loggedBy = loading || !user ? "" : user.displayName || user.email || "";
 
-  const canClose = !loading && !!role && CAN_CLOSE.includes(role);
+  const canClose = !loading && role != null && CAN_CLOSE.has(role);
 
   return { loggedBy, closed, setClosed, canClose };
 }
