@@ -6,7 +6,7 @@ import {
   getAllLocalRsvps,
   isApproved,
   type RSVPRecord,
-} from "@/components/utils/rsvpIndex";
+} from "@/components/utils/rsvpIndex/index";
 
 type Props = { eventId: string };
 
