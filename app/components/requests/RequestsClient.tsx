@@ -1,17 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  DECISION,
-  getAllLocalRsvps,
-  isApproved,
-} from "@/components/utils/rsvpIndex";
+import { getAllLocalRsvps, isApproved } from "@/components/utils/rsvpIndex";
 import { getEventsWithOverrides } from "@/components/utils/eventsStore";
 import type { Event } from "@/types/event";
 
 import RequestsFilters from "./RequestsFilters";
 import RequestsEventGroup from "./RequestsEventGroup";
 import { AttendanceFilter, RSVPRow, StatusFilter } from "@/types/requests";
+import { DECISION } from "@/types/rsvpIndex";
+import type { RSVPRecord } from "@/types/rsvpIndex";
 
 export default function RequestsClient() {
   const [tick, setTick] = useState(0);
@@ -38,11 +36,15 @@ export default function RequestsClient() {
     for (const e of getEventsWithOverrides()) map.set(e.id, e);
     setEventsById(map);
 
-    const nextRows: RSVPRow[] = getAllLocalRsvps().map((r: any) => ({
+    // Contain typing uncertainty here (do not leak `any` downstream)
+    const local = getAllLocalRsvps() as RSVPRecord[];
+
+    const nextRows: RSVPRow[] = local.map((r) => ({
       ...r,
       approved: isApproved(r.eventId, r.uid),
       event: map.get(r.eventId),
     }));
+
     setRows(nextRows);
   }, [tick]);
 
@@ -51,8 +53,10 @@ export default function RequestsClient() {
       .filter((r) => {
         if (attendanceFilter !== "all" && r.attendance !== attendanceFilter)
           return false;
+
         if (statusFilter === DECISION.Pending && r.approved) return false;
         if (statusFilter === DECISION.Approved && !r.approved) return false;
+
         return true;
       })
       .sort((a, b) => {

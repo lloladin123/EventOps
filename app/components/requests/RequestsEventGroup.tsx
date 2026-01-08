@@ -2,11 +2,8 @@
 
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
-import {
-  DECISION,
-  getAllLocalRsvps,
-  setDecision,
-} from "@/components/utils/rsvpIndex";
+import { setDecision } from "@/components/utils/rsvpIndex";
+import { DECISION } from "@/types/rsvpIndex";
 import StateButton from "../ui/StateButton";
 import { getDecision } from "../utils/rsvpIndex/decision";
 
@@ -21,6 +18,12 @@ export default function RequestsEventGroup({
   list: RSVPRow[];
   onCopyApproved: (eventId: string) => void;
 }) {
+  const DECISION_OPTIONS = [
+    { value: DECISION.Approved, label: "Approved" },
+    { value: DECISION.Pending, label: "Pending" },
+    { value: DECISION.Unapproved, label: "Unapproved" },
+  ] as const;
+
   return (
     <div className="border rounded-lg p-3 space-y-3">
       <div className="flex justify-between flex-wrap gap-2">
@@ -55,9 +58,6 @@ export default function RequestsEventGroup({
         <tbody>
           {list.map((r) => {
             const decision = getDecision(r.eventId, r.uid); // ✅ real 3-state
-            const isApproved = decision === DECISION.Approved;
-            const isPending = decision === DECISION.Pending;
-            const isUnapproved = decision === DECISION.Unapproved;
 
             return (
               <tr key={`${r.eventId}:${r.uid}`} className="border-t">
@@ -73,35 +73,16 @@ export default function RequestsEventGroup({
 
                 <td className="py-2">
                   <div className="flex flex-wrap gap-2">
-                    <StateButton
-                      variant={DECISION.Approved}
-                      active={isApproved}
-                      onClick={() =>
-                        setDecision(r.eventId, r.uid, DECISION.Approved)
-                      }
-                    >
-                      Approved
-                    </StateButton>
-
-                    <StateButton
-                      variant={DECISION.Pending}
-                      active={isPending}
-                      onClick={() =>
-                        setDecision(r.eventId, r.uid, DECISION.Pending)
-                      }
-                    >
-                      Pending
-                    </StateButton>
-
-                    <StateButton
-                      variant={DECISION.Unapproved}
-                      active={isUnapproved}
-                      onClick={() =>
-                        setDecision(r.eventId, r.uid, DECISION.Unapproved)
-                      }
-                    >
-                      Unapproved
-                    </StateButton>
+                    {DECISION_OPTIONS.map((opt) => (
+                      <StateButton
+                        key={opt.value}
+                        variant={opt.value}
+                        active={decision === opt.value}
+                        onClick={() => setDecision(r.eventId, r.uid, opt.value)}
+                      >
+                        {opt.label}
+                      </StateButton>
+                    ))}
                   </div>
                 </td>
               </tr>
