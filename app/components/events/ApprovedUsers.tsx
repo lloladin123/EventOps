@@ -12,16 +12,16 @@ import type { RSVPRecord, RSVPAttendance } from "@/types/rsvpIndex";
 type Props = { eventId: string };
 
 function labelFromUid(uid: string) {
-  // If it's an email, show email
   if (uid.includes("@")) return uid;
-
-  // If it's synthetic like "Kontrollør:e1", show just role
   const parts = uid.split(":");
   if (parts.length >= 2) return parts[0];
-
-  // Otherwise show shortened uid
   if (uid.length > 12) return `${uid.slice(0, 6)}…${uid.slice(-4)}`;
   return uid;
+}
+
+// ✅ NEW: canonical display name resolver
+function displayNameFromRsvp(r: RSVPRecord) {
+  return r.userDisplayName?.trim() || labelFromUid(r.uid);
 }
 
 const ATTENDANCE_ORDER: Record<RSVPAttendance, number> = {
@@ -67,22 +67,19 @@ export default function ApprovedUsers({ eventId }: Props) {
   }, []);
 
   const approved = React.useMemo(() => {
-    return (
-      getAllLocalRsvps()
-        .filter((r) => r.eventId === eventId && isApproved(r.eventId, r.uid))
-        // staff-first ordering: yes → maybe → no
-        .sort(
-          (a, b) =>
-            ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
-        )
-    );
+    return getAllLocalRsvps()
+      .filter((r) => r.eventId === eventId && isApproved(r.eventId, r.uid))
+      .sort(
+        (a, b) =>
+          ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
+      );
   }, [eventId, tick]);
 
   const copy = () => {
     const lines = approved.map((r) => {
-      const name = labelFromUid(r.uid);
+      const name = displayNameFromRsvp(r);
       const note = r.comment ? ` — ${r.comment}` : "";
-      const a = RSVP_ATTENDANCE_LABEL[r.attendance]; // "Yes" | "Maybe" | "No"
+      const a = RSVP_ATTENDANCE_LABEL[r.attendance];
       return `- ${name} (${a})${note}`;
     });
     navigator.clipboard.writeText(lines.join("\n") || "(none)");
@@ -112,7 +109,7 @@ export default function ApprovedUsers({ eventId }: Props) {
             <div key={r.uid} className="rounded-xl border bg-white px-3 py-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-medium text-slate-900">
-                  {labelFromUid(r.uid)}
+                  {displayNameFromRsvp(r)}
                 </div>
                 {attendancePill(r.attendance)}
               </div>
