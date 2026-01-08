@@ -5,39 +5,46 @@ import * as React from "react";
 import {
   getAllLocalRsvps,
   isApproved,
-  type RSVPRecord,
-} from "@/components/utils/rsvpIndex";
+} from "@/components/utils/rsvpIndex/index";
+import { RSVP_ATTENDANCE, RSVP_ATTENDANCE_LABEL } from "@/types/rsvpIndex";
+import type { RSVPRecord, RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = { eventId: string };
 
 function labelFromUid(uid: string) {
-  // If it's an email, show email
   if (uid.includes("@")) return uid;
-
-  // If it's synthetic like "Kontrollør:e1", show just role
   const parts = uid.split(":");
   if (parts.length >= 2) return parts[0];
-
-  // Otherwise show shortened uid
   if (uid.length > 12) return `${uid.slice(0, 6)}…${uid.slice(-4)}`;
   return uid;
 }
 
+// ✅ NEW: canonical display name resolver
+function displayNameFromRsvp(r: RSVPRecord) {
+  return r.userDisplayName?.trim() || labelFromUid(r.uid);
+}
+
+const ATTENDANCE_ORDER: Record<RSVPAttendance, number> = {
+  [RSVP_ATTENDANCE.Yes]: 0,
+  [RSVP_ATTENDANCE.Maybe]: 1,
+  [RSVP_ATTENDANCE.No]: 2,
+};
+
 function attendancePill(a: RSVPRecord["attendance"]) {
   switch (a) {
-    case "yes":
+    case RSVP_ATTENDANCE.Yes:
       return (
         <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
           Ja
         </span>
       );
-    case "maybe":
+    case RSVP_ATTENDANCE.Maybe:
       return (
         <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
           Måske
         </span>
       );
-    case "no":
+    case RSVP_ATTENDANCE.No:
       return (
         <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
           Nej
@@ -60,27 +67,19 @@ export default function ApprovedUsers({ eventId }: Props) {
   }, []);
 
   const approved = React.useMemo(() => {
-    return (
-      getAllLocalRsvps()
-        .filter((r) => r.eventId === eventId && isApproved(r.eventId, r.uid))
-        // staff-first ordering: yes → maybe → no
-        .sort((a, b) => {
-          const order = { yes: 0, maybe: 1, no: 2 } as const;
-          return order[a.attendance] - order[b.attendance];
-        })
-    );
+    return getAllLocalRsvps()
+      .filter((r) => r.eventId === eventId && isApproved(r.eventId, r.uid))
+      .sort(
+        (a, b) =>
+          ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
+      );
   }, [eventId, tick]);
 
   const copy = () => {
     const lines = approved.map((r) => {
-      const name = labelFromUid(r.uid);
+      const name = displayNameFromRsvp(r);
       const note = r.comment ? ` — ${r.comment}` : "";
-      const a =
-        r.attendance === "yes"
-          ? "Ja"
-          : r.attendance === "maybe"
-          ? "Måske"
-          : "Nej";
+      const a = RSVP_ATTENDANCE_LABEL[r.attendance];
       return `- ${name} (${a})${note}`;
     });
     navigator.clipboard.writeText(lines.join("\n") || "(none)");
@@ -110,7 +109,7 @@ export default function ApprovedUsers({ eventId }: Props) {
             <div key={r.uid} className="rounded-xl border bg-white px-3 py-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-medium text-slate-900">
-                  {labelFromUid(r.uid)}
+                  {displayNameFromRsvp(r)}
                 </div>
                 {attendancePill(r.attendance)}
               </div>

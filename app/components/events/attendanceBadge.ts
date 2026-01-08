@@ -1,18 +1,18 @@
-import type { EventAttendance } from "@/types/event";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
-export function attendanceBadge(attendance?: EventAttendance) {
+export function attendanceBadge(attendance?: RSVPAttendance) {
   switch (attendance) {
-    case "yes":
+    case RSVP_ATTENDANCE.Yes:
       return {
         text: "Kommer",
         cls: "bg-emerald-50 text-emerald-700 ring-emerald-200",
       };
-    case "maybe":
+    case RSVP_ATTENDANCE.Maybe:
       return {
         text: "Måske",
         cls: "bg-amber-50 text-amber-700 ring-amber-200",
       };
-    case "no":
+    case RSVP_ATTENDANCE.No:
       return {
         text: "Kan ikke",
         cls: "bg-rose-50 text-rose-700 ring-rose-200",

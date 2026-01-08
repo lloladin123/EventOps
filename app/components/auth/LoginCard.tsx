@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import type { Role } from "@/types/rsvp";
-import { ROLES, CREW_SUBROLES, type CrewSubRole } from "@/types/rsvp";
+import { ROLE, ROLES, CREW_SUBROLES } from "@/types/rsvp";
+import type { Role, CrewSubRole } from "@/types/rsvp";
 import { useLogin } from "./useLogin";
 
 export default function LoginCard() {
@@ -45,7 +45,7 @@ export default function LoginCard() {
       </div>
 
       {/* Crew subrole */}
-      {role === "Crew" && (
+      {role === ROLE.Crew && (
         <div className="mt-4">
           <label className="block text-sm font-medium text-slate-900">
             Crew-rolle

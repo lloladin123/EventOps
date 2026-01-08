@@ -3,8 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import type { Event } from "@/types/event";
-import type { EventAttendance } from "@/types/event";
-import type { Role } from "@/types/rsvp";
+import { ROLE, isAdmin, type Role } from "@/types/rsvp";
 
 import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
@@ -15,17 +14,19 @@ import { setEventClosed } from "@/utils/eventStatus";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
+import type { RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = {
   event: Event;
-  attendanceValue?: EventAttendance;
+  attendanceValue?: RSVPAttendance;
   commentValue: string;
-  onChangeAttendance: (eventId: string, attendance: EventAttendance) => void;
+  onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
   onChangeComment: (eventId: string, comment: string) => void;
   onDelete?: (event: Event) => void; // ✅ delete hook (admin only)
 };
 
-const CAN_OPEN_DETAILS: Role[] = ["Admin", "Logfører"];
+// Local UI policy: who can open details
+const CAN_OPEN_DETAILS = new Set<Role>([ROLE.Admin, ROLE.Logfører]);
 
 export default function EventCard({
   event,
@@ -38,9 +39,10 @@ export default function EventCard({
   const b = attendanceBadge(attendanceValue);
 
   const { user, role, loading } = useAuth();
-  const isAdmin = role === "Admin";
+
+  const admin = isAdmin(role);
   const canOpenDetails =
-    !!user && !loading && !!role && CAN_OPEN_DETAILS.includes(role);
+    !!user && !loading && !!role && CAN_OPEN_DETAILS.has(role);
 
   const closeNow = () => {
     setEventClosed(event.id, true);
@@ -59,7 +61,7 @@ export default function EventCard({
   return (
     <div className="relative flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-stretch">
       {/* Admin delete X */}
-      {isAdmin && onDelete && (
+      {admin && onDelete && (
         <button
           type="button"
           onClick={() => onDelete(event)}
@@ -91,7 +93,7 @@ export default function EventCard({
             </span>
           )}
 
-          {!isAdmin && (
+          {!admin && (
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1",
@@ -111,7 +113,7 @@ export default function EventCard({
 
         <EventMeta event={event} />
 
-        {!isAdmin && (
+        {!admin && (
           <EventComment
             eventId={event.id}
             value={commentValue}
@@ -122,7 +124,7 @@ export default function EventCard({
       </div>
 
       {/* Right side controls */}
-      {isAdmin ? (
+      {admin ? (
         <div className="flex shrink-0 flex-col justify-center gap-2 sm:items-end">
           {/* ✅ Use shared StateButton (green=open, red=closed) */}
           {event.open ? (

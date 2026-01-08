@@ -1,32 +1,45 @@
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import { ROLE, CREW_SUBROLE, type Role, type CrewSubRole } from "@/types/rsvp";
 
-export function devRoleFromEmail(email: string | null): {
-  role: Role;
-  subRole: CrewSubRole | null;
-} | null {
-  if (!email) return null;
+type RoleAssignment = { role: Role; subRole: CrewSubRole | null };
 
-  const e = email.trim().toLowerCase();
+function normEmail(v: string | undefined | null) {
+  return v?.trim().toLowerCase() || null;
+}
 
-  const admin = process.env.NEXT_PUBLIC_TEST_ADMIN_EMAIL?.trim().toLowerCase();
-  const log = process.env.NEXT_PUBLIC_TEST_LOG_EMAIL?.trim().toLowerCase();
-  const kontrol =
-    process.env.NEXT_PUBLIC_TEST_KONTROL_EMAIL?.trim().toLowerCase();
+const DEV_ROLE_RULES = [
+  {
+    email: process.env.NEXT_PUBLIC_TEST_ADMIN_EMAIL,
+    value: { role: ROLE.Admin, subRole: null },
+  },
+  {
+    email: process.env.NEXT_PUBLIC_TEST_LOG_EMAIL,
+    value: { role: ROLE.Logfører, subRole: null },
+  },
+  {
+    email: process.env.NEXT_PUBLIC_TEST_KONTROL_EMAIL,
+    value: { role: ROLE.Kontrollør, subRole: null },
+  },
+  {
+    email: process.env.NEXT_PUBLIC_TEST_CREW_SCAN_EMAIL,
+    value: { role: ROLE.Crew, subRole: CREW_SUBROLE.Scanning },
+  },
+  {
+    email: process.env.NEXT_PUBLIC_TEST_CREW_BILLET_EMAIL,
+    value: { role: ROLE.Crew, subRole: CREW_SUBROLE.BilletSalg },
+  },
+  {
+    email: process.env.NEXT_PUBLIC_TEST_CREW_BOLD_EMAIL,
+    value: { role: ROLE.Crew, subRole: CREW_SUBROLE.Boldbørn },
+  },
+] satisfies ReadonlyArray<{ email: string | undefined; value: RoleAssignment }>;
 
-  const scan =
-    process.env.NEXT_PUBLIC_TEST_CREW_SCAN_EMAIL?.trim().toLowerCase();
-  const billet =
-    process.env.NEXT_PUBLIC_TEST_CREW_BILLET_EMAIL?.trim().toLowerCase();
-  const bold =
-    process.env.NEXT_PUBLIC_TEST_CREW_BOLD_EMAIL?.trim().toLowerCase();
+export function devRoleFromEmail(email: string | null): RoleAssignment | null {
+  const e = normEmail(email);
+  if (!e) return null;
 
-  if (admin && e === admin) return { role: "Admin", subRole: null };
-  if (log && e === log) return { role: "Logfører", subRole: null };
-  if (kontrol && e === kontrol) return { role: "Kontrollør", subRole: null };
-
-  if (scan && e === scan) return { role: "Crew", subRole: "Scanning" };
-  if (billet && e === billet) return { role: "Crew", subRole: "Billet salg" };
-  if (bold && e === bold) return { role: "Crew", subRole: "Boldbørn" };
-
+  for (const rule of DEV_ROLE_RULES) {
+    const env = normEmail(rule.email);
+    if (env && env === e) return rule.value;
+  }
   return null;
 }

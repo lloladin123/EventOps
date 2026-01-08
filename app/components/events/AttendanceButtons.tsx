@@ -1,12 +1,18 @@
-import type { EventAttendance } from "@/types/event";
 import StateButton from "@/app/components/ui/StateButton";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = {
   eventId: string;
-  value?: EventAttendance;
+  value?: RSVPAttendance;
   open: boolean;
-  onChangeAttendance: (eventId: string, attendance: EventAttendance) => void;
+  onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
 };
+
+const OPTIONS: ReadonlyArray<{ value: RSVPAttendance; label: string }> = [
+  { value: RSVP_ATTENDANCE.Yes, label: "Jeg kommer" },
+  { value: RSVP_ATTENDANCE.Maybe, label: "Jeg kan måske" },
+  { value: RSVP_ATTENDANCE.No, label: "Jeg kan ikke komme" },
+];
 
 export default function AttendanceButtons({
   eventId,
@@ -14,7 +20,7 @@ export default function AttendanceButtons({
   open,
   onChangeAttendance,
 }: Props) {
-  const handle = (attendance: EventAttendance) => {
+  const handle = (attendance: RSVPAttendance) => {
     console.debug("[AttendanceButtons] click", {
       eventId,
       open,
@@ -27,35 +33,18 @@ export default function AttendanceButtons({
 
   return (
     <div className="flex shrink-0 flex-col gap-2 sm:self-center">
-      <StateButton
-        type="button"
-        variant="yes"
-        active={value === "yes"}
-        disabled={!open}
-        onClick={() => handle("yes")}
-      >
-        Jeg kommer
-      </StateButton>
-
-      <StateButton
-        type="button"
-        variant="maybe"
-        active={value === "maybe"}
-        disabled={!open}
-        onClick={() => handle("maybe")}
-      >
-        Jeg kan måske
-      </StateButton>
-
-      <StateButton
-        type="button"
-        variant="no"
-        active={value === "no"}
-        disabled={!open}
-        onClick={() => handle("no")}
-      >
-        Jeg kan ikke komme
-      </StateButton>
+      {OPTIONS.map((opt) => (
+        <StateButton
+          key={opt.value}
+          type="button"
+          variant={opt.value}
+          active={value === opt.value}
+          disabled={!open}
+          onClick={() => handle(opt.value)}
+        >
+          {opt.label}
+        </StateButton>
+      ))}
     </div>
   );
 }

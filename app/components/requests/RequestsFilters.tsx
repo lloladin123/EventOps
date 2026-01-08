@@ -1,6 +1,17 @@
 "use client";
 
-import { AttendanceFilter, StatusFilter } from "@/types/requests";
+import {
+  DECISION,
+  RSVP_ATTENDANCE,
+  RSVP_ATTENDANCE_LABEL,
+} from "@/types/rsvpIndex";
+import type { AttendanceFilter, StatusFilter } from "@/types/requests";
+
+const STATUS_OPTIONS: StatusFilter[] = [
+  DECISION.Pending,
+  DECISION.Approved,
+  "all",
+];
 
 export default function RequestsFilters({
   statusFilter,
@@ -15,16 +26,20 @@ export default function RequestsFilters({
 }) {
   return (
     <div className="flex gap-2">
+      {/* Status */}
       <select
         className="border rounded px-2 py-1"
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
       >
-        <option value="pending">Pending</option>
-        <option value="approved">Approved</option>
-        <option value="all">All</option>
+        {STATUS_OPTIONS.map((s) => (
+          <option key={s} value={s}>
+            {s[0].toUpperCase() + s.slice(1)}
+          </option>
+        ))}
       </select>
 
+      {/* Attendance */}
       <select
         className="border rounded px-2 py-1"
         value={attendanceFilter}
@@ -33,9 +48,12 @@ export default function RequestsFilters({
         }
       >
         <option value="all">All</option>
-        <option value="yes">Yes</option>
-        <option value="maybe">Maybe</option>
-        <option value="no">No</option>
+
+        {Object.values(RSVP_ATTENDANCE).map((a) => (
+          <option key={a} value={a}>
+            {RSVP_ATTENDANCE_LABEL[a]}
+          </option>
+        ))}
       </select>
     </div>
   );

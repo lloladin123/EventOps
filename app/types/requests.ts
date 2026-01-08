@@ -1,7 +1,7 @@
 import type { Event } from "@/types/event";
+import { Decision, RSVPAttendance } from "./rsvpIndex";
 
-export type RSVPAttendance = "yes" | "maybe" | "no";
-export type StatusFilter = "pending" | "approved" | "all";
+export type StatusFilter = Decision | "all";
 export type AttendanceFilter = RSVPAttendance | "all";
 
 export type RSVPRow = {

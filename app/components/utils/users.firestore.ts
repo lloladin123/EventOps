@@ -18,10 +18,15 @@ export type UserDoc = {
 };
 
 export type RolesConfigDoc = {
-  roles?: Role[];
-  crewSubRoles?: CrewSubRole[];
+  roles?: readonly Role[];
+  crewSubRoles?: readonly CrewSubRole[];
 };
 
+/**
+ * Legacy: Firestore-driven roles config.
+ * Under current rules, roles/subroles should come from canonical constants instead.
+ * Keep temporarily only if something still calls it.
+ */
 export async function fetchRolesConfig(): Promise<RolesConfigDoc | null> {
   const snap = await getDoc(doc(db, "config", "roles"));
   if (!snap.exists()) return null;
@@ -52,7 +57,7 @@ export function subscribeUsers(
 export async function updateUserRole(uid: string, nextRole: Role) {
   await updateDoc(doc(db, "users", uid), {
     role: nextRole,
-    subRole: nextRole === "Crew" ? null : null,
+    subRole: null, // always clear on role changes (was always null before)
   });
 }
 

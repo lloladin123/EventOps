@@ -1,9 +1,10 @@
 "use client";
 
 import * as React from "react";
-import type { EventAttendance } from "@/types/event";
+import { ROLE } from "@/types/rsvp";
 import type { RSVP, Role, CrewSubRole } from "@/types/rsvp";
 import { useAuth } from "@/app/components/auth/AuthProvider";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -18,7 +19,7 @@ function legacyRoleKey(role: Role) {
   return `rsvps:${role}`;
 }
 
-export function useRsvps(_roleIgnored?: Role | null) {
+export function useRsvps() {
   // ✅ allow AuthProvider to optionally supply displayName from Firestore profile
   const authAny = useAuth() as any;
   const { user, role, subRole, loading } = authAny;
@@ -26,7 +27,9 @@ export function useRsvps(_roleIgnored?: Role | null) {
     typeof authAny?.displayName === "string" ? authAny.displayName : null;
 
   const uid = user?.uid ?? null;
-  const effectiveRole = role ?? null;
+
+  // Normalize once (keeps existing behavior, reduces repeated casting)
+  const effectiveRole = (role ?? null) as Role | null;
   const effectiveSubRole = (subRole ?? null) as CrewSubRole | null;
 
   // ✅ Prefer Firestore profile displayName, then Firebase Auth displayName.
@@ -70,7 +73,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
     }
 
     setRsvps([]);
-  }, [uid, loading]); // keep as-is
+  }, [uid, loading, effectiveRole]); // keep as-is
 
   const upsertRsvp = React.useCallback(
     (eventId: string, patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
@@ -78,25 +81,24 @@ export function useRsvps(_roleIgnored?: Role | null) {
 
       setRsvps((prev) => {
         const idx = prev.findIndex((r) => r.eventId === eventId);
-        const resolvedRole = (effectiveRole ?? "Crew") as Role;
+        const resolvedRole: Role = effectiveRole ?? ROLE.Crew;
 
         let next: RSVP[];
 
         if (idx !== -1) {
           const existing = prev[idx];
-          const nextRole = (effectiveRole ??
-            existing.userRole ??
-            "Crew") as Role;
+          const nextRole: Role =
+            effectiveRole ?? existing.userRole ?? ROLE.Crew;
+          const nextIsCrew = nextRole === ROLE.Crew;
 
           next = [...prev];
           next[idx] = {
             ...existing,
             ...patch,
             userRole: nextRole,
-            userSubRole:
-              nextRole === "Crew"
-                ? effectiveSubRole ?? existing.userSubRole ?? null
-                : null,
+            userSubRole: nextIsCrew
+              ? effectiveSubRole ?? existing.userSubRole ?? null
+              : null,
 
             // ✅ Replace bad snapshot ("Ukendt bruger") once we have a real name
             userDisplayName:
@@ -107,13 +109,14 @@ export function useRsvps(_roleIgnored?: Role | null) {
             updatedAt: new Date().toISOString(),
           };
         } else {
+          const resolvedIsCrew = resolvedRole === ROLE.Crew;
+
           const created: RSVP = {
             id: makeId(),
             eventId,
             userRole: resolvedRole,
-            userSubRole:
-              resolvedRole === "Crew" ? effectiveSubRole ?? null : null,
-            attendance: (patch.attendance ?? "maybe") as EventAttendance,
+            userSubRole: resolvedIsCrew ? effectiveSubRole ?? null : null,
+            attendance: patch.attendance ?? RSVP_ATTENDANCE.Maybe,
             comment: patch.comment ?? "",
             userDisplayName,
             createdAt: new Date().toISOString(),
@@ -134,7 +137,7 @@ export function useRsvps(_roleIgnored?: Role | null) {
   );
 
   const onChangeAttendance = React.useCallback(
-    (eventId: string, attendance: EventAttendance) => {
+    (eventId: string, attendance: RSVPAttendance) => {
       upsertRsvp(eventId, { attendance });
     },
     [upsertRsvp]

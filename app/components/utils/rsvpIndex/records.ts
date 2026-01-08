@@ -1,11 +1,16 @@
 import { RSVPRecord } from "@/types/rsvpIndex";
-import { KEY_PATTERNS, KNOWN_ROLES } from "./keys";
+import { KEY_PATTERNS } from "./keys";
 import {
   mapFromKeyArray,
   pushUnique,
   safeJsonParse,
   strOrUndef,
 } from "./storage";
+
+import { ROLE } from "@/types/rsvp";
+
+const ROLE_SET = new Set(Object.values(ROLE));
+const isRoleValue = (v: string) => ROLE_SET.has(v as any);
 
 export function getAllLocalRsvps(): RSVPRecord[] {
   if (typeof window === "undefined") return [];
@@ -80,7 +85,7 @@ export function getAllLocalRsvps(): RSVPRecord[] {
     const mPerEvent = key.match(KEY_PATTERNS.perEvent);
     if (mPerEvent) {
       const [, eventId] = mPerEvent;
-      if (KNOWN_ROLES.has(eventId)) continue;
+      if (isRoleValue(eventId)) continue;
 
       mapFromKeyArray(out, seen, key, (r) => {
         if (!r?.uid || !r?.attendance) return null;
