@@ -5,9 +5,9 @@ import * as React from "react";
 import {
   getAllLocalRsvps,
   isApproved,
-  RSVP_ATTENDANCE,
-  type RSVPRecord,
 } from "@/components/utils/rsvpIndex/index";
+import { RSVP_ATTENDANCE, RSVP_ATTENDANCE_LABEL } from "@/types/rsvpIndex";
+import type { RSVPRecord, RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = { eventId: string };
 
@@ -23,6 +23,12 @@ function labelFromUid(uid: string) {
   if (uid.length > 12) return `${uid.slice(0, 6)}…${uid.slice(-4)}`;
   return uid;
 }
+
+const ATTENDANCE_ORDER: Record<RSVPAttendance, number> = {
+  [RSVP_ATTENDANCE.Yes]: 0,
+  [RSVP_ATTENDANCE.Maybe]: 1,
+  [RSVP_ATTENDANCE.No]: 2,
+};
 
 function attendancePill(a: RSVPRecord["attendance"]) {
   switch (a) {
@@ -65,10 +71,10 @@ export default function ApprovedUsers({ eventId }: Props) {
       getAllLocalRsvps()
         .filter((r) => r.eventId === eventId && isApproved(r.eventId, r.uid))
         // staff-first ordering: yes → maybe → no
-        .sort((a, b) => {
-          const order = { yes: 0, maybe: 1, no: 2 } as const;
-          return order[a.attendance] - order[b.attendance];
-        })
+        .sort(
+          (a, b) =>
+            ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
+        )
     );
   }, [eventId, tick]);
 
@@ -76,12 +82,7 @@ export default function ApprovedUsers({ eventId }: Props) {
     const lines = approved.map((r) => {
       const name = labelFromUid(r.uid);
       const note = r.comment ? ` — ${r.comment}` : "";
-      const a =
-        r.attendance === RSVP_ATTENDANCE.Yes
-          ? "Ja"
-          : r.attendance === RSVP_ATTENDANCE.Maybe
-          ? "Måske"
-          : "Nej";
+      const a = RSVP_ATTENDANCE_LABEL[r.attendance]; // "Yes" | "Maybe" | "No"
       return `- ${name} (${a})${note}`;
     });
     navigator.clipboard.writeText(lines.join("\n") || "(none)");

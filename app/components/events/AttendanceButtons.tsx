@@ -1,5 +1,5 @@
 import StateButton from "@/app/components/ui/StateButton";
-import { RSVP_ATTENDANCE, RSVPAttendance } from "@/types/rsvpIndex";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = {
   eventId: string;
@@ -7,6 +7,12 @@ type Props = {
   open: boolean;
   onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
 };
+
+const OPTIONS: ReadonlyArray<{ value: RSVPAttendance; label: string }> = [
+  { value: RSVP_ATTENDANCE.Yes, label: "Jeg kommer" },
+  { value: RSVP_ATTENDANCE.Maybe, label: "Jeg kan måske" },
+  { value: RSVP_ATTENDANCE.No, label: "Jeg kan ikke komme" },
+];
 
 export default function AttendanceButtons({
   eventId,
@@ -27,35 +33,18 @@ export default function AttendanceButtons({
 
   return (
     <div className="flex shrink-0 flex-col gap-2 sm:self-center">
-      <StateButton
-        type="button"
-        variant={RSVP_ATTENDANCE.Yes}
-        active={value === RSVP_ATTENDANCE.Yes}
-        disabled={!open}
-        onClick={() => handle(RSVP_ATTENDANCE.Yes)}
-      >
-        Jeg kommer
-      </StateButton>
-
-      <StateButton
-        type="button"
-        variant={RSVP_ATTENDANCE.Maybe}
-        active={value === RSVP_ATTENDANCE.Maybe}
-        disabled={!open}
-        onClick={() => handle(RSVP_ATTENDANCE.Maybe)}
-      >
-        Jeg kan måske
-      </StateButton>
-
-      <StateButton
-        type="button"
-        variant={RSVP_ATTENDANCE.No}
-        active={value === RSVP_ATTENDANCE.No}
-        disabled={!open}
-        onClick={() => handle(RSVP_ATTENDANCE.No)}
-      >
-        Jeg kan ikke komme
-      </StateButton>
+      {OPTIONS.map((opt) => (
+        <StateButton
+          key={opt.value}
+          type="button"
+          variant={opt.value}
+          active={value === opt.value}
+          disabled={!open}
+          onClick={() => handle(opt.value)}
+        >
+          {opt.label}
+        </StateButton>
+      ))}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { RSVP_ATTENDANCE, RSVPAttendance } from "@/types/rsvpIndex";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
 export function attendanceBadge(attendance?: RSVPAttendance) {
   switch (attendance) {
