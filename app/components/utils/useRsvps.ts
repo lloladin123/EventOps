@@ -4,7 +4,7 @@ import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { RSVP, Role, CrewSubRole } from "@/types/rsvp";
 import { useAuth } from "@/app/components/auth/AuthProvider";
-import { RSVP_ATTENDANCE, type RSVPAttendance } from "./rsvpIndex";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
@@ -73,7 +73,7 @@ export function useRsvps() {
     }
 
     setRsvps([]);
-  }, [uid, loading, effectiveRole]); // behavior same; avoids stale closure for legacy migrate
+  }, [uid, loading, effectiveRole]); // keep as-is
 
   const upsertRsvp = React.useCallback(
     (eventId: string, patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
