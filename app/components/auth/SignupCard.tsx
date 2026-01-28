@@ -10,6 +10,14 @@ function normalizeName(input: string) {
   return input.trim().replace(/\s+/g, " "); // collapse multiple spaces
 }
 
+function errorMessage(e: unknown, fallback: string) {
+  if (e && typeof e === "object" && "message" in e) {
+    const msg = String((e as any).message || "");
+    return msg || fallback;
+  }
+  return fallback;
+}
+
 export default function SignupCard() {
   const [email, setEmail] = React.useState("");
   const [displayName, setDisplayName] = React.useState("");
@@ -18,20 +26,27 @@ export default function SignupCard() {
   const [error, setError] = React.useState<string | null>(null);
   const [ok, setOk] = React.useState(false);
 
-  const emailOk = email.trim().length > 3;
-  const passwordOk = password.length >= 6;
+  const trimmedEmail = email.trim();
+  const normalizedName = normalizeName(displayName);
 
-  const name = normalizeName(displayName);
-  const nameOk = name.length >= 2; // tweak if you want stricter
+  const emailOk = trimmedEmail.length > 3;
+  const passwordOk = password.length >= 6;
+  const nameOk = normalizedName.length >= 2;
 
   const canSubmit = emailOk && passwordOk && nameOk && !busy;
 
-  const signup = async () => {
+  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setEmail(e.target.value);
+
+  const onNameChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setDisplayName(e.target.value);
+
+  const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setPassword(e.target.value);
+
+  const signup = React.useCallback(async () => {
     setError(null);
     setOk(false);
-
-    const trimmedEmail = email.trim();
-    const normalizedName = normalizeName(displayName);
 
     if (!normalizedName || normalizedName.length < 2) {
       setError("Skriv venligst dit navn (mindst 2 tegn).");
@@ -56,12 +71,20 @@ export default function SignupCard() {
       // AuthProvider will create users/{uid} on first login if it doesn't exist.
 
       setOk(true);
-    } catch (e: any) {
-      setError(e?.message || "Kunne ikke oprette bruger.");
+    } catch (e: unknown) {
+      setError(errorMessage(e, "Kunne ikke oprette bruger."));
     } finally {
       setBusy(false);
     }
-  };
+  }, [normalizedName, trimmedEmail, password]);
+
+  const buttonLabel = busy ? "Opretter…" : "Opret";
+  const buttonClass = [
+    "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
+    canSubmit
+      ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
+      : "cursor-not-allowed bg-slate-200 text-slate-500",
+  ].join(" ");
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -76,11 +99,11 @@ export default function SignupCard() {
         </label>
         <input
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={onEmailChange}
           type="email"
           autoComplete="email"
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           placeholder="name@example.com"
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         />
       </div>
 
@@ -90,11 +113,11 @@ export default function SignupCard() {
         </label>
         <input
           value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
+          onChange={onNameChange}
           type="text"
           autoComplete="name"
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           placeholder="Dit navn"
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         />
         {!nameOk && displayName.length > 0 ? (
           <p className="mt-2 text-xs text-red-600">
@@ -109,11 +132,11 @@ export default function SignupCard() {
         </label>
         <input
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={onPasswordChange}
           type="password"
           autoComplete="new-password"
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           placeholder="Mindst 6 tegn"
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         />
       </div>
 
@@ -121,14 +144,9 @@ export default function SignupCard() {
         type="button"
         onClick={signup}
         disabled={!canSubmit}
-        className={[
-          "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
-          canSubmit
-            ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
-            : "cursor-not-allowed bg-slate-200 text-slate-500",
-        ].join(" ")}
+        className={buttonClass}
       >
-        {busy ? "Opretter…" : "Opret"}
+        {buttonLabel}
       </button>
 
       {ok ? (

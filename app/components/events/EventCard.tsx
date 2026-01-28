@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import type { Event } from "@/types/event";
-import { ROLE, isAdmin, type Role } from "@/types/rsvp";
+import { isAdmin } from "@/types/rsvp";
 
 import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
@@ -15,6 +15,7 @@ import { useAuth } from "@/app/components/auth/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
 import type { RSVPAttendance } from "@/types/rsvpIndex";
+import { canAccessEventDetails } from "@/utils/eventAccess";
 
 type Props = {
   event: Event;
@@ -24,9 +25,6 @@ type Props = {
   onChangeComment: (eventId: string, comment: string) => void;
   onDelete?: (event: Event) => void; // ✅ delete hook (admin only)
 };
-
-// Local UI policy: who can open details
-const CAN_OPEN_DETAILS = new Set<Role>([ROLE.Admin, ROLE.Logfører]);
 
 export default function EventCard({
   event,
@@ -41,8 +39,12 @@ export default function EventCard({
   const { user, role, loading } = useAuth();
 
   const admin = isAdmin(role);
+
+  // ✅ Link only works if user is allowed for this event
   const canOpenDetails =
-    !!user && !loading && !!role && CAN_OPEN_DETAILS.has(role);
+    !!user &&
+    !loading &&
+    canAccessEventDetails({ eventId: event.id, uid: user.uid, role });
 
   const closeNow = () => {
     setEventClosed(event.id, true);
@@ -60,7 +62,6 @@ export default function EventCard({
 
   return (
     <div className="relative flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-stretch">
-      {/* Admin delete X */}
       {admin && onDelete && (
         <button
           type="button"
@@ -85,9 +86,7 @@ export default function EventCard({
           ) : (
             <span
               className="text-lg font-semibold text-slate-900"
-              title={
-                !user || loading ? "" : "Kun Admin/Logfører kan åbne detaljer"
-              }
+              title={!user || loading ? "" : "Kun godkendte kan åbne detaljer"}
             >
               {event.title}
             </span>
@@ -123,10 +122,8 @@ export default function EventCard({
         )}
       </div>
 
-      {/* Right side controls */}
       {admin ? (
         <div className="flex shrink-0 flex-col justify-center gap-2 sm:items-end">
-          {/* ✅ Use shared StateButton (green=open, red=closed) */}
           {event.open ? (
             <OpenCloseButton
               target="close"

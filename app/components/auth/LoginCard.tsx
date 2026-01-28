@@ -2,8 +2,13 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { ROLE, ROLES, CREW_SUBROLES } from "@/types/rsvp";
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import {
+  ROLE,
+  ROLES,
+  CREW_SUBROLES,
+  type Role,
+  type CrewSubRole,
+} from "@/types/rsvp";
 import { useLogin } from "./useLogin";
 
 export default function LoginCard() {
@@ -18,6 +23,27 @@ export default function LoginCard() {
     error,
   } = useLogin();
 
+  const isCrew = role === ROLE.Crew;
+
+  const onRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    onChangeRole(e.target.value as Role);
+  };
+
+  const onCrewRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setCrewRole(e.target.value as CrewSubRole);
+  };
+
+  const disabled = !canLogin || busy;
+
+  const buttonClass = [
+    "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
+    !disabled
+      ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
+      : "cursor-not-allowed bg-slate-200 text-slate-500",
+  ].join(" ");
+
+  const buttonLabel = busy ? "Logger ind…" : "Login";
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <h1 className="text-xl font-semibold text-slate-900">Login</h1>
@@ -30,7 +56,7 @@ export default function LoginCard() {
         </label>
         <select
           value={role}
-          onChange={(e) => onChangeRole(e.target.value as Role)}
+          onChange={onRoleChange}
           className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         >
           <option value="" disabled>
@@ -45,14 +71,14 @@ export default function LoginCard() {
       </div>
 
       {/* Crew subrole */}
-      {role === ROLE.Crew && (
+      {isCrew && (
         <div className="mt-4">
           <label className="block text-sm font-medium text-slate-900">
             Crew-rolle
           </label>
           <select
             value={crewRole}
-            onChange={(e) => setCrewRole(e.target.value as CrewSubRole)}
+            onChange={onCrewRoleChange}
             className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           >
             <option value="" disabled>
@@ -70,18 +96,13 @@ export default function LoginCard() {
       <button
         type="button"
         onClick={login}
-        disabled={!canLogin || busy}
-        className={[
-          "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
-          canLogin && !busy
-            ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
-            : "cursor-not-allowed bg-slate-200 text-slate-500",
-        ].join(" ")}
+        disabled={disabled}
+        className={buttonClass}
       >
-        {busy ? "Logger ind…" : "Login"}
+        {buttonLabel}
       </button>
 
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       {/* Actions */}
       <div className="mt-4 flex items-center justify-between text-sm">

@@ -11,26 +11,44 @@ export default function ForgotPasswordCard() {
   const [error, setError] = React.useState<string | null>(null);
   const [sent, setSent] = React.useState(false);
 
-  const canSubmit = email.trim().length > 3 && !busy;
+  const trimmedEmail = email.trim();
+  const canSubmit = trimmedEmail.length > 3 && !busy;
 
-  const submit = async () => {
+  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
+  const submit = React.useCallback(async () => {
     setError(null);
     setSent(false);
     setBusy(true);
 
     try {
-      if (!auth) {
-        throw new Error("Auth not available");
-      }
-
-      await sendPasswordResetEmail(auth, email.trim());
+      if (!auth) throw new Error("Auth not available");
+      await sendPasswordResetEmail(auth, trimmedEmail);
       setSent(true);
-    } catch (e: any) {
-      setError(e?.message || "Kunne ikke sende reset email.");
+    } catch (e: unknown) {
+      const msg =
+        e && typeof e === "object" && "message" in e
+          ? String((e as any).message)
+          : "Kunne ikke sende reset email.";
+      setError(msg || "Kunne ikke sende reset email.");
     } finally {
       setBusy(false);
     }
+  }, [trimmedEmail]);
+
+  const onEmailKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && canSubmit) submit();
   };
+
+  const buttonLabel = busy ? "Sender…" : "Send reset link";
+  const buttonClass = [
+    "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
+    canSubmit
+      ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
+      : "cursor-not-allowed bg-slate-200 text-slate-500",
+  ].join(" ");
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -47,13 +65,11 @@ export default function ForgotPasswordCard() {
         <input
           type="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={onEmailChange}
+          onKeyDown={onEmailKeyDown}
           autoComplete="email"
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           placeholder="name@example.com"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && canSubmit) submit();
-          }}
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         />
       </div>
 
@@ -61,14 +77,9 @@ export default function ForgotPasswordCard() {
         type="button"
         onClick={submit}
         disabled={!canSubmit}
-        className={[
-          "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
-          canSubmit
-            ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
-            : "cursor-not-allowed bg-slate-200 text-slate-500",
-        ].join(" ")}
+        className={buttonClass}
       >
-        {busy ? "Sender…" : "Send reset link"}
+        {buttonLabel}
       </button>
 
       {sent && (

@@ -8,22 +8,37 @@ import { auth, db } from "@/app/lib/firebase/client";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import { devRoleFromEmail } from "@/app/components/auth/devRoleFromEmail";
 
+type UserDoc = {
+  role?: Role | null;
+  subRole?: CrewSubRole | null;
+  email?: string | null;
+  displayName?: string | null;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
+
 type AuthState = {
   user: User | null;
   role: Role | null;
   subRole: CrewSubRole | null;
-  displayName: string | null; // ✅ ADD
+  displayName: string | null;
   loading: boolean;
   logout: () => Promise<void>;
 };
 
 const AuthContext = React.createContext<AuthState | null>(null);
 
+function cleanName(v: unknown): string | null {
+  if (typeof v !== "string") return null;
+  const s = v.trim();
+  return s.length ? s : null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
   const [role, setRole] = React.useState<Role | null>(null);
   const [subRole, setSubRole] = React.useState<CrewSubRole | null>(null);
-  const [displayName, setDisplayName] = React.useState<string | null>(null); // ✅ ADD
+  const [displayName, setDisplayName] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -46,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
         setRole(null);
         setSubRole(null);
-        setDisplayName(null); // ✅ ADD
+        setDisplayName(null);
         setLoading(false);
         return;
       }
@@ -59,38 +74,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!snap.exists()) {
           const seeded = devRoleFromEmail(u.email);
 
-          const safeEmail = u.email ?? null;
-          const safeName = u.displayName?.trim() ? u.displayName.trim() : null;
+          const safeEmail = typeof u.email === "string" ? u.email : null;
+          const nameFromAuth = cleanName(u.displayName);
 
           await setDoc(ref, {
             role: seeded?.role ?? null,
             subRole: seeded?.subRole ?? null,
             email: safeEmail,
-            displayName: safeName,
+            displayName: nameFromAuth,
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
-          });
+          } satisfies UserDoc);
 
-          // ✅ expose something immediately (even before next snapshot tick)
-          setRole((seeded?.role ?? null) as Role | null);
-          setSubRole((seeded?.subRole ?? null) as CrewSubRole | null);
-          setDisplayName(safeName); // ✅ ADD
+          // expose immediately (before next snapshot tick)
+          setRole(seeded?.role ?? null);
+          setSubRole(seeded?.subRole ?? null);
+          setDisplayName(nameFromAuth);
           setLoading(false);
           return;
         }
 
-        const data = snap.data() as any;
+        const data = snap.data() as UserDoc;
 
-        setRole((data?.role ?? null) as Role | null);
-        setSubRole((data?.subRole ?? null) as CrewSubRole | null);
+        setRole(data.role ?? null);
+        setSubRole(data.subRole ?? null);
 
-        // ✅ Prefer Firestore displayName, fallback to Firebase Auth displayName
-        const nameFromDoc =
-          typeof data?.displayName === "string" ? data.displayName.trim() : "";
-        const nameFromAuth = u.displayName?.trim() ?? "";
+        // Prefer Firestore displayName, fallback to Firebase Auth displayName
+        const nameFromDoc = cleanName(data.displayName);
+        const nameFromAuth = cleanName(u.displayName);
 
-        setDisplayName(nameFromDoc || nameFromAuth || null);
-
+        setDisplayName(nameFromDoc ?? nameFromAuth ?? null);
         setLoading(false);
       });
     });
@@ -101,18 +114,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const logout = async () => {
+  const logout = React.useCallback(async () => {
     if (!auth) return;
     await auth.signOut();
-  };
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{ user, role, subRole, displayName, loading, logout }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = React.useMemo<AuthState>(
+    () => ({ user, role, subRole, displayName, loading, logout }),
+    [user, role, subRole, displayName, loading, logout]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
