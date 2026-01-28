@@ -16,6 +16,7 @@ import { getAllEvents } from "@/utils/eventsStore";
 import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
 import ApprovedUsers from "@/components/events/ApprovedUsers";
 import { ROLE, type Role } from "@/types/rsvp";
+import { canAccessEventDetails } from "@/utils/eventAccess";
 
 const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
 
@@ -38,19 +39,43 @@ export default function EventDetailPage() {
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
   const [hydrated, setHydrated] = React.useState(false);
 
+  // ✅ Same rerender trigger as ApprovedUsers so approval state stays fresh
+  const [tick, setTick] = React.useState(0);
+  React.useEffect(() => {
+    const rerender = () => setTick((t) => t + 1);
+    window.addEventListener("events-changed", rerender);
+    window.addEventListener("requests-changed", rerender);
+    return () => {
+      window.removeEventListener("events-changed", rerender);
+      window.removeEventListener("requests-changed", rerender);
+    };
+  }, []);
+
   const event: Event | undefined = React.useMemo(() => {
     return getAllEvents().find((e) => e.id === id);
   }, [id]);
 
+  const allowed = React.useMemo(() => {
+    return canAccessEventDetails({ eventId: id, uid, role });
+    // tick forces recompute when approvals/requests update
+  }, [id, uid, role, tick]);
+
+  // ✅ Block UI while we decide access
+  const accessResolved = !loading && !!uid;
+  const shouldBlock = accessResolved && !allowed;
+
+  React.useEffect(() => {
+    if (!accessResolved) return;
+    if (!allowed) router.replace("/events");
+  }, [accessResolved, allowed, router]);
+
   // ✅ Load incidents ONCE per eventId (shared log)
-  // Includes legacy migration from per-user key -> shared key
   React.useEffect(() => {
     if (loading) return;
 
     const sharedKey = incidentStorageKey(id);
     const rawShared = localStorage.getItem(sharedKey);
 
-    // 1) Preferred: shared event log
     if (rawShared) {
       try {
         setIncidents(JSON.parse(rawShared) as Incident[]);
@@ -61,7 +86,6 @@ export default function EventDetailPage() {
       return;
     }
 
-    // 2) Legacy: per-user log (migrate if present)
     if (uid) {
       const legacyKey = legacyIncidentStorageKey(id, uid);
       const rawLegacy = localStorage.getItem(legacyKey);
@@ -70,8 +94,6 @@ export default function EventDetailPage() {
         try {
           const legacyIncidents = JSON.parse(rawLegacy) as Incident[];
           setIncidents(legacyIncidents);
-
-          // migrate to shared key so everyone sees it
           localStorage.setItem(sharedKey, JSON.stringify(legacyIncidents));
         } catch {
           setIncidents([]);
@@ -116,7 +138,13 @@ export default function EventDetailPage() {
       unauthorizedRedirectTo="/events"
       description="Du har ikke adgang til denne kamp."
     >
-      {!event ? (
+      {shouldBlock ? (
+        <main className="mx-auto max-w-4xl p-6">
+          <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
+            Ingen adgang…
+          </div>
+        </main>
+      ) : !event ? (
         <main className="mx-auto max-w-4xl p-6">
           <h1 className="text-2xl font-bold text-slate-900">
             Event ikke fundet
