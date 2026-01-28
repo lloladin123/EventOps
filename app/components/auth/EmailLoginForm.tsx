@@ -15,6 +15,26 @@ export default function EmailLoginForm() {
     error,
   } = useEmailLogin();
 
+  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setEmail(e.target.value);
+
+  const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setPassword(e.target.value);
+
+  const onPasswordKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && canLogin) login();
+  };
+
+  const disabled = !canLogin || busy;
+  const buttonLabel = busy ? "Logger ind…" : "Login";
+
+  const buttonClass = [
+    "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
+    !disabled
+      ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
+      : "cursor-not-allowed bg-slate-200 text-slate-500",
+  ].join(" ");
+
   return (
     <>
       <p className="mt-1 text-sm text-slate-600">
@@ -27,11 +47,11 @@ export default function EmailLoginForm() {
         </label>
         <input
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={onEmailChange}
           type="email"
           autoComplete="email"
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           placeholder="name@example.com"
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         />
       </div>
 
@@ -41,32 +61,25 @@ export default function EmailLoginForm() {
         </label>
         <input
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={onPasswordChange}
+          onKeyDown={onPasswordKeyDown}
           type="password"
           autoComplete="current-password"
-          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           placeholder="••••••••"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && canLogin) login();
-          }}
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         />
       </div>
 
       <button
         type="button"
         onClick={login}
-        disabled={!canLogin || busy}
-        className={[
-          "mt-6 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
-          canLogin && !busy
-            ? "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]"
-            : "cursor-not-allowed bg-slate-200 text-slate-500",
-        ].join(" ")}
+        disabled={disabled}
+        className={buttonClass}
       >
-        {busy ? "Logger ind…" : "Login"}
+        {buttonLabel}
       </button>
 
-      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
     </>
   );
 }
