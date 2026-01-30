@@ -11,22 +11,16 @@ import IncidentList from "@/components/events/IncidentList";
 import LoginRedirect from "@/components/layout/LoginRedirect";
 import ApprovedUsers from "@/components/events/ApprovedUsers";
 import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
+import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { ROLE, type Role } from "@/types/rsvp";
 import { canAccessEventDetails } from "@/utils/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
+import { subscribeIncidents } from "@/app/lib/firestore/incidents";
 
 const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
-
-function incidentStorageKey(eventId: string) {
-  return `incidents:${eventId}`;
-}
-
-function legacyIncidentStorageKey(eventId: string, uid: string) {
-  return `incidents:${eventId}:uid:${uid}`;
-}
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -41,9 +35,12 @@ export default function EventDetailPage() {
   const [eventLoading, setEventLoading] = React.useState(true);
   const [eventError, setEventError] = React.useState<string | null>(null);
 
-  // incidents (still local for now)
+  // 🔥 Firestore incidents
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
-  const [hydrated, setHydrated] = React.useState(false);
+  const [incidentsLoading, setIncidentsLoading] = React.useState(true);
+  const [incidentsError, setIncidentsError] = React.useState<string | null>(
+    null
+  );
 
   // keep approval state fresh
   const [tick, setTick] = React.useState(0);
@@ -56,6 +53,19 @@ export default function EventDetailPage() {
       window.removeEventListener("requests-changed", rerender);
     };
   }, []);
+
+  // access control
+  const allowed = React.useMemo(() => {
+    return canAccessEventDetails({ eventId: id, uid, role });
+  }, [id, uid, role, tick]);
+
+  const accessResolved = !loading && !!uid;
+  const shouldBlock = accessResolved && !allowed;
+
+  React.useEffect(() => {
+    if (!accessResolved) return;
+    if (!allowed) router.replace("/events");
+  }, [accessResolved, allowed, router]);
 
   // 🔥 Subscribe to single event
   React.useEffect(() => {
@@ -79,77 +89,53 @@ export default function EventDetailPage() {
     return () => unsub();
   }, [id]);
 
-  // access control
-  const allowed = React.useMemo(() => {
-    return canAccessEventDetails({ eventId: id, uid, role });
-  }, [id, uid, role, tick]);
-
-  const accessResolved = !loading && !!uid;
-  const shouldBlock = accessResolved && !allowed;
-
+  // 🔥 Subscribe to incidents (only when allowed + have eventId)
   React.useEffect(() => {
+    // Don’t even try until auth resolved and user is allowed
     if (!accessResolved) return;
-    if (!allowed) router.replace("/events");
-  }, [accessResolved, allowed, router]);
+    if (!allowed) return;
 
-  // 🔹 Load incidents (local)
-  React.useEffect(() => {
-    if (loading) return;
+    setIncidentsLoading(true);
+    setIncidentsError(null);
 
-    const sharedKey = incidentStorageKey(id);
-    const rawShared = localStorage.getItem(sharedKey);
-
-    if (rawShared) {
-      try {
-        setIncidents(JSON.parse(rawShared) as Incident[]);
-      } catch {
-        setIncidents([]);
-      }
-      setHydrated(true);
-      return;
-    }
-
-    if (uid) {
-      const legacyKey = legacyIncidentStorageKey(id, uid);
-      const rawLegacy = localStorage.getItem(legacyKey);
-
-      if (rawLegacy) {
-        try {
-          const legacyIncidents = JSON.parse(rawLegacy) as Incident[];
-          setIncidents(legacyIncidents);
-          localStorage.setItem(sharedKey, JSON.stringify(legacyIncidents));
-        } catch {
-          setIncidents([]);
-        }
-      } else {
-        setIncidents([]);
-      }
-    } else {
-      setIncidents([]);
-    }
-
-    setHydrated(true);
-  }, [id, uid, loading]);
-
-  React.useEffect(() => {
-    if (loading || !hydrated) return;
-    localStorage.setItem(incidentStorageKey(id), JSON.stringify(incidents));
-  }, [id, loading, hydrated, incidents]);
-
-  const onAddIncident = (incident: Incident) => {
-    setIncidents((prev) => [
-      {
-        ...incident,
-        createdByUid: uid,
-        createdByRole: role ?? null,
+    const unsub = subscribeIncidents(
+      id,
+      (rows) => {
+        setIncidents(rows);
+        setIncidentsLoading(false);
       },
-      ...prev,
-    ]);
-  };
+      (err) => {
+        setIncidentsLoading(false);
+        setIncidentsError(
+          err instanceof Error ? err.message : "Kunne ikke hente hændelser"
+        );
+      }
+    );
 
-  const onDeleteIncident = (incidentId: string) => {
-    setIncidents((prev) => prev.filter((x) => x.id !== incidentId));
-  };
+    return () => unsub();
+  }, [id, accessResolved, allowed]);
+
+  // ✅ With Firestore subscribe, we don’t need optimistic local state.
+  // Keep this as a no-op to avoid touching IncidentForm props right now.
+  const onAddIncident = React.useCallback((_incident: Incident) => {
+    // Firestore snapshot will update the list automatically.
+  }, []);
+
+  const onDeleteIncident = React.useCallback(
+    (incidentId: string) => {
+      if (!event) return;
+
+      const ok = window.confirm("Slet hændelsen?");
+      if (!ok) return;
+
+      void deleteIncidentFirestore(event.id, incidentId).catch((err) => {
+        alert(
+          err instanceof Error ? err.message : "Kunne ikke slette hændelse"
+        );
+      });
+    },
+    [event]
+  );
 
   return (
     <LoginRedirect
@@ -197,11 +183,23 @@ export default function EventDetailPage() {
           <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
 
           <div className="mt-4 space-y-3">
-            <IncidentList
-              incidents={incidents}
-              onEdit={() => alert("TODO: edit incident")}
-              onDelete={onDeleteIncident}
-            />
+            {incidentsError ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+                Kunne ikke hente hændelser: {incidentsError}
+              </div>
+            ) : null}
+
+            {incidentsLoading ? (
+              <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
+                Loader hændelser…
+              </div>
+            ) : (
+              <IncidentList
+                incidents={incidents}
+                onEdit={() => alert("TODO: edit incident")}
+                onDelete={onDeleteIncident}
+              />
+            )}
 
             <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
           </div>
