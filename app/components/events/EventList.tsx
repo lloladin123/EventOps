@@ -13,41 +13,25 @@ import { isEventOpen } from "@/utils/eventStatus";
 import { setEventDeleted } from "@/utils/eventDeleted";
 import { useRsvps } from "@/utils/useRsvps";
 import { useUiToggle } from "@/utils/useUiToggle";
-import { getAllEvents } from "@/utils/eventsStore";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 import type { RSVPAttendance } from "@/types/rsvpIndex";
+import { useEventsFirestore } from "@/utils/useEventsFirestore";
 
 export default function EventList() {
-  const { role, loading } = useAuth();
+  const { role, loading: authLoading } = useAuth();
   const admin = isAdmin(role);
 
-  // minimizers
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
 
-  // RSVP state + handlers (role comes from AuthProvider inside the hook)
   const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps();
 
-  // events state (still localStorage)
-  const [events, setEvents] = React.useState<Event[]>(() => getAllEvents());
+  // ✅ Firestore events
+  const { events, loading: eventsLoading, error } = useEventsFirestore();
 
-  // reload on close/reopen/add/delete
-  React.useEffect(() => {
-    const reload = () => setEvents(getAllEvents());
-
-    reload();
-    window.addEventListener("events-changed", reload);
-    window.addEventListener("storage", reload);
-
-    return () => {
-      window.removeEventListener("events-changed", reload);
-      window.removeEventListener("storage", reload);
-    };
-  }, []);
-
-  // delete (persist) + memory-only undo stack event
+  // delete (still your existing local util for now)
   const onDeleteEvent = React.useCallback((event: Event) => {
     setEventDeleted(event.id, true);
     window.dispatchEvent(
@@ -55,16 +39,29 @@ export default function EventList() {
     );
   }, []);
 
-  // grouped lists
-  const openEvents = events.filter((e) => isEventOpen(e));
-  const closedEvents = events.filter((e) => !isEventOpen(e));
+  // Filter out deleted if your docs include it (safe if undefined)
+  const visibleEvents = events.filter((e) => !e.deleted);
 
-  // Optional: prevent flicker while auth loads (keeps UI stable)
-  if (loading) return null;
+  const openEvents = visibleEvents.filter((e) => isEventOpen(e));
+  const closedEvents = visibleEvents.filter((e) => !isEventOpen(e));
+
+  if (authLoading) return null;
+
+  // optional: you can style this however you want
+  if (eventsLoading) return null;
+
+  if (error) {
+    return (
+      <main className="mx-auto max-w-4xl space-y-8 p-6">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
+          Kunne ikke hente events: {error}
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-4xl space-y-8 p-6">
-      {/* Global delete undo stack (admin only) */}
       <DeletedEventsUndoStack visible={admin} />
 
       <EventSection
@@ -73,7 +70,6 @@ export default function EventList() {
         minimized={openMinimized}
         setMinimized={setOpenMinimized}
       >
-        {/* Undo stack for accidental closes */}
         <ClosedEventsUndoStack visible={admin} />
 
         {openEvents.length === 0 ? (
@@ -107,7 +103,6 @@ export default function EventList() {
           minimized={closedMinimized}
           setMinimized={setClosedMinimized}
         >
-          {/* Undo stack for accidental opens */}
           <OpenedEventsUndoStack visible={admin} />
 
           {closedEvents.length === 0 ? (

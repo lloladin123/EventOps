@@ -7,20 +7,44 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import type { Event } from "@/types/event";
 
-// Subscribe to all events (adjust ordering field to whatever you have)
-export function subscribeEvents(onData: (events: Event[]) => void) {
-  const q = query(collection(db, "events"), orderBy("date", "asc")); // change "date" if needed
+export type EventDoc = Event & {
+  deleted?: boolean;
+  createdAt?: unknown;
+  updatedAt?: unknown;
+};
 
-  return onSnapshot(q, (snap) => {
-    const rows = snap.docs.map((d) => ({
-      id: d.id,
-      ...(d.data() as any),
-    })) as Event[];
+// Subscribe to all events
+export function subscribeEvents(
+  onData: (events: EventDoc[]) => void,
+  onError?: (err: unknown) => void
+) {
+  const q = query(collection(db, "events"), orderBy("date", "asc"));
 
-    onData(rows);
+  return onSnapshot(
+    q,
+    (snap) => {
+      const rows = snap.docs.map((d) => ({
+        ...(d.data() as any),
+        id: d.id, // doc id always wins
+      })) as EventDoc[];
+
+      onData(rows);
+    },
+    (err) => onError?.(err)
+  );
+}
+
+// Create event
+export async function createEventFirestore(event: Event) {
+  await setDoc(doc(db, "events", event.id), {
+    ...event,
+    deleted: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   });
 }
 
