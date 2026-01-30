@@ -3,20 +3,20 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 
-import type { Event } from "@/types/event";
 import type { Incident } from "@/types/incident";
 
 import EventHeader from "@/components/events/EventHeader";
 import IncidentForm from "@/components/events/IncidentForm";
 import IncidentList from "@/components/events/IncidentList";
 import LoginRedirect from "@/components/layout/LoginRedirect";
+import ApprovedUsers from "@/components/events/ApprovedUsers";
+import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
-import { getAllEvents } from "@/utils/eventsStore";
-import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
-import ApprovedUsers from "@/components/events/ApprovedUsers";
 import { ROLE, type Role } from "@/types/rsvp";
 import { canAccessEventDetails } from "@/utils/eventAccess";
+
+import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 
 const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
 
@@ -36,10 +36,16 @@ export default function EventDetailPage() {
   const { user, role, loading } = useAuth();
   const uid = user?.uid ?? null;
 
+  // 🔥 Firestore event
+  const [event, setEvent] = React.useState<EventDoc | null>(null);
+  const [eventLoading, setEventLoading] = React.useState(true);
+  const [eventError, setEventError] = React.useState<string | null>(null);
+
+  // incidents (still local for now)
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
   const [hydrated, setHydrated] = React.useState(false);
 
-  // ✅ Same rerender trigger as ApprovedUsers so approval state stays fresh
+  // keep approval state fresh
   const [tick, setTick] = React.useState(0);
   React.useEffect(() => {
     const rerender = () => setTick((t) => t + 1);
@@ -51,16 +57,33 @@ export default function EventDetailPage() {
     };
   }, []);
 
-  const event: Event | undefined = React.useMemo(() => {
-    return getAllEvents().find((e) => e.id === id);
+  // 🔥 Subscribe to single event
+  React.useEffect(() => {
+    setEventLoading(true);
+    setEventError(null);
+
+    const unsub = subscribeEvent(
+      id,
+      (e) => {
+        setEvent(e);
+        setEventLoading(false);
+      },
+      (err) => {
+        setEventLoading(false);
+        setEventError(
+          err instanceof Error ? err.message : "Kunne ikke hente event"
+        );
+      }
+    );
+
+    return () => unsub();
   }, [id]);
 
+  // access control
   const allowed = React.useMemo(() => {
     return canAccessEventDetails({ eventId: id, uid, role });
-    // tick forces recompute when approvals/requests update
   }, [id, uid, role, tick]);
 
-  // ✅ Block UI while we decide access
   const accessResolved = !loading && !!uid;
   const shouldBlock = accessResolved && !allowed;
 
@@ -69,7 +92,7 @@ export default function EventDetailPage() {
     if (!allowed) router.replace("/events");
   }, [accessResolved, allowed, router]);
 
-  // ✅ Load incidents ONCE per eventId (shared log)
+  // 🔹 Load incidents (local)
   React.useEffect(() => {
     if (loading) return;
 
@@ -108,24 +131,20 @@ export default function EventDetailPage() {
     setHydrated(true);
   }, [id, uid, loading]);
 
-  // ✅ Persist shared incidents after initial hydration
   React.useEffect(() => {
-    if (loading) return;
-    if (!hydrated) return;
-
-    const key = incidentStorageKey(id);
-    localStorage.setItem(key, JSON.stringify(incidents));
+    if (loading || !hydrated) return;
+    localStorage.setItem(incidentStorageKey(id), JSON.stringify(incidents));
   }, [id, loading, hydrated, incidents]);
 
   const onAddIncident = (incident: Incident) => {
-    const withMeta: Incident = {
-      ...incident,
-      // @ts-expect-error optional meta fields
-      createdByUid: uid,
-      createdByRole: role ?? null,
-    };
-
-    setIncidents((prev) => [withMeta, ...prev]);
+    setIncidents((prev) => [
+      {
+        ...incident,
+        createdByUid: uid,
+        createdByRole: role ?? null,
+      },
+      ...prev,
+    ]);
   };
 
   const onDeleteIncident = (incidentId: string) => {
@@ -142,6 +161,18 @@ export default function EventDetailPage() {
         <main className="mx-auto max-w-4xl p-6">
           <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
             Ingen adgang…
+          </div>
+        </main>
+      ) : eventLoading ? (
+        <main className="mx-auto max-w-4xl p-6">
+          <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
+            Loader…
+          </div>
+        </main>
+      ) : eventError ? (
+        <main className="mx-auto max-w-4xl p-6">
+          <div className="rounded-2xl border bg-white p-4 text-sm text-rose-700">
+            {eventError}
           </div>
         </main>
       ) : !event ? (
@@ -168,10 +199,7 @@ export default function EventDetailPage() {
           <div className="mt-4 space-y-3">
             <IncidentList
               incidents={incidents}
-              onEdit={(incident) => {
-                console.log("Edit incident:", incident);
-                alert("TODO: open edit UI for this incident");
-              }}
+              onEdit={() => alert("TODO: edit incident")}
               onDelete={onDeleteIncident}
             />
 

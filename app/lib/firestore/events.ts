@@ -62,3 +62,18 @@ export async function setEventOpen(eventId: string, open: boolean) {
     updatedAt: serverTimestamp(),
   });
 }
+
+export function subscribeEvent(
+  eventId: string,
+  onData: (event: EventDoc | null) => void,
+  onError?: (err: unknown) => void
+) {
+  return onSnapshot(
+    doc(db, "events", eventId),
+    (snap) => {
+      if (!snap.exists()) return onData(null);
+      onData({ ...(snap.data() as any), id: snap.id } as EventDoc);
+    },
+    (err) => onError?.(err)
+  );
+}
