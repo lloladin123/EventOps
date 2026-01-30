@@ -10,7 +10,7 @@ import EventComment from "./EventComment";
 import AttendanceButtons from "./AttendanceButtons";
 import { attendanceBadge } from "./attendanceBadge";
 import { cn } from "@/components/ui/classNames";
-import { setEventClosed } from "@/utils/eventStatus";
+import { setEventOpen } from "@/app/lib/firestore/events";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
@@ -47,14 +47,14 @@ export default function EventCard({
     canAccessEventDetails({ eventId: event.id, uid: user.uid, role });
 
   const closeNow = () => {
-    setEventClosed(event.id, true);
+    void setEventOpen(event.id, false);
     window.dispatchEvent(
       new CustomEvent<Event>("event-closed", { detail: event })
     );
   };
 
   const openNow = () => {
-    setEventClosed(event.id, false);
+    void setEventOpen(event.id, true);
     window.dispatchEvent(
       new CustomEvent<Event>("event-opened", { detail: event })
     );

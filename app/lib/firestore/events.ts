@@ -55,3 +55,10 @@ export async function softDeleteEvent(eventId: string, deleted: boolean) {
     updatedAt: serverTimestamp(),
   });
 }
+// Open/close event
+export async function setEventOpen(eventId: string, open: boolean) {
+  await updateDoc(doc(db, "events", eventId), {
+    open,
+    updatedAt: serverTimestamp(),
+  });
+}
