@@ -19,6 +19,7 @@ import { canAccessEventDetails } from "@/utils/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
+import CloseLog from "@/components/events/CloseLog";
 
 const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
 
@@ -180,7 +181,11 @@ export default function EventDetailPage() {
             <ApprovedUsers eventId={event.id} />
           </EventHeader>
 
-          <IncidentForm eventId={event.id} onAddIncident={onAddIncident} />
+          <IncidentForm
+            eventId={event.id}
+            eventOpen={event.open ?? true}
+            onAddIncident={onAddIncident}
+          />
 
           <div className="mt-4 space-y-3">
             {incidentsError ? (

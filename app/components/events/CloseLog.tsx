@@ -3,12 +3,13 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
+import { setEventOpen } from "@/app/lib/firestore/events";
 
 type Props = {
   eventId: string;
+  open: boolean; // ✅ source of truth comes from Firestore snapshot
   disabled?: boolean;
   onClosed?: () => void;
   onReopened?: () => void;
@@ -18,6 +19,7 @@ const WAIT_SECONDS = 5;
 
 export default function CloseLog({
   eventId,
+  open,
   disabled,
   onClosed,
   onReopened,
@@ -25,28 +27,12 @@ export default function CloseLog({
   const router = useRouter();
   const { role, loading } = useAuth();
 
-  const [closed, setClosed] = React.useState(false);
+  const closed = !open;
 
   const [openCloseModal, setOpenCloseModal] = React.useState(false);
   const [openReopenModal, setOpenReopenModal] = React.useState(false);
-
   const [secondsLeft, setSecondsLeft] = React.useState(WAIT_SECONDS);
-
-  // keep closed state in sync (localStorage-based)
-  React.useEffect(() => {
-    const read = () => {
-      setClosed(isEventClosed(eventId));
-    };
-
-    read();
-    window.addEventListener("events-changed", read);
-    window.addEventListener("storage", read);
-
-    return () => {
-      window.removeEventListener("events-changed", read);
-      window.removeEventListener("storage", read);
-    };
-  }, [eventId]);
+  const [saving, setSaving] = React.useState(false);
 
   // countdown for close-confirm modal
   React.useEffect(() => {
@@ -67,27 +53,36 @@ export default function CloseLog({
     return () => clearInterval(interval);
   }, [openCloseModal]);
 
-  const closeLog = () => {
-    setEventClosed(eventId, true);
-    setClosed(true); // instant UI update
-    window.dispatchEvent(new CustomEvent("events-changed"));
-    onClosed?.();
-    setOpenCloseModal(false);
-    router.push("/events");
-  };
-
-  const reopenLog = () => {
-    setEventClosed(eventId, false);
-    setClosed(false); // instant UI update
-    window.dispatchEvent(new CustomEvent("events-changed"));
-    onReopened?.();
-    setOpenReopenModal(false);
-    router.push("/events");
-  };
-
   const canConfirmClose = secondsLeft === 0;
 
-  // Optional: while auth is loading, don’t show admin-only actions incorrectly
+  const closeLog = async () => {
+    try {
+      setSaving(true);
+      await setEventOpen(eventId, false); // ✅ close == open:false
+      onClosed?.();
+      setOpenCloseModal(false);
+      router.push("/events");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Kunne ikke lukke log");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reopenLog = async () => {
+    try {
+      setSaving(true);
+      await setEventOpen(eventId, true); // ✅ reopen == open:true
+      onReopened?.();
+      setOpenReopenModal(false);
+      router.push("/events");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Kunne ikke genåbne log");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const showReopen = !loading && closed && isAdmin(role);
 
   return (
@@ -109,11 +104,11 @@ export default function CloseLog({
             {!closed && (
               <button
                 type="button"
-                disabled={disabled}
+                disabled={disabled || saving}
                 onClick={() => setOpenCloseModal(true)}
                 className={[
                   "mt-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm sm:mt-0",
-                  disabled
+                  disabled || saving
                     ? "cursor-not-allowed bg-slate-200 text-slate-500"
                     : "bg-red-600 text-white hover:bg-red-700",
                 ].join(" ")}
@@ -125,8 +120,12 @@ export default function CloseLog({
             {showReopen && (
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => setOpenReopenModal(true)}
-                className="mt-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50 sm:mt-0"
+                className={[
+                  "mt-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50 sm:mt-0",
+                  saving ? "cursor-not-allowed opacity-60" : "",
+                ].join(" ")}
               >
                 Genåbn log
               </button>
@@ -159,6 +158,7 @@ export default function CloseLog({
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => setOpenCloseModal(false)}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
               >
@@ -167,16 +167,20 @@ export default function CloseLog({
 
               <button
                 type="button"
-                disabled={!canConfirmClose}
+                disabled={!canConfirmClose || saving}
                 onClick={closeLog}
                 className={[
                   "rounded-xl px-4 py-2 text-sm font-semibold transition",
-                  canConfirmClose
+                  canConfirmClose && !saving
                     ? "bg-red-600 text-white hover:bg-red-700"
                     : "cursor-not-allowed bg-red-200 text-red-400",
                 ].join(" ")}
               >
-                {canConfirmClose ? "Ja, luk log" : `Vent ${secondsLeft}s`}
+                {saving
+                  ? "Lukker…"
+                  : canConfirmClose
+                  ? "Ja, luk log"
+                  : `Vent ${secondsLeft}s`}
               </button>
             </div>
           </div>
@@ -199,6 +203,7 @@ export default function CloseLog({
             <div className="mt-6 flex justify-end gap-2">
               <button
                 type="button"
+                disabled={saving}
                 onClick={() => setOpenReopenModal(false)}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
               >
@@ -207,10 +212,11 @@ export default function CloseLog({
 
               <button
                 type="button"
+                disabled={saving}
                 onClick={reopenLog}
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Ja, genåbn
+                {saving ? "Genåbner…" : "Ja, genåbn"}
               </button>
             </div>
           </div>

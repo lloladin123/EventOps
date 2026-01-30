@@ -7,7 +7,6 @@ import CloseLog from "@/components/events/CloseLog";
 import IncidentFormFields from "@/components/events/IncidentFormFields";
 import IncidentSubmitButton from "@/components/events/IncidentSubmitButton";
 
-import { isEventClosed } from "@/utils/eventStatus";
 import { nowHHmm, parseTimeToHHmm } from "@/utils/time";
 import { useAuthAndClosed } from "@/utils/useAuthAndClosed";
 import { useAuth } from "@/app/components/auth/AuthProvider";
@@ -15,16 +14,23 @@ import { createIncidentFirestore } from "@/app/lib/firestore/incidents";
 
 type Props = {
   eventId: string;
-  onAddIncident: (incident: Incident) => void; // keep optimistic UI
+  eventOpen: boolean; // ✅ Firestore truth
+  onAddIncident: (incident: Incident) => void;
 };
 
 function makeId() {
   return `inc_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
-export default function IncidentForm({ eventId, onAddIncident }: Props) {
-  const { loggedBy, closed, setClosed, canClose } = useAuthAndClosed(eventId);
+export default function IncidentForm({
+  eventId,
+  eventOpen,
+  onAddIncident,
+}: Props) {
+  const { loggedBy, canClose } = useAuthAndClosed(eventId); // keep for identity + permissions
   const { user, role } = useAuth();
+
+  const closed = !eventOpen; // ✅ single source of truth
 
   const [time, setTime] = React.useState<string>(nowHHmm());
   const [type, setType] = React.useState<IncidentType>("Fejl");
@@ -53,10 +59,8 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
     e.preventDefault();
     if (!canSubmit || !normalizedTime) return;
 
-    if (isEventClosed(eventId)) {
-      setClosed(true);
-      return;
-    }
+    // ✅ if it got closed while user had the form open
+    if (closed) return;
 
     setSaving(true);
     setError(null);
@@ -72,18 +76,16 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
       loesning: loesning.trim(),
       politiInvolveret,
       beredskabInvolveret,
-      files, // will be converted to metadata in createIncidentFirestore
-      createdAt: new Date().toISOString(), // UI-only; Firestore will store serverTimestamp
+      files,
+      createdAt: new Date().toISOString(),
     };
 
     try {
-      // ✅ write to Firestore
       await createIncidentFirestore(eventId, incident, {
         createdByUid: user?.uid ?? null,
         createdByRole: role ?? null,
       });
 
-      // ✅ optimistic UI still fine (later we’ll replace with subscribeIncidents)
       onAddIncident(incident);
 
       setTime(nowHHmm());
@@ -170,11 +172,8 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
 
       {canClose && (
         <div className="w-full">
-          <CloseLog
-            eventId={eventId}
-            disabled={closed}
-            onClosed={() => setClosed(true)}
-          />
+          {/* ✅ now CloseLog has what it needs */}
+          <CloseLog eventId={eventId} open={eventOpen} />
         </div>
       )}
     </>
