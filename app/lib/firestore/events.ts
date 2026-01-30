@@ -19,7 +19,7 @@ export type EventDoc = Event & {
 
 // Subscribe to all events
 export function subscribeEvents(
-  onData: (events: EventDoc[]) => void,
+  onData: (events: Array<Event & { deleted?: boolean }>) => void,
   onError?: (err: unknown) => void
 ) {
   const q = query(collection(db, "events"), orderBy("date", "asc"));
@@ -29,8 +29,8 @@ export function subscribeEvents(
     (snap) => {
       const rows = snap.docs.map((d) => ({
         ...(d.data() as any),
-        id: d.id, // doc id always wins
-      })) as EventDoc[];
+        id: d.id,
+      })) as Array<Event & { deleted?: boolean }>;
 
       onData(rows);
     },

@@ -10,7 +10,8 @@ import ClosedEventsUndoStack from "@/components/events/ClosedEventsUndoStack";
 import OpenedEventsUndoStack from "@/components/events/OpenedEventsUndoStack";
 
 import { isEventOpen } from "@/utils/eventStatus";
-import { setEventDeleted } from "@/utils/eventDeleted";
+import { softDeleteEvent } from "@/app/lib/firestore/events";
+
 import { useRsvps } from "@/utils/useRsvps";
 import { useUiToggle } from "@/utils/useUiToggle";
 
@@ -31,12 +32,13 @@ export default function EventList() {
   // ✅ Firestore events
   const { events, loading: eventsLoading, error } = useEventsFirestore();
 
-  // delete (still your existing local util for now)
   const onDeleteEvent = React.useCallback((event: Event) => {
-    setEventDeleted(event.id, true);
-    window.dispatchEvent(
-      new CustomEvent<Event>("event-deleted", { detail: event })
-    );
+    // fire-and-forget (button handler can't be async nicely)
+    void softDeleteEvent(event.id, true).then(() => {
+      window.dispatchEvent(
+        new CustomEvent<Event>("event-deleted", { detail: event })
+      );
+    });
   }, []);
 
   // Filter out deleted if your docs include it (safe if undefined)
