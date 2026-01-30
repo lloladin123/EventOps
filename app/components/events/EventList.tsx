@@ -44,8 +44,10 @@ export default function EventList() {
   // Filter out deleted if your docs include it (safe if undefined)
   const visibleEvents = events.filter((e) => !e.deleted);
 
-  const openEvents = visibleEvents.filter((e) => isEventOpen(e));
-  const closedEvents = visibleEvents.filter((e) => !isEventOpen(e));
+  const isOpen = (e: Event) => e.open ?? true;
+
+  const openEvents = visibleEvents.filter(isOpen);
+  const closedEvents = visibleEvents.filter((e) => !isOpen(e));
 
   if (authLoading) return null;
 
@@ -81,12 +83,11 @@ export default function EventList() {
         ) : (
           openEvents.map((event) => {
             const my = myRsvpFor(event.id);
-            const effectiveEvent = { ...event, open: isEventOpen(event) };
 
             return (
               <EventCard
                 key={event.id}
-                event={effectiveEvent}
+                event={event} // ✅ keep Firestore field
                 attendanceValue={my?.attendance as RSVPAttendance | undefined}
                 commentValue={my?.comment ?? ""}
                 onChangeAttendance={onChangeAttendance}
