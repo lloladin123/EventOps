@@ -20,6 +20,7 @@ import { canAccessEventDetails } from "@/utils/eventAccess";
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
 import CloseLog from "@/components/events/CloseLog";
+import EditIncidentModal from "@/components/events/EditIncidentModal";
 
 const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
 
@@ -42,6 +43,7 @@ export default function EventDetailPage() {
   const [incidentsError, setIncidentsError] = React.useState<string | null>(
     null
   );
+  const [editing, setEditing] = React.useState<Incident | null>(null);
 
   // keep approval state fresh
   const [tick, setTick] = React.useState(0);
@@ -201,8 +203,15 @@ export default function EventDetailPage() {
             ) : (
               <IncidentList
                 incidents={incidents}
-                onEdit={() => alert("TODO: edit incident")}
+                onEdit={(incident) => setEditing(incident)}
                 onDelete={onDeleteIncident}
+              />
+            )}
+            {editing && (
+              <EditIncidentModal
+                incident={editing}
+                eventId={event.id}
+                onClose={() => setEditing(null)}
               />
             )}
 

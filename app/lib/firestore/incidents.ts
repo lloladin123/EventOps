@@ -7,6 +7,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
   type DocumentData,
   type Timestamp,
 } from "firebase/firestore";
@@ -88,6 +89,17 @@ export async function deleteIncidentFirestore(
   incidentId: string
 ) {
   await deleteDoc(doc(db, "events", eventId, "incidents", incidentId));
+}
+
+export async function updateIncidentFirestore(
+  eventId: string,
+  incidentId: string,
+  patch: Partial<Incident>
+) {
+  await updateDoc(doc(db, "events", eventId, "incidents", incidentId), {
+    ...patch,
+    updatedAt: serverTimestamp(),
+  });
 }
 
 /**
