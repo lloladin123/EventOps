@@ -2,14 +2,18 @@
 "use client";
 
 import * as React from "react";
+import { subscribeEventRsvps, type RsvpDoc } from "@/app/lib/firestore/rsvps";
 import {
-  getAllLocalRsvps,
-  isApproved,
-} from "@/components/utils/rsvpIndex/index";
-import { RSVP_ATTENDANCE, RSVP_ATTENDANCE_LABEL } from "@/types/rsvpIndex";
-import type { RSVPRecord, RSVPAttendance } from "@/types/rsvpIndex";
+  RSVP_ATTENDANCE,
+  RSVP_ATTENDANCE_LABEL,
+  DECISION,
+  type RSVPAttendance,
+  type Decision,
+} from "@/types/rsvpIndex";
 
 type Props = { eventId: string };
+
+type Row = { uid: string } & RsvpDoc;
 
 function labelFromUid(uid: string) {
   if (uid.includes("@")) return uid;
@@ -19,8 +23,7 @@ function labelFromUid(uid: string) {
   return uid;
 }
 
-// ✅ NEW: canonical display name resolver
-function displayNameFromRsvp(r: RSVPRecord) {
+function displayNameFromRow(r: Row) {
   return r.userDisplayName?.trim() || labelFromUid(r.uid);
 }
 
@@ -30,7 +33,7 @@ const ATTENDANCE_ORDER: Record<RSVPAttendance, number> = {
   [RSVP_ATTENDANCE.No]: 2,
 };
 
-function attendancePill(a: RSVPRecord["attendance"]) {
+function attendancePill(a: RSVPAttendance) {
   switch (a) {
     case RSVP_ATTENDANCE.Yes:
       return (
@@ -54,30 +57,37 @@ function attendancePill(a: RSVPRecord["attendance"]) {
 }
 
 export default function ApprovedUsers({ eventId }: Props) {
-  const [tick, setTick] = React.useState(0);
+  const [rows, setRows] = React.useState<Row[]>([]);
 
   React.useEffect(() => {
-    const rerender = () => setTick((t) => t + 1);
-    window.addEventListener("events-changed", rerender);
-    window.addEventListener("requests-changed", rerender);
-    return () => {
-      window.removeEventListener("events-changed", rerender);
-      window.removeEventListener("requests-changed", rerender);
-    };
-  }, []);
+    return subscribeEventRsvps(
+      eventId,
+      (docs) => setRows(docs as Row[]),
+      (err) => console.error("[ApprovedUsers] subscribeEventRsvps", err)
+    );
+  }, [eventId]);
 
   const approved = React.useMemo(() => {
-    return getAllLocalRsvps()
-      .filter((r) => r.eventId === eventId && isApproved(r.eventId, r.uid))
+    return rows
+      .filter((r) => {
+        const decision: Decision =
+          r.decision ?? (r.approved ? DECISION.Approved : DECISION.Pending);
+        return decision === DECISION.Approved;
+      })
+      .map((r) => ({
+        ...r,
+        attendance: (r.attendance ?? RSVP_ATTENDANCE.Maybe) as RSVPAttendance,
+        comment: r.comment ?? "",
+      }))
       .sort(
         (a, b) =>
           ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
       );
-  }, [eventId, tick]);
+  }, [rows]);
 
   const copy = () => {
     const lines = approved.map((r) => {
-      const name = displayNameFromRsvp(r);
+      const name = displayNameFromRow(r);
       const note = r.comment ? ` — ${r.comment}` : "";
       const a = RSVP_ATTENDANCE_LABEL[r.attendance];
       return `- ${name} (${a})${note}`;
@@ -109,7 +119,7 @@ export default function ApprovedUsers({ eventId }: Props) {
             <div key={r.uid} className="rounded-xl border bg-white px-3 py-2">
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-medium text-slate-900">
-                  {displayNameFromRsvp(r)}
+                  {displayNameFromRow(r)}
                 </div>
                 {attendancePill(r.attendance)}
               </div>

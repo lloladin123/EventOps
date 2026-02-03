@@ -1,11 +1,13 @@
 "use client";
 
+import * as React from "react";
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
-import { setDecision } from "@/components/utils/rsvpIndex";
-import { DECISION } from "@/types/rsvpIndex";
+import { DECISION, type Decision } from "@/types/rsvpIndex"; // ✅
 import StateButton from "../ui/StateButton";
-import { getDecision } from "../utils/rsvpIndex/decision";
+
+import { setRsvpDecision } from "@/app/lib/firestore/rsvps";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 
 export default function RequestsEventGroup({
   eventId,
@@ -18,6 +20,32 @@ export default function RequestsEventGroup({
   list: RSVPRow[];
   onCopyApproved: (eventId: string) => void;
 }) {
+  const { user } = useAuth();
+  const isOpen = event?.open ?? true;
+
+  const [saving, setSaving] = React.useState<Set<string>>(new Set());
+
+  const setRowDecision = async (uid: string, decision: Decision) => {
+    const key = `${eventId}:${uid}`;
+    setSaving((prev) => new Set(prev).add(key));
+
+    try {
+      await setRsvpDecision(eventId, uid, decision, {
+        decidedByUid: user?.uid ?? null,
+      });
+    } catch (err) {
+      alert(
+        err instanceof Error ? err.message : "Kunne ikke opdatere decision"
+      );
+    } finally {
+      setSaving((prev) => {
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+    }
+  };
+
   const DECISION_OPTIONS = [
     { value: DECISION.Approved, label: "Approved" },
     { value: DECISION.Pending, label: "Pending" },
@@ -57,10 +85,15 @@ export default function RequestsEventGroup({
         </thead>
         <tbody>
           {list.map((r) => {
-            const decision = getDecision(r.eventId, r.uid); // ✅ real 3-state
+            const decision: Decision = // ✅
+              (r as any).decision ??
+              (r.approved ? DECISION.Approved : DECISION.Pending);
+
+            const rowKey = `${r.eventId}:${r.uid}`;
+            const isSaving = saving.has(rowKey);
 
             return (
-              <tr key={`${r.eventId}:${r.uid}`} className="border-t">
+              <tr key={rowKey} className="border-t">
                 <td className="py-2">
                   <div className="font-medium">
                     {r.userDisplayName?.trim() || "Ukendt navn"}
@@ -72,18 +105,35 @@ export default function RequestsEventGroup({
                 <td className="py-2 opacity-80">{r.comment || "—"}</td>
 
                 <td className="py-2">
-                  <div className="flex flex-wrap gap-2">
-                    {DECISION_OPTIONS.map((opt) => (
-                      <StateButton
-                        key={opt.value}
-                        variant={opt.value}
-                        active={decision === opt.value}
-                        onClick={() => setDecision(r.eventId, r.uid, opt.value)}
-                      >
-                        {opt.label}
-                      </StateButton>
-                    ))}
-                  </div>
+                  {isOpen ? (
+                    <div className="flex flex-wrap gap-2">
+                      {DECISION_OPTIONS.map((opt) => (
+                        <StateButton
+                          key={opt.value}
+                          variant={
+                            opt.value === DECISION.Approved
+                              ? "yes"
+                              : opt.value === DECISION.Unapproved
+                              ? "no"
+                              : "maybe"
+                          }
+                          active={decision === opt.value}
+                          disabled={!isOpen || isSaving}
+                          onClick={() => void setRowDecision(r.uid, opt.value)}
+                        >
+                          {opt.label}
+                        </StateButton>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs opacity-70">
+                      {decision === DECISION.Approved
+                        ? "Approved"
+                        : decision === DECISION.Unapproved
+                        ? "Unapproved"
+                        : "Pending"}
+                    </span>
+                  )}
                 </td>
               </tr>
             );
@@ -92,8 +142,8 @@ export default function RequestsEventGroup({
       </table>
 
       <div className="text-xs opacity-60">
-        Tip: If you want “deny”, add a{" "}
-        <code>event:denied:&lt;eventId&gt;:&lt;uid&gt;</code> flag the same way.
+        Decisions are stored in Firestore on{" "}
+        <code>events/&lt;eventId&gt;/rsvps/&lt;uid&gt;</code>.
       </div>
     </div>
   );

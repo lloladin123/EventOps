@@ -11,6 +11,7 @@ export type RSVPRow = {
   attendance: RSVPAttendance;
   comment?: string;
   updatedAt?: string;
+  decision?: Decision;
   approved: boolean;
   event?: Event;
 };

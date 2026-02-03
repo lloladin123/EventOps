@@ -6,132 +6,169 @@ import type { RSVP, Role, CrewSubRole } from "@/types/rsvp";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
+import { useEventsFirestore } from "@/utils/useEventsFirestore";
+import {
+  subscribeMyRsvp,
+  setRsvpAttendance,
+  setRsvpComment,
+  type RsvpDoc,
+} from "@/app/lib/firestore/rsvps";
+
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
-function uidKey(uid: string) {
-  return `rsvps:uid:${uid}`;
-}
+function toLegacyRsvpShape(args: {
+  eventId: string;
+  uid: string;
+  effectiveRole: Role | null;
+  effectiveSubRole: CrewSubRole | null;
+  userDisplayName: string;
+  doc: RsvpDoc | null;
+}): RSVP | null {
+  const { eventId, effectiveRole, effectiveSubRole, userDisplayName, doc } =
+    args;
+  if (!doc) return null;
 
-// legacy (old) key
-function legacyRoleKey(role: Role) {
-  return `rsvps:${role}`;
+  const resolvedRole = (doc.role as Role) ?? effectiveRole ?? ROLE.Crew;
+  const isCrew = resolvedRole === ROLE.Crew;
+
+  return {
+    id: makeId(), // UI-only; your old RSVP had ids. Not needed for Firestore.
+    eventId,
+    userRole: resolvedRole,
+    userSubRole: isCrew
+      ? (doc.subRole as CrewSubRole) ?? effectiveSubRole ?? null
+      : null,
+    attendance: doc.attendance ?? RSVP_ATTENDANCE.Maybe,
+    comment: doc.comment ?? "",
+    userDisplayName: doc.userDisplayName?.trim() || userDisplayName,
+    createdAt: new Date().toISOString(), // UI-only
+    updatedAt: new Date().toISOString(), // UI-only
+  };
 }
 
 export function useRsvps() {
-  // ✅ allow AuthProvider to optionally supply displayName from Firestore profile
   const authAny = useAuth() as any;
   const { user, role, subRole, loading } = authAny;
+
   const profileDisplayName: string | null =
     typeof authAny?.displayName === "string" ? authAny.displayName : null;
 
   const uid = user?.uid ?? null;
 
-  // Normalize once (keeps existing behavior, reduces repeated casting)
   const effectiveRole = (role ?? null) as Role | null;
   const effectiveSubRole = (subRole ?? null) as CrewSubRole | null;
 
-  // ✅ Prefer Firestore profile displayName, then Firebase Auth displayName.
-  // ❌ Never fall back to email.
   const userDisplayName =
     profileDisplayName?.trim() || user?.displayName?.trim() || "Ukendt bruger";
   const hasRealName = userDisplayName !== "Ukendt bruger";
 
-  const [rsvps, setRsvps] = React.useState<RSVP[]>([]);
+  // ✅ we need events to know which rsvp docs to subscribe to
+  const { events } = useEventsFirestore();
+  const eventIds = React.useMemo(
+    () => events.filter((e) => !e.deleted).map((e) => e.id),
+    [events]
+  );
+
+  // internal storage: map by eventId
+  const [myByEvent, setMyByEvent] = React.useState<
+    Record<string, RsvpDoc | null>
+  >({});
+
+  // public shape: RSVP[]
+  const rsvps = React.useMemo(() => {
+    if (!uid) return [];
+    return eventIds
+      .map((eventId) =>
+        toLegacyRsvpShape({
+          eventId,
+          uid,
+          effectiveRole,
+          effectiveSubRole,
+          userDisplayName,
+          doc: myByEvent[eventId] ?? null,
+        })
+      )
+      .filter(Boolean) as RSVP[];
+  }, [
+    uid,
+    eventIds,
+    myByEvent,
+    effectiveRole,
+    effectiveSubRole,
+    userDisplayName,
+  ]);
 
   React.useEffect(() => {
     if (loading) return;
-
     if (!uid) {
-      setRsvps([]);
+      setMyByEvent({});
+      return;
+    }
+    if (eventIds.length === 0) {
+      setMyByEvent({});
       return;
     }
 
-    const raw = localStorage.getItem(uidKey(uid));
-    if (raw) {
-      try {
-        setRsvps(JSON.parse(raw) as RSVP[]);
-        return;
-      } catch {
-        // fall through
-      }
-    }
+    const unsubs = eventIds.map((eventId) =>
+      subscribeMyRsvp(
+        eventId,
+        uid,
+        (doc) => {
+          setMyByEvent((prev) => ({ ...prev, [eventId]: doc }));
+        },
+        (err) => console.error("[useRsvps] subscribeMyRsvp error", eventId, err)
+      )
+    );
 
-    if (effectiveRole) {
-      const legacyRaw = localStorage.getItem(legacyRoleKey(effectiveRole));
-      if (legacyRaw) {
-        try {
-          const legacy = JSON.parse(legacyRaw) as RSVP[];
-          localStorage.setItem(uidKey(uid), JSON.stringify(legacy));
-          setRsvps(legacy);
-          return;
-        } catch {
-          // ignore
-        }
-      }
-    }
-
-    setRsvps([]);
-  }, [uid, loading, effectiveRole]); // keep as-is
+    return () => unsubs.forEach((u) => u());
+  }, [uid, loading, eventIds.join("|")]);
 
   const upsertRsvp = React.useCallback(
     (eventId: string, patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
       if (!uid) return;
 
-      setRsvps((prev) => {
-        const idx = prev.findIndex((r) => r.eventId === eventId);
-        const resolvedRole: Role = effectiveRole ?? ROLE.Crew;
-
-        let next: RSVP[];
-
-        if (idx !== -1) {
-          const existing = prev[idx];
-          const nextRole: Role =
-            effectiveRole ?? existing.userRole ?? ROLE.Crew;
-          const nextIsCrew = nextRole === ROLE.Crew;
-
-          next = [...prev];
-          next[idx] = {
-            ...existing,
-            ...patch,
-            userRole: nextRole,
-            userSubRole: nextIsCrew
-              ? effectiveSubRole ?? existing.userSubRole ?? null
+      // ✅ optimistic UI (feels instant)
+      setMyByEvent((prev) => ({
+        ...prev,
+        [eventId]: {
+          ...(prev[eventId] ?? {}),
+          ...(patch.attendance !== undefined
+            ? { attendance: patch.attendance as any }
+            : {}),
+          ...(patch.comment !== undefined ? { comment: patch.comment } : {}),
+          role: (effectiveRole ?? ROLE.Crew) as any,
+          subRole:
+            (effectiveRole ?? ROLE.Crew) === ROLE.Crew
+              ? (effectiveSubRole as any)
               : null,
+          userDisplayName: hasRealName
+            ? userDisplayName
+            : prev[eventId]?.userDisplayName ?? userDisplayName,
+        },
+      }));
 
-            // ✅ Replace bad snapshot ("Ukendt bruger") once we have a real name
-            userDisplayName:
-              existing.userDisplayName === "Ukendt bruger" && hasRealName
-                ? userDisplayName
-                : existing.userDisplayName || userDisplayName,
+      const meta = {
+        role: (effectiveRole ?? ROLE.Crew) as any,
+        subRole:
+          (effectiveRole ?? ROLE.Crew) === ROLE.Crew
+            ? (effectiveSubRole as any)
+            : null,
+        userDisplayName: userDisplayName,
+      };
 
-            updatedAt: new Date().toISOString(),
-          };
-        } else {
-          const resolvedIsCrew = resolvedRole === ROLE.Crew;
-
-          const created: RSVP = {
-            id: makeId(),
-            eventId,
-            userRole: resolvedRole,
-            userSubRole: resolvedIsCrew ? effectiveSubRole ?? null : null,
-            attendance: patch.attendance ?? RSVP_ATTENDANCE.Maybe,
-            comment: patch.comment ?? "",
-            userDisplayName,
-            createdAt: new Date().toISOString(),
-          };
-          next = [...prev, created];
-        }
-
-        try {
-          localStorage.setItem(uidKey(uid), JSON.stringify(next));
-        } catch {
-          // ignore
-        }
-
-        return next;
-      });
+      if (patch.attendance !== undefined) {
+        void setRsvpAttendance(
+          eventId,
+          uid,
+          patch.attendance as RSVPAttendance,
+          meta
+        );
+      }
+      if (patch.comment !== undefined) {
+        void setRsvpComment(eventId, uid, patch.comment ?? "", meta);
+      }
     },
     [uid, effectiveRole, effectiveSubRole, userDisplayName, hasRealName]
   );

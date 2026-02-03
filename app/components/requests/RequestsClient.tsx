@@ -1,52 +1,105 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getAllLocalRsvps, isApproved } from "@/components/utils/rsvpIndex";
-import { getEventsWithOverrides } from "@/components/utils/eventsStore";
 import type { Event } from "@/types/event";
 
 import RequestsFilters from "./RequestsFilters";
 import RequestsEventGroup from "./RequestsEventGroup";
 import { AttendanceFilter, RSVPRow, StatusFilter } from "@/types/requests";
 import { DECISION } from "@/types/rsvpIndex";
-import type { RSVPRecord } from "@/types/rsvpIndex";
+
+import { useEventsFirestore } from "@/utils/useEventsFirestore";
+import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
+import OpenCloseButton from "../ui/OpenCloseButton";
+
+function toIso(x: any): string {
+  if (!x) return "";
+  if (typeof x === "string") return x;
+  if (typeof x?.toDate === "function") {
+    try {
+      return x.toDate().toISOString();
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
 
 export default function RequestsClient() {
-  const [tick, setTick] = useState(0);
-
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [attendanceFilter, setAttendanceFilter] =
     useState<AttendanceFilter>("all");
 
+  const [showClosedEvents, setShowClosedEvents] = useState(false);
+
+  const {
+    events,
+    loading: eventsLoading,
+    error: eventsError,
+  } = useEventsFirestore();
+
   const [eventsById, setEventsById] = useState<Map<string, Event>>(new Map());
   const [rows, setRows] = useState<RSVPRow[]>([]);
 
-  useEffect(() => {
-    const rerender = () => setTick((t) => t + 1);
-    window.addEventListener("events-changed", rerender);
-    window.addEventListener("requests-changed", rerender);
-    return () => {
-      window.removeEventListener("events-changed", rerender);
-      window.removeEventListener("requests-changed", rerender);
-    };
-  }, []);
-
+  // Build event map from Firestore
   useEffect(() => {
     const map = new Map<string, Event>();
-    for (const e of getEventsWithOverrides()) map.set(e.id, e);
+    for (const e of events) map.set(e.id, e);
     setEventsById(map);
+  }, [events]);
 
-    // Contain typing uncertainty here (do not leak `any` downstream)
-    const local = getAllLocalRsvps() as RSVPRecord[];
+  // Subscribe to RSVPs for each event (admin view)
+  useEffect(() => {
+    if (eventsLoading) return;
 
-    const nextRows: RSVPRow[] = local.map((r) => ({
-      ...r,
-      approved: isApproved(r.eventId, r.uid),
-      event: map.get(r.eventId),
-    }));
+    const visibleEvents = events
+      .filter((e) => !e.deleted)
+      .filter((e) => showClosedEvents || (e.open ?? true)); // ✅ only open unless toggled
 
-    setRows(nextRows);
-  }, [tick]);
+    let cancelled = false;
+
+    // Keep per-event lists, then flatten into rows
+    const perEvent = new Map<string, RSVPRow[]>();
+
+    const flush = () => {
+      if (cancelled) return;
+      setRows(visibleEvents.flatMap((e) => perEvent.get(e.id) ?? []));
+    };
+
+    const unsubs = visibleEvents.map((event) =>
+      subscribeEventRsvps(
+        event.id,
+        (docs) => {
+          const list: RSVPRow[] = docs.map((d: any) => ({
+            eventId: event.id,
+            uid: d.uid,
+            attendance: d.attendance,
+            comment: d.comment ?? "",
+            userDisplayName: d.userDisplayName ?? "",
+
+            decision:
+              d.decision ?? (d.approved ? DECISION.Approved : DECISION.Pending), // ✅ ADD
+            approved: !!d.approved,
+
+            updatedAt: toIso(d.updatedAt) || toIso(d.approvedAt) || "",
+            event,
+            userRole: d.role ?? d.userRole ?? null,
+            userSubRole: d.subRole ?? d.userSubRole ?? null,
+          }));
+
+          perEvent.set(event.id, list);
+          flush();
+        },
+        (err) =>
+          console.error("[RequestsClient] subscribeEventRsvps", event.id, err)
+      )
+    );
+
+    return () => {
+      cancelled = true;
+      unsubs.forEach((u) => u());
+    };
+  }, [eventsLoading, events, showClosedEvents]);
 
   const visible = useMemo(() => {
     return rows
@@ -54,11 +107,14 @@ export default function RequestsClient() {
         if (attendanceFilter !== "all" && r.attendance !== attendanceFilter)
           return false;
 
-        if (statusFilter === DECISION.Pending && r.approved) return false;
-        if (statusFilter === DECISION.Approved && !r.approved) return false;
+        if (statusFilter !== "all") {
+          const d = r.decision ?? DECISION.Pending;
+          if (d !== statusFilter) return false;
+        }
 
         return true;
       })
+
       .sort((a, b) => {
         const da = a.event?.date ?? "9999-99-99";
         const db = b.event?.date ?? "9999-99-99";
@@ -68,7 +124,12 @@ export default function RequestsClient() {
         const tb = b.event?.meetingTime ?? "99:99";
         if (ta !== tb) return ta.localeCompare(tb);
 
-        return (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "");
+        // ✅ stable ordering inside event
+        const na = (a.userDisplayName?.trim() || a.uid).toLowerCase();
+        const nb = (b.userDisplayName?.trim() || b.uid).toLowerCase();
+        if (na !== nb) return na.localeCompare(nb);
+
+        return a.uid.localeCompare(b.uid);
       });
   }, [rows, attendanceFilter, statusFilter]);
 
@@ -96,22 +157,38 @@ export default function RequestsClient() {
     );
   };
 
+  if (eventsError) {
+    return (
+      <div className="p-4 space-y-4">
+        <div className="border rounded p-4 text-sm opacity-80">
+          Kunne ikke hente events: {eventsError}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex flex-wrap gap-3 items-end justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Requests</h1>
-          <p className="opacity-70 text-sm">
-            Local RSVP requests (this browser only)
-          </p>
-        </div>
+          <p className="opacity-70 text-sm">Firestore RSVP requests</p>
+          <div className="flex gap-2 items-center">
+            <OpenCloseButton
+              target={showClosedEvents ? "close" : "open"}
+              onClick={() => setShowClosedEvents((v) => !v)}
+            >
+              {showClosedEvents ? "Skjul lukkede" : "Vis lukkede"}
+            </OpenCloseButton>
 
-        <RequestsFilters
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          attendanceFilter={attendanceFilter}
-          setAttendanceFilter={setAttendanceFilter}
-        />
+            <RequestsFilters
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              attendanceFilter={attendanceFilter}
+              setAttendanceFilter={setAttendanceFilter}
+            />
+          </div>
+        </div>
       </div>
 
       {grouped.size === 0 ? (

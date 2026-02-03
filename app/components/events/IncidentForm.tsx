@@ -7,12 +7,14 @@ import CloseLog from "@/components/events/CloseLog";
 import IncidentFormFields from "@/components/events/IncidentFormFields";
 import IncidentSubmitButton from "@/components/events/IncidentSubmitButton";
 
-import { isEventClosed } from "@/utils/eventStatus";
 import { nowHHmm, parseTimeToHHmm } from "@/utils/time";
 import { useAuthAndClosed } from "@/utils/useAuthAndClosed";
+import { useAuth } from "@/app/components/auth/AuthProvider";
+import { createIncidentFirestore } from "@/app/lib/firestore/incidents";
 
 type Props = {
   eventId: string;
+  eventOpen: boolean; // ✅ Firestore truth
   onAddIncident: (incident: Incident) => void;
 };
 
@@ -20,8 +22,15 @@ function makeId() {
   return `inc_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
 
-export default function IncidentForm({ eventId, onAddIncident }: Props) {
-  const { loggedBy, closed, setClosed, canClose } = useAuthAndClosed(eventId);
+export default function IncidentForm({
+  eventId,
+  eventOpen,
+  onAddIncident,
+}: Props) {
+  const { loggedBy, canClose } = useAuthAndClosed(eventId); // keep for identity + permissions
+  const { user, role } = useAuth();
+
+  const closed = !eventOpen; // ✅ single source of truth
 
   const [time, setTime] = React.useState<string>(nowHHmm());
   const [type, setType] = React.useState<IncidentType>("Fejl");
@@ -33,23 +42,28 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
   const [files, setFiles] = React.useState<File[]>([]);
   const [fileInputKey, setFileInputKey] = React.useState(0);
 
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
   const normalizedTime = React.useMemo(() => parseTimeToHHmm(time), [time]);
 
   const canSubmit =
     !closed &&
+    !saving &&
     loggedBy.trim().length > 0 &&
     !!normalizedTime &&
     modtagetFra.trim().length > 0 &&
     haendelse.trim().length > 0;
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || !normalizedTime) return;
 
-    if (isEventClosed(eventId)) {
-      setClosed(true);
-      return;
-    }
+    // ✅ if it got closed while user had the form open
+    if (closed) return;
+
+    setSaving(true);
+    setError(null);
 
     const incident: Incident = {
       id: makeId(),
@@ -66,17 +80,30 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
       createdAt: new Date().toISOString(),
     };
 
-    onAddIncident(incident);
+    try {
+      await createIncidentFirestore(eventId, incident, {
+        createdByUid: user?.uid ?? null,
+        createdByRole: role ?? null,
+      });
 
-    setTime(nowHHmm());
-    setType("Fejl");
-    setModtagetFra("");
-    setHaendelse("");
-    setLoesning("");
-    setPolitiInvolveret(false);
-    setBeredskabInvolveret(false);
-    setFiles([]);
-    setFileInputKey((k) => k + 1);
+      onAddIncident(incident);
+
+      setTime(nowHHmm());
+      setType("Fejl");
+      setModtagetFra("");
+      setHaendelse("");
+      setLoesning("");
+      setPolitiInvolveret(false);
+      setBeredskabInvolveret(false);
+      setFiles([]);
+      setFileInputKey((k) => k + 1);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Kunne ikke gemme hændelse"
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -85,7 +112,6 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
         onSubmit={submit}
         className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
       >
-        {/* Header + TOP submit */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">
@@ -101,6 +127,12 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
 
           <IncidentSubmitButton disabled={!canSubmit} />
         </div>
+
+        {error && (
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            {error}
+          </div>
+        )}
 
         {closed && (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
@@ -131,7 +163,6 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
               setFileInputKey={setFileInputKey}
             />
 
-            {/* BOTTOM submit */}
             <div className="mt-6 flex justify-end">
               <IncidentSubmitButton disabled={!canSubmit} />
             </div>
@@ -139,14 +170,10 @@ export default function IncidentForm({ eventId, onAddIncident }: Props) {
         )}
       </form>
 
-      {/* Close log box (full width like other boxes) */}
       {canClose && (
         <div className="w-full">
-          <CloseLog
-            eventId={eventId}
-            disabled={closed}
-            onClosed={() => setClosed(true)}
-          />
+          {/* ✅ now CloseLog has what it needs */}
+          <CloseLog eventId={eventId} open={eventOpen} />
         </div>
       )}
     </>
