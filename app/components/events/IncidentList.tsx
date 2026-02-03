@@ -5,6 +5,7 @@ import type { Incident } from "@/types/incident";
 import IncidentListItem from "./IncidentListItem";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin as isAdminRole } from "@/types/rsvp";
+import IncidentTable from "./IncidentTable";
 
 type Props = {
   incidents?: Incident[]; // ✅ allow undefined
@@ -102,78 +103,15 @@ export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
           })}
         </ul>
       ) : (
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b bg-slate-50 text-left">
-                <th className="px-3 py-2 font-medium">Tid</th>
-                <th className="px-3 py-2 font-medium">Type</th>
-                <th className="px-3 py-2 font-medium">Hændelse</th>
-                <th className="px-3 py-2 font-medium">Logget af</th>
-                <th className="px-3 py-2 font-medium">Politi</th>
-                <th className="px-3 py-2 font-medium">Beredskab</th>
-                <th className="px-3 py-2 font-medium text-right">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {safeIncidents.map((i) => {
-                const canEdit =
-                  admin || (isOwner(i, uid) && canEditWithinWindow(i, now));
-
-                return (
-                  <tr key={i.id} className="border-b last:border-0 align-top">
-                    <td className="px-3 py-2 text-slate-600">{i.time}</td>
-                    <td className="px-3 py-2">{i.type}</td>
-                    <td className="px-3 py-2 truncate max-w-xs">
-                      {i.haendelse}
-                    </td>
-                    <td className="px-3 py-2 text-slate-600">{i.loggetAf}</td>
-                    <td className="px-3 py-2 text-center">
-                      {i.politiInvolveret ? "✔︎" : "—"}
-                    </td>
-                    <td className="px-3 py-2 text-center">
-                      {i.beredskabInvolveret ? "✔︎" : "—"}
-                    </td>
-
-                    <td className="px-3 py-2">
-                      <div className="flex justify-end gap-2">
-                        {canEdit && onEdit ? (
-                          <button
-                            type="button"
-                            onClick={() => onEdit(i)}
-                            className="rounded-lg border px-2 py-1 text-xs font-medium hover:bg-slate-50"
-                          >
-                            Update
-                          </button>
-                        ) : (
-                          <span className="text-xs text-slate-400">
-                            {onEdit ? "—" : ""}
-                          </span>
-                        )}
-
-                        {admin && onDelete ? (
-                          <button
-                            type="button"
-                            onClick={() => onDelete(i.id)}
-                            className="rounded-lg border border-rose-300 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50"
-                          >
-                            Delete
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-
-          <p className="mt-2 text-xs text-slate-500">
-            Update er kun muligt i 5 min efter oprettelse for den der oprettede
-            hændelsen (Admin altid).
-          </p>
-        </div>
+        <IncidentTable
+          incidents={safeIncidents}
+          canEditIncident={(i) =>
+            admin || (isOwner(i, uid) && canEditWithinWindow(i, now))
+          }
+          canDeleteIncident={admin}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       )}
     </section>
   );
