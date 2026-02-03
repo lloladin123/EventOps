@@ -21,6 +21,7 @@ export default function RequestsEventGroup({
   onCopyApproved: (eventId: string) => void;
 }) {
   const { user } = useAuth();
+  const isOpen = event?.open ?? true;
 
   const [saving, setSaving] = React.useState<Set<string>>(new Set());
 
@@ -104,25 +105,35 @@ export default function RequestsEventGroup({
                 <td className="py-2 opacity-80">{r.comment || "—"}</td>
 
                 <td className="py-2">
-                  <div className="flex flex-wrap gap-2">
-                    {DECISION_OPTIONS.map((opt) => (
-                      <StateButton
-                        key={opt.value}
-                        variant={
-                          opt.value === DECISION.Approved
-                            ? "yes"
-                            : opt.value === DECISION.Unapproved
-                            ? "no"
-                            : "maybe"
-                        }
-                        active={decision === opt.value}
-                        disabled={isSaving}
-                        onClick={() => void setRowDecision(r.uid, opt.value)}
-                      >
-                        {opt.label}
-                      </StateButton>
-                    ))}
-                  </div>
+                  {isOpen ? (
+                    <div className="flex flex-wrap gap-2">
+                      {DECISION_OPTIONS.map((opt) => (
+                        <StateButton
+                          key={opt.value}
+                          variant={
+                            opt.value === DECISION.Approved
+                              ? "yes"
+                              : opt.value === DECISION.Unapproved
+                              ? "no"
+                              : "maybe"
+                          }
+                          active={decision === opt.value}
+                          disabled={!isOpen || isSaving}
+                          onClick={() => void setRowDecision(r.uid, opt.value)}
+                        >
+                          {opt.label}
+                        </StateButton>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs opacity-70">
+                      {decision === DECISION.Approved
+                        ? "Approved"
+                        : decision === DECISION.Unapproved
+                        ? "Unapproved"
+                        : "Pending"}
+                    </span>
+                  )}
                 </td>
               </tr>
             );

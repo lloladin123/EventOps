@@ -10,6 +10,7 @@ import { DECISION } from "@/types/rsvpIndex";
 
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
+import OpenCloseButton from "../ui/OpenCloseButton";
 
 function toIso(x: any): string {
   if (!x) return "";
@@ -28,6 +29,8 @@ export default function RequestsClient() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [attendanceFilter, setAttendanceFilter] =
     useState<AttendanceFilter>("all");
+
+  const [showClosedEvents, setShowClosedEvents] = useState(false);
 
   const {
     events,
@@ -49,11 +52,9 @@ export default function RequestsClient() {
   useEffect(() => {
     if (eventsLoading) return;
 
-    const visibleEvents = events.filter((e) => !e.deleted);
-    if (visibleEvents.length === 0) {
-      setRows([]);
-      return;
-    }
+    const visibleEvents = events
+      .filter((e) => !e.deleted)
+      .filter((e) => showClosedEvents || (e.open ?? true)); // ✅ only open unless toggled
 
     let cancelled = false;
 
@@ -62,7 +63,7 @@ export default function RequestsClient() {
 
     const flush = () => {
       if (cancelled) return;
-      setRows(Array.from(perEvent.values()).flat());
+      setRows(visibleEvents.flatMap((e) => perEvent.get(e.id) ?? []));
     };
 
     const unsubs = visibleEvents.map((event) =>
@@ -98,7 +99,7 @@ export default function RequestsClient() {
       cancelled = true;
       unsubs.forEach((u) => u());
     };
-  }, [eventsLoading, events]);
+  }, [eventsLoading, events, showClosedEvents]);
 
   const visible = useMemo(() => {
     return rows
@@ -172,14 +173,22 @@ export default function RequestsClient() {
         <div>
           <h1 className="text-2xl font-semibold">Requests</h1>
           <p className="opacity-70 text-sm">Firestore RSVP requests</p>
-        </div>
+          <div className="flex gap-2 items-center">
+            <OpenCloseButton
+              target={showClosedEvents ? "close" : "open"}
+              onClick={() => setShowClosedEvents((v) => !v)}
+            >
+              {showClosedEvents ? "Skjul lukkede" : "Vis lukkede"}
+            </OpenCloseButton>
 
-        <RequestsFilters
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          attendanceFilter={attendanceFilter}
-          setAttendanceFilter={setAttendanceFilter}
-        />
+            <RequestsFilters
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              attendanceFilter={attendanceFilter}
+              setAttendanceFilter={setAttendanceFilter}
+            />
+          </div>
+        </div>
       </div>
 
       {grouped.size === 0 ? (
