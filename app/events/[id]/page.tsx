@@ -202,6 +202,7 @@ export default function EventDetailPage() {
               </div>
             ) : (
               <IncidentList
+                eventId={event.id}
                 incidents={incidents}
                 onEdit={(incident) => setEditing(incident)}
                 onDelete={onDeleteIncident}

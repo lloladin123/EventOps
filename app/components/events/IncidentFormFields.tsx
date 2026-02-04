@@ -57,6 +57,35 @@ export default function IncidentFormFields(props: Props) {
     props.setFiles(list);
   };
 
+  // ✅ build previews + cleanup URLs
+  const [previews, setPreviews] = React.useState<
+    { name: string; size: number; url: string }[]
+  >([]);
+
+  React.useEffect(() => {
+    const next = props.files.map((f) => ({
+      name: f.name,
+      size: f.size,
+      url: URL.createObjectURL(f),
+    }));
+
+    setPreviews(next);
+
+    return () => {
+      for (const p of next) URL.revokeObjectURL(p.url);
+    };
+  }, [props.files]);
+
+  const removeFileAt = (index: number) => {
+    const next = props.files.filter((_, i) => i !== index);
+    props.setFiles(next);
+
+    // reset input if no files left (so same file can be re-added)
+    if (next.length === 0) {
+      props.setFileInputKey((k) => k + 1);
+    }
+  };
+
   return (
     <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
       {/* Tidspunkt */}
@@ -147,9 +176,25 @@ export default function IncidentFormFields(props: Props) {
 
       {/* Upload */}
       <div className="md:col-span-2">
-        <label className="block text-sm font-medium text-slate-900">
-          Upload (billeder)
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label className="block text-sm font-medium text-slate-900">
+            Upload (billeder)
+          </label>
+
+          {props.files.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                props.setFiles([]);
+                props.setFileInputKey((k) => k + 1);
+              }}
+              className="text-xs font-semibold text-slate-700 hover:text-slate-900"
+            >
+              Fjern valgte
+            </button>
+          )}
+        </div>
+
         <input
           key={props.fileInputKey}
           type="file"
@@ -158,10 +203,41 @@ export default function IncidentFormFields(props: Props) {
           onChange={handleFiles}
           className="mt-2 block w-full text-sm text-slate-700 file:mr-3 file:rounded-xl file:border-0 file:bg-slate-900 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-slate-800"
         />
+
         {props.files.length > 0 && (
-          <p className="mt-2 text-xs text-slate-600">
-            Valgt: {props.files.length} fil(er)
-          </p>
+          <>
+            <p className="mt-2 text-xs text-slate-600">
+              Valgt: {props.files.length} fil(er)
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+              {previews.map((p, idx) => (
+                <div
+                  key={p.url}
+                  className="relative overflow-hidden rounded-xl border bg-white"
+                  title={p.name}
+                >
+                  <button
+                    type="button"
+                    onClick={() => removeFileAt(idx)}
+                    className="absolute right-1 top-1 z-10 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-xs font-bold text-white hover:bg-black"
+                    aria-label="Fjern billede"
+                  >
+                    ✕
+                  </button>
+
+                  <img
+                    src={p.url}
+                    alt={p.name}
+                    className="h-24 w-full object-cover"
+                  />
+
+                  <div className="px-2 py-1 text-[11px] text-slate-600 truncate">
+                    {p.name}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

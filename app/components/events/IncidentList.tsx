@@ -8,6 +8,7 @@ import { isAdmin as isAdminRole } from "@/types/rsvp";
 import IncidentTable from "./IncidentTable";
 
 type Props = {
+  eventId: string;
   incidents?: Incident[]; // ✅ allow undefined
   onEdit?: (incident: Incident) => void;
   onDelete?: (incidentId: string) => void;
@@ -37,7 +38,12 @@ function getInitialView(): ViewMode {
   return raw === "table" || raw === "list" ? raw : "list";
 }
 
-export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
+export default function IncidentList({
+  eventId,
+  incidents,
+  onEdit,
+  onDelete,
+}: Props) {
   // ✅ always an array from here on
   const safeIncidents: Incident[] = Array.isArray(incidents) ? incidents : [];
 
@@ -104,6 +110,7 @@ export default function IncidentList({ incidents, onEdit, onDelete }: Props) {
         </ul>
       ) : (
         <IncidentTable
+          eventId={eventId}
           incidents={safeIncidents}
           canEditIncident={(i) =>
             admin || (isOwner(i, uid) && canEditWithinWindow(i, now))
