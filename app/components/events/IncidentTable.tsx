@@ -2,14 +2,13 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
-import IncidentEditModal from "./IncidentEditModal";
 
 type Props = {
-  eventId: string;
+  eventId: string; // kept for consistency with parent; not used here (page-level modal handles it)
   incidents: Incident[];
   canEditIncident: (incident: Incident) => boolean;
   canDeleteIncident: boolean;
-  onEdit?: (incident: Incident) => void;
+  onEdit?: (incident: Incident) => void; // ✅ page-level modal trigger
   onDelete?: (incidentId: string) => void;
 };
 
@@ -31,16 +30,13 @@ function NoBadge() {
 }
 
 export default function IncidentTable({
-  eventId,
+  eventId: _eventId,
   incidents,
   canEditIncident,
   canDeleteIncident,
   onEdit,
   onDelete,
 }: Props) {
-  const [editOpen, setEditOpen] = React.useState(false);
-  const [selected, setSelected] = React.useState<Incident | null>(null);
-
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="w-full border-collapse text-sm">
@@ -53,6 +49,7 @@ export default function IncidentTable({
             <th className="px-3 py-2 font-medium">Logget af</th>
             <th className="px-3 py-2 font-medium text-center">Politi</th>
             <th className="px-3 py-2 font-medium text-center">Beredskab</th>
+            <th className="px-3 py-2 font-medium text-center">Billeder</th>
             <th className="px-3 py-2 font-medium text-right">Actions</th>
           </tr>
         </thead>
@@ -60,13 +57,14 @@ export default function IncidentTable({
         <tbody>
           {incidents.map((i) => {
             const canEdit = canEditIncident(i);
+            const imgCount = Array.isArray(i.files) ? i.files.length : 0;
 
             return (
               <tr
                 key={i.id}
                 className="border-b last:border-0 align-top hover:bg-slate-50/40"
               >
-                <td className="px-3 py-2 text-slate-600 whitespace-nowrap">
+                <td className="px-3 py-2 whitespace-nowrap text-slate-600">
                   {i.time}
                 </td>
 
@@ -98,16 +96,22 @@ export default function IncidentTable({
                   )}
                 </td>
 
+                <td className="px-3 py-2 text-center">
+                  {imgCount > 0 ? (
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+                      🖼️ {imgCount}
+                    </span>
+                  ) : (
+                    <NoBadge />
+                  )}
+                </td>
+
                 <td className="px-3 py-2">
                   <div className="flex justify-end gap-2">
                     {canEdit && onEdit ? (
                       <button
                         type="button"
-                        onClick={() => {
-                          setSelected(i);
-                          setEditOpen(true);
-                          onEdit?.(i);
-                        }}
+                        onClick={() => onEdit(i)} // ✅ ONLY triggers page-level modal
                         className="rounded-lg border px-2 py-1 text-xs font-medium hover:bg-slate-50"
                       >
                         Update

@@ -5,6 +5,11 @@ import type { Incident } from "@/types/incident";
 import IncidentFormFields from "./IncidentFormFields";
 import { updateIncidentFirestore } from "@/app/lib/firestore/incidents";
 
+import { useAuth } from "@/app/components/auth/AuthProvider";
+import {
+  UploadedIncidentFile,
+  uploadIncidentImages,
+} from "@/lib//uploadIncidentImages";
 type Props = {
   eventId: string;
   incident: Incident;
@@ -16,15 +21,25 @@ export default function EditIncidentModal({
   incident,
   onClose,
 }: Props) {
+  const { user } = useAuth();
+
   const [state, setState] = React.useState<Incident>({ ...incident });
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // ✅ new images to append
+  const [newFiles, setNewFiles] = React.useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = React.useState(0);
 
   // ✅ if user clicks edit on another incident, update the form
   React.useEffect(() => {
     setState({ ...incident });
     setError(null);
     setSaving(false);
+
+    // reset new selections when switching incident
+    setNewFiles([]);
+    setFileInputKey((k) => k + 1);
   }, [incident.id]);
 
   const safeClose = () => {
@@ -37,6 +52,31 @@ export default function EditIncidentModal({
     setError(null);
 
     try {
+      if (!user) throw new Error("Ikke logget ind");
+
+      const idToken =
+        typeof (user as any).getIdToken === "function"
+          ? await (user as any).getIdToken()
+          : null;
+
+      if (!idToken) throw new Error("Kunne ikke hente login token");
+
+      // 1) upload new images (if any)
+      let uploaded: UploadedIncidentFile[] = [];
+      if (newFiles.length > 0) {
+        uploaded = await uploadIncidentImages({
+          eventId,
+          incidentId: incident.id,
+          files: newFiles,
+          idToken,
+        });
+      }
+
+      // 2) merge existing + newly uploaded
+      const existing = Array.isArray(state.files) ? state.files : [];
+      const mergedFiles = [...existing, ...uploaded];
+
+      // 3) update incident
       await updateIncidentFirestore(eventId, incident.id, {
         time: state.time,
         type: state.type,
@@ -45,10 +85,15 @@ export default function EditIncidentModal({
         loesning: state.loesning,
         politiInvolveret: state.politiInvolveret,
         beredskabInvolveret: state.beredskabInvolveret,
+        files: mergedFiles, // ✅ append-only
       });
 
+      // reset and close
+      setNewFiles([]);
+      setFileInputKey((k) => k + 1);
       onClose();
     } catch (err) {
+      console.error("EDIT SAVE FAILED:", err);
       setError(
         err instanceof Error ? err.message : "Kunne ikke opdatere hændelse"
       );
@@ -64,7 +109,7 @@ export default function EditIncidentModal({
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [saving]);
+  }, [saving]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -98,7 +143,7 @@ export default function EditIncidentModal({
           </div>
         )}
 
-        {/* ✅ Reuse fields UI, but disable file uploads in edit */}
+        {/* ✅ Reuse same UI. In edit: the file picker will select NEW images (append-only). */}
         <IncidentFormFields
           time={state.time}
           setTime={(v) => setState((s) => ({ ...s, time: v }))}
@@ -118,14 +163,14 @@ export default function EditIncidentModal({
           setBeredskabInvolveret={(v) =>
             setState((s) => ({ ...s, beredskabInvolveret: v }))
           }
-          // ⛔️ no file editing here (keep existing uploads)
-          files={[]}
-          setFiles={() => {}}
-          fileInputKey={0}
-          setFileInputKey={() => {}}
+          // ✅ these are NEW files (not existing uploads)
+          files={newFiles}
+          setFiles={setNewFiles}
+          fileInputKey={fileInputKey}
+          setFileInputKey={setFileInputKey}
         />
 
-        {/* Optional: show existing files (so users aren't confused) */}
+        {/* Existing uploaded files (read-only) */}
         {state.files?.length ? (
           <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
             <p className="text-sm font-medium text-slate-900">
@@ -145,6 +190,7 @@ export default function EditIncidentModal({
                     src={f.downloadUrl}
                     alt={f.fileName}
                     className="h-24 w-full object-cover"
+                    loading="lazy"
                   />
                   <div className="px-2 py-1 text-xs text-slate-600 truncate">
                     {f.fileName}

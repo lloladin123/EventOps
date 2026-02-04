@@ -4,6 +4,11 @@ import * as React from "react";
 import type { Incident, IncidentType } from "@/types/incident";
 import { parseTimeToHHmm } from "@/utils/time";
 import { updateIncidentFirestore } from "@/app/lib/firestore/incidents";
+import { useAuth } from "@/app/components/auth/AuthProvider";
+import {
+  UploadedIncidentFile,
+  uploadIncidentImages,
+} from "@/lib//uploadIncidentImages";
 
 type Props = {
   open: boolean;
@@ -26,6 +31,8 @@ export default function IncidentEditModal({
   eventId,
   incident,
 }: Props) {
+  const { user } = useAuth();
+
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -37,6 +44,37 @@ export default function IncidentEditModal({
   const [politiInvolveret, setPolitiInvolveret] = React.useState(false);
   const [beredskabInvolveret, setBeredskabInvolveret] = React.useState(false);
 
+  // ✅ append-only uploads
+  const [newFiles, setNewFiles] = React.useState<File[]>([]);
+  const [fileInputKey, setFileInputKey] = React.useState(0);
+
+  // ✅ previews (same logic as create form)
+  const [previews, setPreviews] = React.useState<
+    { name: string; size: number; url: string }[]
+  >([]);
+
+  React.useEffect(() => {
+    const next = newFiles.map((f) => ({
+      name: f.name,
+      size: f.size,
+      url: URL.createObjectURL(f),
+    }));
+
+    setPreviews(next);
+
+    return () => {
+      for (const p of next) URL.revokeObjectURL(p.url);
+    };
+  }, [newFiles]);
+
+  const removeNewFileAt = (index: number) => {
+    const next = newFiles.filter((_, i) => i !== index);
+    setNewFiles(next);
+
+    if (next.length === 0) setFileInputKey((k) => k + 1);
+  };
+
+  // hydrate when opening / switching incident
   React.useEffect(() => {
     if (!open || !incident) return;
 
@@ -50,7 +88,10 @@ export default function IncidentEditModal({
     setLoesning(incident.loesning ?? "");
     setPolitiInvolveret(!!incident.politiInvolveret);
     setBeredskabInvolveret(!!incident.beredskabInvolveret);
-  }, [open, incident]);
+
+    setNewFiles([]);
+    setFileInputKey((k) => k + 1);
+  }, [open, incident?.id]);
 
   const normalizedTime = React.useMemo(() => parseTimeToHHmm(time), [time]);
 
@@ -64,10 +105,6 @@ export default function IncidentEditModal({
   const closeIfAllowed = () => {
     if (saving) return;
     onClose();
-  };
-
-  const onBackdropMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) closeIfAllowed();
   };
 
   React.useEffect(() => {
@@ -86,6 +123,29 @@ export default function IncidentEditModal({
     setError(null);
 
     try {
+      if (!user) throw new Error("Ikke logget ind");
+
+      const idToken =
+        typeof (user as any).getIdToken === "function"
+          ? await (user as any).getIdToken()
+          : null;
+
+      if (!idToken) throw new Error("Kunne ikke hente login token");
+
+      // upload new images (append-only)
+      let uploaded: UploadedIncidentFile[] = [];
+      if (newFiles.length > 0) {
+        uploaded = await uploadIncidentImages({
+          eventId,
+          incidentId: incident.id,
+          files: newFiles,
+          idToken,
+        });
+      }
+
+      const existing = Array.isArray(incident.files) ? incident.files : [];
+      const mergedFiles = [...existing, ...uploaded];
+
       await updateIncidentFirestore(eventId, incident.id, {
         time: normalizedTime,
         type,
@@ -94,10 +154,12 @@ export default function IncidentEditModal({
         loesning: loesning.trim(),
         politiInvolveret,
         beredskabInvolveret,
+        files: mergedFiles,
       });
 
       onClose();
     } catch (err) {
+      console.error("EDIT UPLOAD FAILED:", err);
       setError(
         err instanceof Error ? err.message : "Kunne ikke opdatere hændelse"
       );
@@ -108,12 +170,14 @@ export default function IncidentEditModal({
 
   if (!open || !incident) return null;
 
+  const existingFiles = Array.isArray(incident.files) ? incident.files : [];
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onMouseDown={onBackdropMouseDown}
+      onMouseDown={(e) => e.target === e.currentTarget && closeIfAllowed()}
     >
-      <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl">
+      <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-xl">
         {/* Header */}
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-4">
           <div>
@@ -129,13 +193,7 @@ export default function IncidentEditModal({
             type="button"
             onClick={closeIfAllowed}
             disabled={saving}
-            className={[
-              "rounded-xl px-3 py-2 text-sm font-semibold",
-              saving
-                ? "cursor-not-allowed text-slate-400"
-                : "text-slate-700 hover:bg-slate-100",
-            ].join(" ")}
-            aria-label="Luk"
+            className="rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
           >
             ✕
           </button>
@@ -156,27 +214,15 @@ export default function IncidentEditModal({
                 Tidspunkt
               </label>
               <input
-                type="text"
-                inputMode="numeric"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 onBlur={() => {
                   const parsed = parseTimeToHHmm(time);
                   if (parsed) setTime(parsed);
                 }}
-                className={[
-                  "mt-2 w-full rounded-xl border px-3 py-2 text-sm shadow-sm outline-none",
-                  normalizedTime
-                    ? "border-slate-200 bg-white text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                    : "border-rose-300 bg-rose-50 text-slate-900 focus:border-rose-500 focus:ring-1 focus:ring-rose-500",
-                ].join(" ")}
+                className="mt-2 w-full rounded-xl border px-3 py-2 text-sm"
                 placeholder="12:45 eller 1245"
               />
-              {!normalizedTime && time.trim().length > 0 && (
-                <p className="mt-1 text-xs text-rose-700">
-                  Skriv tid som HH:mm (fx 12:45) eller 4 tal (fx 1245)
-                </p>
-              )}
             </div>
 
             {/* Type */}
@@ -187,12 +233,10 @@ export default function IncidentEditModal({
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value as IncidentType)}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                className="mt-2 w-full rounded-xl border px-3 py-2 text-sm"
               >
                 {TYPE_OPTIONS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
+                  <option key={t}>{t}</option>
                 ))}
               </select>
             </div>
@@ -203,11 +247,9 @@ export default function IncidentEditModal({
                 Modtaget fra
               </label>
               <input
-                type="text"
                 value={modtagetFra}
                 onChange={(e) => setModtagetFra(e.target.value)}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                placeholder="Fx: Vagtleder, dommer, publikum…"
+                className="mt-2 w-full rounded-xl border px-3 py-2 text-sm"
               />
             </div>
 
@@ -217,10 +259,10 @@ export default function IncidentEditModal({
                 Hændelse
               </label>
               <textarea
+                rows={3}
                 value={haendelse}
                 onChange={(e) => setHaendelse(e.target.value)}
-                rows={3}
-                className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                className="mt-2 w-full rounded-xl border p-3 text-sm"
               />
             </div>
 
@@ -230,64 +272,97 @@ export default function IncidentEditModal({
                 Løsning
               </label>
               <textarea
+                rows={3}
                 value={loesning}
                 onChange={(e) => setLoesning(e.target.value)}
-                rows={3}
-                className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                placeholder="Hvad blev gjort / hvad er planen?"
+                className="mt-2 w-full rounded-xl border p-3 text-sm"
               />
             </div>
 
-            {/* Checkboxes */}
-            <div className="md:col-span-2 flex flex-col gap-2 sm:flex-row sm:gap-6">
-              <label className="flex items-center gap-2 text-sm text-slate-900">
-                <input
-                  type="checkbox"
-                  checked={politiInvolveret}
-                  onChange={(e) => setPolitiInvolveret(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300"
-                />
-                Politi involveret
+            {/* Existing images */}
+            {existingFiles.length > 0 && (
+              <div className="md:col-span-2">
+                <p className="text-sm font-medium text-slate-900 mb-2">
+                  Eksisterende billeder
+                </p>
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {existingFiles.map((f) => (
+                    <a
+                      key={f.storagePath}
+                      href={f.downloadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block overflow-hidden rounded-xl border"
+                    >
+                      <img
+                        src={f.downloadUrl}
+                        alt={f.fileName}
+                        className="h-24 w-full object-cover"
+                      />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add images (same UX as create) */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-slate-900">
+                Tilføj flere billeder
               </label>
 
-              <label className="flex items-center gap-2 text-sm text-slate-900">
-                <input
-                  type="checkbox"
-                  checked={beredskabInvolveret}
-                  onChange={(e) => setBeredskabInvolveret(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300"
-                />
-                Beredskab involveret
-              </label>
+              <input
+                key={fileInputKey}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) =>
+                  setNewFiles(e.target.files ? Array.from(e.target.files) : [])
+                }
+                className="mt-2 block w-full text-sm"
+              />
+
+              {previews.length > 0 && (
+                <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {previews.map((p, idx) => (
+                    <div
+                      key={p.url}
+                      className="relative overflow-hidden rounded-xl border"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => removeNewFileAt(idx)}
+                        className="absolute right-1 top-1 z-10 h-6 w-6 rounded-full bg-black/60 text-xs text-white"
+                      >
+                        ✕
+                      </button>
+                      <img
+                        src={p.url}
+                        alt={p.name}
+                        className="h-24 w-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-slate-200 p-4">
+        <div className="flex justify-end gap-2 border-t p-4">
           <button
-            type="button"
             onClick={closeIfAllowed}
-            disabled={saving}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-xl border px-4 py-2 text-sm"
           >
             Annuller
           </button>
 
           <button
-            type="button"
             onClick={save}
             disabled={!canSave}
-            className={[
-              "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition",
-              !canSave
-                ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                : "bg-slate-900 text-white hover:bg-slate-800 active:scale-[0.99]",
-            ].join(" ")}
+            className="rounded-xl bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
           >
-            {saving && (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-transparent" />
-            )}
             {saving ? "Gemmer…" : "Gem ændringer"}
           </button>
         </div>
