@@ -13,8 +13,8 @@ export type Incident = {
   time: string;
   type: IncidentType;
 
-  modtagetFra: string; // reported by (typed)
-  loggetAf: string; // logged by (current user)
+  modtagetFra: string;
+  loggetAf: string;
 
   haendelse: string;
   loesning: string;
@@ -22,4 +22,8 @@ export type Incident = {
   beredskabInvolveret: boolean;
   files: UploadedIncidentFile[];
   createdAt: string;
+
+  // ✅ NEW: ownership / auditing (needed for 5-min edit for non-admins)
+  createdByUid?: string | null;
+  createdByRole?: string | null;
 };

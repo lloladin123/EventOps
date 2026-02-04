@@ -97,8 +97,12 @@ export default function IncidentForm({
         loesning: loesning.trim(),
         politiInvolveret,
         beredskabInvolveret,
-        files: uploadedFiles, // ✅ real URLs + paths
+        files: uploadedFiles,
         createdAt: new Date().toISOString(),
+
+        // ✅ add ownership directly onto the incident
+        createdByUid: (user as any)?.uid ?? null,
+        createdByRole: role ?? null,
       };
 
       await createIncidentFirestore(eventId, incident, {

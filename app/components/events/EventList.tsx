@@ -89,6 +89,7 @@ export default function EventList() {
                 key={event.id}
                 event={event} // ✅ keep Firestore field
                 attendanceValue={my?.attendance as RSVPAttendance | undefined}
+                approved={my?.approved}
                 commentValue={my?.comment ?? ""}
                 onChangeAttendance={onChangeAttendance}
                 onChangeComment={onChangeComment}
@@ -121,6 +122,7 @@ export default function EventList() {
                 <EventCard
                   key={event.id}
                   event={effectiveEvent}
+                  approved={my?.approved}
                   attendanceValue={my?.attendance as RSVPAttendance | undefined}
                   commentValue={my?.comment ?? ""}
                   onChangeAttendance={onChangeAttendance}

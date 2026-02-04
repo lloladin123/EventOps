@@ -34,7 +34,7 @@ function toLegacyRsvpShape(args: {
   const isCrew = resolvedRole === ROLE.Crew;
 
   return {
-    id: makeId(), // UI-only; your old RSVP had ids. Not needed for Firestore.
+    id: makeId(),
     eventId,
     userRole: resolvedRole,
     userSubRole: isCrew
@@ -42,9 +42,10 @@ function toLegacyRsvpShape(args: {
       : null,
     attendance: doc.attendance ?? RSVP_ATTENDANCE.Maybe,
     comment: doc.comment ?? "",
+    approved: doc.approved ?? undefined, // ✅ THIS LINE
     userDisplayName: doc.userDisplayName?.trim() || userDisplayName,
-    createdAt: new Date().toISOString(), // UI-only
-    updatedAt: new Date().toISOString(), // UI-only
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   };
 }
 

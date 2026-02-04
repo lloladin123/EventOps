@@ -54,13 +54,41 @@ export default function LoginRedirect({
     );
   }
 
-  // If logged in but role not loaded yet (doc missing / rules), block with a soft message
+  // Logged in but no role assigned yet → waiting for admin approval
   if (!role) {
     return (
       <main className="mx-auto max-w-2xl p-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-slate-900">Loading…</h1>
-          <p className="mt-2 text-sm text-slate-600">Henter brugerrolle…</p>
+          <h1 className="text-xl font-semibold text-slate-900">
+            Afventer godkendelse
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-600">
+            Din konto er oprettet, men en admin skal først tildele dig en rolle,
+            før du kan bruge systemet.
+          </p>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+            >
+              Opdater
+            </button>
+
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Skift bruger
+            </button>
+          </div>
+
+          <p className="mt-3 text-xs text-slate-500">
+            Tip: Hvis du lige er blevet godkendt, så tryk “Opdater”.
+          </p>
         </div>
       </main>
     );

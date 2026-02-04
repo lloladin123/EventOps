@@ -118,7 +118,26 @@ export default function IncidentTable({
                       </button>
                     ) : (
                       <span className="text-xs text-slate-400">
-                        {onEdit ? "—" : ""}
+                        {onEdit ? (
+                          <button
+                            type="button"
+                            onClick={() => onEdit(i)}
+                            disabled={!canEdit}
+                            className={[
+                              "rounded-lg border px-2 py-1 text-xs font-medium",
+                              canEdit
+                                ? "hover:bg-slate-50"
+                                : "cursor-not-allowed opacity-40",
+                            ].join(" ")}
+                            title={
+                              canEdit
+                                ? "Update"
+                                : "Update kun muligt i 5 min for den der oprettede hændelsen (Admin altid)"
+                            }
+                          >
+                            Update
+                          </button>
+                        ) : null}
                       </span>
                     )}
 
