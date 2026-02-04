@@ -98,7 +98,10 @@ export default function RequestsEventGroup({
                   <div className="font-medium">
                     {r.userDisplayName?.trim() || "Ukendt navn"}
                   </div>
-                  <div className="font-mono text-xs opacity-70">{r.uid}</div>
+                  <div className="text-xs opacity-70">
+                    {r.userRole ?? "—"}
+                    {r.userSubRole ? ` • ${r.userSubRole}` : ""}
+                  </div>
                 </td>
 
                 <td className="py-2">{r.attendance}</td>
