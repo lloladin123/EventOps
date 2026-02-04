@@ -79,9 +79,13 @@ export default function EventCard({
           {canOpenDetails ? (
             <Link
               href={`/events/${event.id}`}
-              className="text-lg font-semibold underline text-slate-900 hover:text-slate-600"
+              aria-label={`Åbn detaljer for ${event.title}`}
+              className="group flex items-center gap-2 text-lg font-semibold text-slate-900 hover:text-slate-600"
             >
-              {event.title}
+              <span className="group-hover:underline">{event.title}</span>
+              <span className="text-slate-400 transition group-hover:translate-x-0.5">
+                ›
+              </span>
             </Link>
           ) : (
             <span
