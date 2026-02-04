@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
-import { DECISION, type Decision } from "@/types/rsvpIndex"; // ✅
+import { DECISION, type Decision } from "@/types/rsvpIndex";
 import StateButton from "../ui/StateButton";
 
 import { setRsvpDecision } from "@/app/lib/firestore/rsvps";
@@ -35,7 +35,7 @@ export default function RequestsEventGroup({
       });
     } catch (err) {
       alert(
-        err instanceof Error ? err.message : "Kunne ikke opdatere decision"
+        err instanceof Error ? err.message : "Kunne ikke opdatere beslutning"
       );
     } finally {
       setSaving((prev) => {
@@ -47,10 +47,28 @@ export default function RequestsEventGroup({
   };
 
   const DECISION_OPTIONS = [
-    { value: DECISION.Approved, label: "Approved" },
-    { value: DECISION.Pending, label: "Pending" },
-    { value: DECISION.Unapproved, label: "Unapproved" },
+    { value: DECISION.Approved, label: "Godkend" },
+    { value: DECISION.Pending, label: "Afventer" },
+    { value: DECISION.Unapproved, label: "Afvis" },
   ] as const;
+
+  // ✅ split list into yes/maybe/no
+  const { actionable, maybes, saidNo } = React.useMemo(() => {
+    const actionable: RSVPRow[] = []; // yes + maybe
+    const maybes: RSVPRow[] = [];
+    const saidNo: RSVPRow[] = [];
+
+    for (const r of list) {
+      if (r.attendance === "no") {
+        saidNo.push(r);
+        continue;
+      }
+      actionable.push(r);
+      if (r.attendance === "maybe") maybes.push(r);
+    }
+
+    return { actionable, maybes, saidNo };
+  }, [list]);
 
   return (
     <div className="border rounded-lg p-3 space-y-3">
@@ -77,15 +95,15 @@ export default function RequestsEventGroup({
       <table className="w-full text-sm">
         <thead className="opacity-60">
           <tr>
-            <th className="text-left py-1">User</th>
-            <th className="text-left py-1">Attendance</th>
-            <th className="text-left py-1">Comment</th>
-            <th className="text-left py-1">Decision</th>
+            <th className="text-left py-1">Bruger</th>
+            <th className="text-left py-1">Deltagelse</th>
+            <th className="text-left py-1">Kommentar</th>
+            <th className="text-left py-1">Beslutning</th>
           </tr>
         </thead>
         <tbody>
-          {list.map((r) => {
-            const decision: Decision = // ✅
+          {actionable.map((r) => {
+            const decision: Decision =
               (r as any).decision ??
               (r.approved ? DECISION.Approved : DECISION.Pending);
 
@@ -104,7 +122,10 @@ export default function RequestsEventGroup({
                   </div>
                 </td>
 
-                <td className="py-2">{r.attendance}</td>
+                <td className="py-2">
+                  {r.attendance === "maybe" ? "maybe (måske)" : r.attendance}
+                </td>
+
                 <td className="py-2 opacity-80">{r.comment || "—"}</td>
 
                 <td className="py-2">
@@ -131,10 +152,10 @@ export default function RequestsEventGroup({
                   ) : (
                     <span className="text-xs opacity-70">
                       {decision === DECISION.Approved
-                        ? "Approved"
+                        ? "Godkendt"
                         : decision === DECISION.Unapproved
-                        ? "Unapproved"
-                        : "Pending"}
+                        ? "Afvist"
+                        : "Afventer"}
                     </span>
                   )}
                 </td>
@@ -143,6 +164,40 @@ export default function RequestsEventGroup({
           })}
         </tbody>
       </table>
+
+      {/* ✅ NO list (simple, no actions) */}
+      {saidNo.length > 0 && (
+        <div className="border-t pt-3">
+          <div className="text-sm font-semibold">
+            Sagde nej ({saidNo.length})
+          </div>
+
+          <div className="mt-2 space-y-2">
+            {saidNo.map((r) => {
+              const key = `${r.eventId}:${r.uid}:no`;
+              return (
+                <div
+                  key={key}
+                  className="rounded-lg border bg-slate-50 px-3 py-2"
+                >
+                  <div className="text-sm font-medium">
+                    {r.userDisplayName?.trim() || "Ukendt navn"}
+                  </div>
+                  <div className="text-xs opacity-70">
+                    {r.userRole ?? "—"}
+                    {r.userSubRole ? ` • ${r.userSubRole}` : ""}
+                  </div>
+                  {r.comment ? (
+                    <div className="mt-1 text-xs opacity-80">
+                      Kommentar: {r.comment}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="text-xs opacity-60">
         Decisions are stored in Firestore on{" "}
