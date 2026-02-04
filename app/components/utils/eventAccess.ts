@@ -9,7 +9,7 @@ type Args = {
 
 // Admin always allowed. Everyone else must be approved.
 export function canAccessEventDetails({ eventId, uid, role }: Args): boolean {
-  if (role === ROLE.Admin) return true;
+  if (role === ROLE.Admin || role === ROLE.Logfører) return true;
   if (!uid) return false;
   return isApproved(eventId, uid);
 }

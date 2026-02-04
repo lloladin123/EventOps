@@ -45,9 +45,12 @@ export async function createIncidentFirestore(
     // ✅ store uploaded file metadata (NOT File objects)
     files: Array.isArray(incident.files) ? incident.files : [],
 
-    createdByUid: opts?.createdByUid ?? null,
-    createdByRole: opts?.createdByRole ?? null,
+    // ✅ IMPORTANT: store ownership on the doc
+    // Prefer incident.createdByUid if present, otherwise opts
+    createdByUid: incident.createdByUid ?? opts?.createdByUid ?? null,
+    createdByRole: incident.createdByRole ?? opts?.createdByRole ?? null,
 
+    // ✅ canonical timestamps
     createdAt: serverTimestamp(),
     createdAtMs: nowMs,
   };
@@ -105,10 +108,14 @@ export function subscribeIncidents(
           politiInvolveret: !!data.politiInvolveret,
           beredskabInvolveret: !!data.beredskabInvolveret,
 
-          // ✅ load uploaded metadata back from Firestore
           files: Array.isArray(data.files) ? data.files : [],
 
+          // ✅ convert serverTimestamp -> ISO string for UI
           createdAt: toIso(data.createdAt),
+
+          // ✅ THIS IS THE MISSING PIECE (owner + role for permissions)
+          createdByUid: data.createdByUid ?? null,
+          createdByRole: data.createdByRole ?? null,
         };
 
         return incident;

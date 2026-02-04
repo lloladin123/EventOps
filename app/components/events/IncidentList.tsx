@@ -9,7 +9,7 @@ import IncidentTable from "./IncidentTable";
 
 type Props = {
   eventId: string;
-  incidents?: Incident[]; // ✅ allow undefined
+  incidents?: Incident[];
   onEdit?: (incident: Incident) => void;
   onDelete?: (incidentId: string) => void;
 };
@@ -17,19 +17,44 @@ type Props = {
 type ViewMode = "list" | "table";
 const VIEW_KEY = "incidentViewMode";
 
+// 🔧 CHANGE THIS FOR TESTING
+// const EDIT_WINDOW_MS = 10 * 1000;
 const EDIT_WINDOW_MS = 5 * 60 * 1000;
 
-function canEditWithinWindow(incident: Incident, now: number) {
-  const created = new Date(incident.createdAt).getTime();
-  if (!Number.isFinite(created)) return false;
-  return now - created <= EDIT_WINDOW_MS;
+function getCreatedMs(incident: Incident): number | null {
+  const v: any = (incident as any).createdAt;
+
+  if (typeof v === "string" || typeof v === "number" || v instanceof Date) {
+    const t = new Date(v).getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+
+  if (v?.toDate && typeof v.toDate === "function") {
+    const t = v.toDate().getTime();
+    return Number.isFinite(t) ? t : null;
+  }
+
+  if (typeof v?.seconds === "number") {
+    return v.seconds * 1000;
+  }
+
+  return null;
 }
 
 function isOwner(incident: Incident, uid: string | null) {
   if (!uid) return false;
-  const createdByUid = (incident as any).createdByUid as string | undefined;
-  if (!createdByUid) return false;
-  return createdByUid === uid;
+
+  const anyI = incident as any;
+  const createdByUid =
+    anyI.createdByUid ??
+    anyI.createdBy?.uid ??
+    anyI.createdBy?.id ??
+    anyI.createdById ??
+    anyI.userId ??
+    anyI.uid ??
+    null;
+
+  return typeof createdByUid === "string" && createdByUid === uid;
 }
 
 function getInitialView(): ViewMode {
@@ -44,15 +69,72 @@ export default function IncidentList({
   onEdit,
   onDelete,
 }: Props) {
-  // ✅ always an array from here on
   const safeIncidents: Incident[] = Array.isArray(incidents) ? incidents : [];
 
   const { role, user } = useAuth();
   const admin = isAdminRole(role);
   const uid = user?.uid ?? null;
-  const now = useNow(15_000);
 
   const [view, setView] = React.useState<ViewMode>(() => getInitialView());
+
+  // ✅ ONE BOOLEAN PER INCIDENT — THIS IS THE FIX
+  const [editableMap, setEditableMap] = React.useState<Record<string, boolean>>(
+    () => {
+      if (typeof window === "undefined") return {};
+      try {
+        const raw = localStorage.getItem("incidentEditableMap");
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+  );
+
+  React.useEffect(() => {
+    setEditableMap((prev) => {
+      const next: Record<string, boolean> = {};
+      for (const i of safeIncidents) {
+        if (prev[i.id] !== undefined) {
+          next[i.id] = prev[i.id];
+        }
+      }
+      return next;
+    });
+  }, [safeIncidents]);
+
+  React.useEffect(() => {
+    localStorage.setItem("incidentEditableMap", JSON.stringify(editableMap));
+  }, [editableMap]);
+
+  // ✅ INIT + EXPIRE EACH INCIDENT ONCE
+  React.useEffect(() => {
+    const now = Date.now();
+
+    safeIncidents.forEach((i) => {
+      // already initialized → do nothing
+      if (editableMap[i.id] !== undefined) return;
+
+      const created = getCreatedMs(i);
+      if (created == null) return;
+
+      const expiresAt = created + EDIT_WINDOW_MS;
+
+      // already expired
+      if (now >= expiresAt) {
+        setEditableMap((m) => ({ ...m, [i.id]: false }));
+        return;
+      }
+
+      // editable now
+      setEditableMap((m) => ({ ...m, [i.id]: true }));
+
+      // flip to false ONCE
+      const delay = expiresAt - now;
+      window.setTimeout(() => {
+        setEditableMap((m) => ({ ...m, [i.id]: false }));
+      }, delay);
+    });
+  }, [safeIncidents, editableMap]);
 
   React.useEffect(() => {
     localStorage.setItem(VIEW_KEY, view);
@@ -94,7 +176,7 @@ export default function IncidentList({
         <ul className="mt-4 space-y-3">
           {safeIncidents.map((i) => {
             const canEdit =
-              admin || (isOwner(i, uid) && canEditWithinWindow(i, now));
+              admin || (isOwner(i, uid) && editableMap[i.id] === true);
 
             return (
               <IncidentListItem
@@ -113,7 +195,7 @@ export default function IncidentList({
           eventId={eventId}
           incidents={safeIncidents}
           canEditIncident={(i) =>
-            admin || (isOwner(i, uid) && canEditWithinWindow(i, now))
+            admin || (isOwner(i, uid) && editableMap[i.id] === true)
           }
           canDeleteIncident={admin}
           onEdit={onEdit}
@@ -131,18 +213,4 @@ function btnCls(active: boolean) {
       ? "bg-slate-900 text-white"
       : "bg-slate-100 text-slate-600 hover:bg-slate-200",
   ].join(" ");
-}
-
-function useNow(tickMs = 15_000) {
-  const [now, setNow] = React.useState(() => Date.now());
-
-  React.useEffect(() => {
-    const id = window.setInterval(() => {
-      setNow(Date.now());
-    }, tickMs);
-
-    return () => window.clearInterval(id);
-  }, [tickMs]);
-
-  return now;
 }
