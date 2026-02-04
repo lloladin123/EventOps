@@ -4,8 +4,9 @@ import * as React from "react";
 import Link from "next/link";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
-import { auth } from "@/app/lib/firebase/client";
+import { auth, db } from "@/app/lib/firebase/client";
 import { useRouter } from "next/navigation";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
 function normalizeName(input: string) {
   return input.trim().replace(/\s+/g, " "); // collapse multiple spaces
@@ -69,6 +70,17 @@ export default function SignupCard() {
 
       // ✅ Force displayName in Firebase Auth
       await updateProfile(cred.user, { displayName: normalizedName });
+
+      await setDoc(
+        doc(db, "users", cred.user.uid),
+        {
+          displayName: normalizedName,
+          email: cred.user.email,
+          updatedAt: serverTimestamp(),
+          // only set createdAt if it's missing (see below)
+        },
+        { merge: true }
+      );
 
       // ✅ Do NOT write Firestore here.
       // AuthProvider will create users/{uid} on first login if it doesn't exist.
