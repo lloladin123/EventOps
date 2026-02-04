@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 
 import { auth } from "@/app/lib/firebase/client";
+import { useRouter } from "next/navigation";
 
 function normalizeName(input: string) {
   return input.trim().replace(/\s+/g, " "); // collapse multiple spaces
@@ -32,6 +33,8 @@ export default function SignupCard() {
   const emailOk = trimmedEmail.length > 3;
   const passwordOk = password.length >= 6;
   const nameOk = normalizedName.length >= 2;
+
+  const router = useRouter();
 
   const canSubmit = emailOk && passwordOk && nameOk && !busy;
 
@@ -71,12 +74,13 @@ export default function SignupCard() {
       // AuthProvider will create users/{uid} on first login if it doesn't exist.
 
       setOk(true);
+      router.replace("/events");
     } catch (e: unknown) {
       setError(errorMessage(e, "Kunne ikke oprette bruger."));
     } finally {
       setBusy(false);
     }
-  }, [normalizedName, trimmedEmail, password]);
+  }, [normalizedName, trimmedEmail, password, router]);
 
   const buttonLabel = busy ? "Opretter…" : "Opret";
   const buttonClass = [

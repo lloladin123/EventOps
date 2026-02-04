@@ -14,21 +14,52 @@ import { setEventOpen } from "@/app/lib/firestore/events";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
-import type { RSVPAttendance } from "@/types/rsvpIndex";
+import type { Decision, RSVPAttendance } from "@/types/rsvpIndex";
 import { canAccessEventDetails } from "@/utils/eventAccess";
 
 type Props = {
   event: Event;
   attendanceValue?: RSVPAttendance;
+  approved?: boolean;
   commentValue: string;
   onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
   onChangeComment: (eventId: string, comment: string) => void;
   onDelete?: (event: Event) => void; // ✅ delete hook (admin only)
 };
 
+function decisionText(decision?: Decision) {
+  switch (decision) {
+    case "approved":
+      return "Din anmodning er godkendt";
+    case "unapproved":
+      return "Din anmodning blev afvist";
+    case "pending":
+      return "Afventer godkendelse";
+    default:
+      return "Du har ikke anmodet om deltagelse";
+  }
+}
+
+function userStatusText(attendance?: RSVPAttendance, approved?: boolean) {
+  if (!attendance) {
+    return "Du har ikke anmodet om deltagelse";
+  }
+
+  if (approved === true) {
+    return "Din anmodning er godkendt";
+  }
+
+  if (approved === false) {
+    return "Din anmodning blev afvist";
+  }
+
+  return "Afventer godkendelse";
+}
+
 export default function EventCard({
   event,
   attendanceValue,
+  approved,
   commentValue,
   onChangeAttendance,
   onChangeComment,
@@ -97,14 +128,20 @@ export default function EventCard({
           )}
 
           {!admin && (
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1",
-                b.cls
-              )}
-            >
-              {b.text}
-            </span>
+            <div className="flex flex-col gap-1">
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1",
+                  b.cls
+                )}
+              >
+                {b.text}
+              </span>
+
+              <span className="text-xs text-slate-500">
+                {userStatusText(attendanceValue, approved)}
+              </span>
+            </div>
           )}
 
           {!event.open && (

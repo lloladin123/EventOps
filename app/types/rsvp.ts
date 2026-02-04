@@ -30,6 +30,8 @@ export type RSVP = {
   id: string;
   eventId: string;
 
+  approved?: boolean;
+
   userRole: Role;
   userSubRole?: CrewSubRole | null;
 
