@@ -13,7 +13,10 @@ import {
 
 type Props = { eventId: string };
 
-type Row = { uid: string } & RsvpDoc;
+type Row = { uid: string } & RsvpDoc & {
+    userRole?: string | null;
+    userSubRole?: string | null;
+  };
 
 function labelFromUid(uid: string) {
   if (uid.includes("@")) return uid;
@@ -25,6 +28,13 @@ function labelFromUid(uid: string) {
 
 function displayNameFromRow(r: Row) {
   return r.userDisplayName?.trim() || labelFromUid(r.uid);
+}
+
+function roleLabelFromRow(r: Row) {
+  const role = (r as any).role ?? (r as any).userRole ?? null;
+  const subRole = (r as any).subRole ?? (r as any).userSubRole ?? null;
+  if (!role) return null;
+  return subRole ? `${role} • ${subRole}` : role;
 }
 
 const ATTENDANCE_ORDER: Record<RSVPAttendance, number> = {
@@ -115,22 +125,33 @@ export default function ApprovedUsers({ eventId }: Props) {
         <div className="mt-2 text-sm text-slate-500">Ingen godkendte endnu</div>
       ) : (
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {approved.map((r) => (
-            <div key={r.uid} className="rounded-xl border bg-white px-3 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium text-slate-900">
-                  {displayNameFromRow(r)}
-                </div>
-                {attendancePill(r.attendance)}
-              </div>
+          {approved.map((r) => {
+            const roleLabel = roleLabelFromRow(r);
 
-              {r.comment ? (
-                <div className="mt-1 text-xs text-slate-600">
-                  Note: {r.comment}
+            return (
+              <div key={r.uid} className="rounded-xl border bg-white px-3 py-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <div className="text-sm font-medium text-slate-900">
+                      {displayNameFromRow(r)}
+                    </div>
+
+                    {roleLabel ? (
+                      <div className="text-xs text-slate-500">{roleLabel}</div>
+                    ) : null}
+                  </div>
+
+                  {attendancePill(r.attendance)}
                 </div>
-              ) : null}
-            </div>
-          ))}
+
+                {r.comment ? (
+                  <div className="mt-1 text-xs text-slate-600">
+                    Note: {r.comment}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
