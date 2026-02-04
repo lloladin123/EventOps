@@ -16,6 +16,7 @@ import { useAuth } from "@/app/components/auth/AuthProvider";
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
 import type { Decision, RSVPAttendance } from "@/types/rsvpIndex";
 import { canAccessEventDetails } from "@/utils/eventAccess";
+import EventCardMembers from "./EventCardMembers";
 
 type Props = {
   event: Event;
@@ -152,6 +153,8 @@ export default function EventCard({
         </div>
 
         <EventMeta event={event} />
+
+        {!admin && <EventCardMembers eventId={event.id} max={6} />}
 
         {!admin && (
           <EventComment
