@@ -85,10 +85,20 @@ export default function RequestsEventGroup({
         </div>
 
         <button
-          className="border rounded px-3 py-1"
           onClick={() => onCopyApproved(eventId)}
+          className="
+            rounded-md
+            bg-slate-900
+            px-4 py-2
+            text-sm font-medium
+            text-white
+            shadow-sm
+            transition
+            hover:bg-slate-800
+            active:scale-95
+          "
         >
-          Copy approved
+          Kopiér godkendte
         </button>
       </div>
 
@@ -123,7 +133,7 @@ export default function RequestsEventGroup({
                 </td>
 
                 <td className="py-2">
-                  {r.attendance === "maybe" ? "maybe (måske)" : r.attendance}
+                  {r.attendance === "maybe" ? "måske" : r.attendance}
                 </td>
 
                 <td className="py-2 opacity-80">{r.comment || "—"}</td>
