@@ -2,7 +2,12 @@ export const runtime = "nodejs";
 
 import { PDFDocument, StandardFonts } from "pdf-lib";
 
-// Keep the route flexible: accept whatever you send, but expect incidents[]
+type IncidentFilePayload = {
+  fileName?: string;
+  downloadUrl?: string;
+  storagePath?: string;
+};
+
 type IncidentPayload = {
   id?: string;
   time?: string;
@@ -14,6 +19,7 @@ type IncidentPayload = {
   politiInvolveret?: boolean;
   beredskabInvolveret?: boolean;
   createdAt?: string;
+  files?: IncidentFilePayload[];
 };
 
 type Body = {
@@ -30,6 +36,18 @@ function boolMark(v: unknown) {
   return v ? "Ja" : "Nej";
 }
 
+function isHttpUrl(s: string) {
+  return /^https?:\/\//i.test(s);
+}
+
+async function fetchImage(url: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const ct = res.headers.get("content-type") || "";
+  const ab = await res.arrayBuffer();
+  return { bytes: new Uint8Array(ab), contentType: ct };
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => ({}))) as Body;
@@ -38,12 +56,10 @@ export async function POST(req: Request) {
     const eventTitle = safeStr(body.eventTitle);
     const eventId = safeStr(body.eventId);
 
-    // Create PDF
     const pdf = await PDFDocument.create();
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-    // A4 in points
     const PAGE_W = 595.28;
     const PAGE_H = 841.89;
 
@@ -54,6 +70,13 @@ export async function POST(req: Request) {
     let page = pdf.addPage([PAGE_W, PAGE_H]);
     let y = PAGE_H - marginY;
 
+    const newPageIfNeeded = (minY = marginY + 60) => {
+      if (y < minY) {
+        page = pdf.addPage([PAGE_W, PAGE_H]);
+        y = PAGE_H - marginY;
+      }
+    };
+
     const drawLine = (
       text: string,
       opts?: { bold?: boolean; size?: number }
@@ -61,16 +84,12 @@ export async function POST(req: Request) {
       const size = opts?.size ?? 11;
       const useFont = opts?.bold ? fontBold : font;
 
-      // crude wrapping
       const maxWidth = PAGE_W - marginX * 2;
       const words = text.split(" ");
       let line = "";
 
       const flush = (l: string) => {
-        if (y < marginY + 60) {
-          page = pdf.addPage([PAGE_W, PAGE_H]);
-          y = PAGE_H - marginY;
-        }
+        newPageIfNeeded();
         page.drawText(l, { x: marginX, y, size, font: useFont });
         y -= lineH;
       };
@@ -87,6 +106,83 @@ export async function POST(req: Request) {
         }
       }
       if (line) flush(line);
+    };
+
+    // Draw a simple image grid under current y
+    const drawImages = async (files: IncidentFilePayload[] | undefined) => {
+      const urls = (files ?? [])
+        .map((f) => safeStr(f.downloadUrl))
+        .filter((u) => u && isHttpUrl(u));
+
+      if (!urls.length) return;
+
+      drawLine("Billeder:", { bold: true });
+      y -= 4;
+
+      const maxWidth = PAGE_W - marginX * 2;
+      const gap = 10;
+      const imgW = 160;
+      const imgH = 120;
+
+      let x = marginX;
+
+      for (let idx = 0; idx < urls.length; idx++) {
+        // wrap row
+        if (x + imgW > marginX + maxWidth + 0.1) {
+          x = marginX;
+          y -= imgH + gap;
+        }
+
+        // new page if needed
+        if (y - imgH < marginY) {
+          page = pdf.addPage([PAGE_W, PAGE_H]);
+          y = PAGE_H - marginY;
+          x = marginX;
+        }
+
+        const url = urls[idx];
+
+        try {
+          const { bytes, contentType } = await fetchImage(url);
+
+          // embed based on content-type; fallback tries both
+          let embedded;
+          if (contentType.includes("png")) {
+            embedded = await pdf.embedPng(bytes);
+          } else if (
+            contentType.includes("jpeg") ||
+            contentType.includes("jpg")
+          ) {
+            embedded = await pdf.embedJpg(bytes);
+          } else {
+            // fallback: try png then jpg
+            try {
+              embedded = await pdf.embedPng(bytes);
+            } catch {
+              embedded = await pdf.embedJpg(bytes);
+            }
+          }
+
+          page.drawImage(embedded, {
+            x,
+            y: y - imgH,
+            width: imgW,
+            height: imgH,
+          });
+        } catch {
+          // don't crash export if one image fails
+          drawLine(`(Kunne ikke hente billede ${idx + 1})`);
+          // keep layout moving a bit so we don't overlap
+          y -= lineH;
+          x += imgW + gap;
+          continue;
+        }
+
+        x += imgW + gap;
+      }
+
+      // after grid, move y down
+      y -= imgH + 8;
     };
 
     // Header
@@ -120,13 +216,17 @@ export async function POST(req: Request) {
         const loesning = safeStr(i.loesning);
         if (loesning) drawLine(`Løsning: ${loesning}`);
 
+        y -= 6;
+
+        // ✅ Images
+        await drawImages(i.files);
+
         y -= 8;
+        newPageIfNeeded(marginY + 80);
       }
     }
 
     const bytes = await pdf.save();
-
-    // filename that won’t annoy browsers
     const filename = `haendelser${eventId ? `-${eventId}` : ""}.pdf`;
 
     return new Response(Buffer.from(bytes), {

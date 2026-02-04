@@ -8,29 +8,13 @@ import {
   serverTimestamp,
   setDoc,
   updateDoc,
+  deleteDoc,
   type DocumentData,
   type Timestamp,
 } from "firebase/firestore";
 import type { Incident } from "@/types/incident";
 
-type FileMeta = {
-  name: string;
-  size: number;
-  type: string;
-  lastModified: number;
-};
-
-function filesToMeta(files: File[]): FileMeta[] {
-  return files.map((f) => ({
-    name: f.name,
-    size: f.size,
-    type: f.type,
-    lastModified: f.lastModified,
-  }));
-}
-
 function toIso(createdAt: unknown): string {
-  // Firestore Timestamp
   if (
     createdAt &&
     typeof createdAt === "object" &&
@@ -38,21 +22,13 @@ function toIso(createdAt: unknown): string {
   ) {
     return (createdAt as Timestamp).toDate().toISOString();
   }
-
-  // already ISO string
   if (typeof createdAt === "string") return createdAt;
-
-  // fallback
   return new Date().toISOString();
 }
 
-/**
- * Create an incident under: events/{eventId}/incidents/{incidentId}
- *
- * IMPORTANT:
- * - Firestore serverTimestamp() is initially null, which can break ordering.
- * - We store createdAtMs for immediate stable ordering while createdAt resolves.
- */
+// removes undefined anywhere (Firestore hates undefined)
+const clean = (v: any) => JSON.parse(JSON.stringify(v));
+
 export async function createIncidentFirestore(
   eventId: string,
   incident: Incident,
@@ -66,23 +42,18 @@ export async function createIncidentFirestore(
     ...incident,
     eventId,
 
-    // Strip File objects, store metadata only
-    files: filesToMeta((incident as any).files ?? []),
+    // ✅ store uploaded file metadata (NOT File objects)
+    files: Array.isArray(incident.files) ? incident.files : [],
 
     createdByUid: opts?.createdByUid ?? null,
     createdByRole: opts?.createdByRole ?? null,
 
-    // Canonical timestamp (resolves on server)
     createdAt: serverTimestamp(),
-
-    // Stable immediate ordering key
     createdAtMs: nowMs,
   };
 
-  await setDoc(ref, payload, { merge: false });
+  await setDoc(ref, clean(payload), { merge: false });
 }
-
-import { deleteDoc } from "firebase/firestore"; // add to existing imports
 
 export async function deleteIncidentFirestore(
   eventId: string,
@@ -96,16 +67,15 @@ export async function updateIncidentFirestore(
   incidentId: string,
   patch: Partial<Incident>
 ) {
-  await updateDoc(doc(db, "events", eventId, "incidents", incidentId), {
-    ...patch,
-    updatedAt: serverTimestamp(),
-  });
+  await updateDoc(
+    doc(db, "events", eventId, "incidents", incidentId),
+    clean({
+      ...patch,
+      updatedAt: serverTimestamp(),
+    })
+  );
 }
 
-/**
- * Subscribe to incidents ordered newest-first.
- * Uses createdAtMs for stable ordering (no flicker / null timestamp issues).
- */
 export function subscribeIncidents(
   eventId: string,
   onData: (incidents: Incident[]) => void,
@@ -125,6 +95,7 @@ export function subscribeIncidents(
         const incident: Incident = {
           id: d.id,
           eventId,
+
           time: data.time ?? "",
           type: data.type ?? "Fejl",
           modtagetFra: data.modtagetFra ?? "",
@@ -134,16 +105,10 @@ export function subscribeIncidents(
           politiInvolveret: !!data.politiInvolveret,
           beredskabInvolveret: !!data.beredskabInvolveret,
 
-          // File objects can't come from Firestore; keep empty for UI
-          files: [],
+          // ✅ load uploaded metadata back from Firestore
+          files: Array.isArray(data.files) ? data.files : [],
 
-          // Keep UI logic working (edit-window etc.)
           createdAt: toIso(data.createdAt),
-
-          // meta (optional; used for ownership checks)
-          // @ts-expect-error meta fields
-          createdByUid: data.createdByUid ?? null,
-          createdByRole: data.createdByRole ?? null,
         };
 
         return incident;

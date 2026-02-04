@@ -1,3 +1,5 @@
+import { UploadedIncidentFile } from "../lib/uploadIncidentImages";
+
 export type IncidentType =
   | "Fejl"
   | "Sikkerhed"
@@ -18,6 +20,6 @@ export type Incident = {
   loesning: string;
   politiInvolveret: boolean;
   beredskabInvolveret: boolean;
-  files: File[];
+  files: UploadedIncidentFile[];
   createdAt: string;
 };

@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
+import IncidentEditModal from "./IncidentEditModal";
 
 type Props = {
+  eventId: string;
   incidents: Incident[];
   canEditIncident: (incident: Incident) => boolean;
   canDeleteIncident: boolean;
@@ -29,12 +31,16 @@ function NoBadge() {
 }
 
 export default function IncidentTable({
+  eventId,
   incidents,
   canEditIncident,
   canDeleteIncident,
   onEdit,
   onDelete,
 }: Props) {
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [selected, setSelected] = React.useState<Incident | null>(null);
+
   return (
     <div className="mt-4 overflow-x-auto">
       <table className="w-full border-collapse text-sm">
@@ -97,7 +103,11 @@ export default function IncidentTable({
                     {canEdit && onEdit ? (
                       <button
                         type="button"
-                        onClick={() => onEdit(i)}
+                        onClick={() => {
+                          setSelected(i);
+                          setEditOpen(true);
+                          onEdit?.(i);
+                        }}
                         className="rounded-lg border px-2 py-1 text-xs font-medium hover:bg-slate-50"
                       >
                         Update
