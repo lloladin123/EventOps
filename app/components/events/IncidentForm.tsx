@@ -11,10 +11,11 @@ import { nowHHmm, parseTimeToHHmm } from "@/utils/time";
 import { useAuthAndClosed } from "@/utils/useAuthAndClosed";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { createIncidentFirestore } from "@/app/lib/firestore/incidents";
+import { uploadIncidentImages } from "@/lib//uploadIncidentImages";
 
 type Props = {
   eventId: string;
-  eventOpen: boolean; // ✅ Firestore truth
+  eventOpen: boolean;
   onAddIncident: (incident: Incident) => void;
 };
 
@@ -27,10 +28,10 @@ export default function IncidentForm({
   eventOpen,
   onAddIncident,
 }: Props) {
-  const { loggedBy, canClose } = useAuthAndClosed(eventId); // keep for identity + permissions
+  const { loggedBy, canClose } = useAuthAndClosed(eventId);
   const { user, role } = useAuth();
 
-  const closed = !eventOpen; // ✅ single source of truth
+  const closed = !eventOpen;
 
   const [time, setTime] = React.useState<string>(nowHHmm());
   const [type, setType] = React.useState<IncidentType>("Fejl");
@@ -58,31 +59,50 @@ export default function IncidentForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canSubmit || !normalizedTime) return;
-
-    // ✅ if it got closed while user had the form open
     if (closed) return;
 
     setSaving(true);
     setError(null);
 
-    const incident: Incident = {
-      id: makeId(),
-      eventId,
-      time: normalizedTime,
-      type,
-      modtagetFra: modtagetFra.trim(),
-      loggetAf: loggedBy.trim(),
-      haendelse: haendelse.trim(),
-      loesning: loesning.trim(),
-      politiInvolveret,
-      beredskabInvolveret,
-      files,
-      createdAt: new Date().toISOString(),
-    };
+    const incidentId = makeId();
 
     try {
+      if (!user) throw new Error("Ikke logget ind");
+
+      // must be a Firebase user with getIdToken()
+      const idToken =
+        typeof (user as any).getIdToken === "function"
+          ? await (user as any).getIdToken()
+          : null;
+
+      if (!idToken) throw new Error("Kunne ikke hente login token");
+
+      // 1) upload images
+      const uploadedFiles = await uploadIncidentImages({
+        eventId,
+        incidentId,
+        files,
+        idToken,
+      });
+
+      // 2) save incident with uploaded metadata
+      const incident: Incident = {
+        id: incidentId,
+        eventId,
+        time: normalizedTime,
+        type,
+        modtagetFra: modtagetFra.trim(),
+        loggetAf: loggedBy.trim(),
+        haendelse: haendelse.trim(),
+        loesning: loesning.trim(),
+        politiInvolveret,
+        beredskabInvolveret,
+        files: uploadedFiles, // ✅ real URLs + paths
+        createdAt: new Date().toISOString(),
+      };
+
       await createIncidentFirestore(eventId, incident, {
-        createdByUid: user?.uid ?? null,
+        createdByUid: (user as any)?.uid ?? null,
         createdByRole: role ?? null,
       });
 
@@ -125,7 +145,7 @@ export default function IncidentForm({
             </p>
           </div>
 
-          <IncidentSubmitButton disabled={!canSubmit} />
+          <IncidentSubmitButton disabled={!canSubmit} loading={saving} />
         </div>
 
         {error && (
@@ -164,7 +184,7 @@ export default function IncidentForm({
             />
 
             <div className="mt-6 flex justify-end">
-              <IncidentSubmitButton disabled={!canSubmit} />
+              <IncidentSubmitButton disabled={!canSubmit} loading={saving} />
             </div>
           </>
         )}
@@ -172,7 +192,6 @@ export default function IncidentForm({
 
       {canClose && (
         <div className="w-full">
-          {/* ✅ now CloseLog has what it needs */}
           <CloseLog eventId={eventId} open={eventOpen} />
         </div>
       )}
