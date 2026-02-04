@@ -25,6 +25,12 @@ export default function UserListTable({
   setUserRole,
   setUserSubRole,
 }: Props) {
+  // ✅ Hide admins from the list
+  const visibleUsers = React.useMemo(
+    () => users.filter(({ data }) => (data.role as Role | null) !== ROLE.Admin),
+    [users]
+  );
+
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
       <table className="w-full">
@@ -55,14 +61,14 @@ export default function UserListTable({
                 Loading users…
               </td>
             </tr>
-          ) : users.length === 0 ? (
+          ) : visibleUsers.length === 0 ? (
             <tr>
               <td className="px-4 py-4 text-sm text-slate-600" colSpan={5}>
                 No users found.
               </td>
             </tr>
           ) : (
-            users.map(({ uid, data }) => {
+            visibleUsers.map(({ uid, data }) => {
               const role = (data.role ?? null) as Role | null;
               const subRole = (data.subRole ?? null) as CrewSubRole | null;
               const isCrew = role === ROLE.Crew;
@@ -89,11 +95,13 @@ export default function UserListTable({
                       <option value="" disabled>
                         Select role…
                       </option>
-                      {roles.map((roleOpt) => (
-                        <option key={roleOpt} value={roleOpt}>
-                          {roleOpt}
-                        </option>
-                      ))}
+                      {roles
+                        .filter((r) => r !== ROLE.Admin)
+                        .map((roleOpt) => (
+                          <option key={roleOpt} value={roleOpt}>
+                            {roleOpt}
+                          </option>
+                        ))}
                     </select>
                   </td>
 
