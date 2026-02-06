@@ -32,12 +32,7 @@ export default function UsersPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-6">
-      <div className="mb-4">
-        <h1 className="text-lg font-semibold text-slate-900">Users</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Assign roles and crew subroles.
-        </p>
-      </div>
+      <div className=""></div>
 
       <UserListTable
         users={users}

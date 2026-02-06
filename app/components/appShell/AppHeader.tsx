@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import UserBadge from "@/components/layout/UserBadge";
 import Breadcrumbs from "@/components/appShell/Breadcrumbs";
@@ -11,15 +10,9 @@ import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 
 export default function AppHeader() {
-  const router = useRouter();
-  const { user, role, loading, logout } = useAuth();
+  const { user, role, loading } = useAuth();
 
   const showAdminNav = !loading && isAdmin(role);
-
-  const onLogout = React.useCallback(async () => {
-    await logout();
-    router.push("/login");
-  }, [logout, router]);
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
@@ -38,11 +31,9 @@ export default function AppHeader() {
 
               {showAdminNav ? (
                 <div className="w-full sm:w-auto">
-                  {/* AdminNav is vertical on mobile now, horizontal on desktop (from your updated component) */}
                   <AdminNav />
                 </div>
               ) : (
-                // If not admin, still show brand on mobile so left side isn't empty
                 <Link
                   href="/events"
                   className="truncate text-sm font-semibold text-slate-900 sm:hidden"
@@ -54,18 +45,9 @@ export default function AppHeader() {
           </div>
 
           {/* RIGHT: Auth */}
-          <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <div className="flex justify-end">
             {!loading && user ? (
-              <>
-                <UserBadge />
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 active:scale-[0.99]"
-                >
-                  Log ud
-                </button>
-              </>
+              <UserBadge />
             ) : !loading ? (
               <Link
                 href="/login"
@@ -83,7 +65,7 @@ export default function AppHeader() {
         </div>
 
         {/* Desktop breadcrumbs under header row */}
-        <div className="hidden sm:block mt-1">
+        <div className="mt-1 hidden sm:block">
           <Breadcrumbs />
         </div>
       </div>

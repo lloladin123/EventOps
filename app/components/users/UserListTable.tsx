@@ -7,6 +7,7 @@ import type { UserDoc } from "@/utils/users.firestore";
 
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
+import { countNonAdminUsers, countUsersWithoutRole } from "../utils/userCounts";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
@@ -49,7 +50,7 @@ export default function UserListTable({
 
   if (busy) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-slate-200 bg-white text-sm text-slate-600">
         Loading users…
       </div>
     );
@@ -57,7 +58,7 @@ export default function UserListTable({
 
   if (visibleUsers.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-slate-200 bg-white text-sm text-slate-600">
         No users found.
       </div>
     );
@@ -69,18 +70,39 @@ export default function UserListTable({
       initialSort={initialSort}
       tableMinWidthClassName="min-w-[900px]"
       getGroupId={() => "all"}
-      getGroupMeta={(_gid, list) => ({
-        title: "Users",
-        subtitle: (
-          <>
-            {list.length} bruger{list.length === 1 ? "" : "e"}
-          </>
-        ),
-      })}
+      getGroupMeta={(_gid, list) => {
+        const total = countNonAdminUsers(list);
+        const withoutRole = countUsersWithoutRole(list);
+
+        return {
+          title: "Brugere",
+          subtitle: (
+            <div className="flex-col flex-wrap items-center gap-2">
+              <span>
+                <p className="mt-1 text-sm text-slate-600">
+                  Tildel roller og crew-underroller.
+                </p>
+              </span>
+              <span>
+                {total} bruger{total === 1 ? "" : "e"}
+              </span>
+
+              {withoutRole > 0 && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-amber-700">
+                    {withoutRole} uden rolle
+                  </span>
+                </>
+              )}
+            </div>
+          ),
+        };
+      }}
       columns={[
         {
           key: "user",
-          header: "User",
+          header: "Bruger",
           headerTitle: "Sortér efter navn",
           sortValue: (r) =>
             r.data.displayName?.trim() || r.data.email?.split("@")[0] || r.uid,
@@ -102,7 +124,7 @@ export default function UserListTable({
         },
         {
           key: "role",
-          header: "Role",
+          header: "Rolle",
           headerTitle: "Sortér efter rolle",
           sortValue: (r) => asText(r.data.role ?? ""),
           cell: (r) => {
@@ -130,7 +152,7 @@ export default function UserListTable({
         },
         {
           key: "subRole",
-          header: "SubRole",
+          header: "Under rolle",
           headerTitle: "Sortér efter subrole",
           sortValue: (r) => asText(r.data.subRole ?? ""),
           cell: (r) => {
@@ -160,13 +182,6 @@ export default function UserListTable({
               <span className="text-sm text-slate-400">—</span>
             );
           },
-        },
-        {
-          key: "status",
-          header: <span className="text-right block">Status</span>,
-          align: "right",
-          // not sortable
-          cell: (_r) => <span className="text-xs text-slate-500"> </span>,
         },
       ]}
     />

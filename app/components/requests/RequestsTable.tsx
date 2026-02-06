@@ -6,10 +6,14 @@ import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
+import { countNewRequests } from "../utils/requestCounts";
+import { attendanceLabel, statusLabel } from "@/utils/rsvpLabels";
+import Link from "next/link";
 
 type Props = {
   rows: RSVPRow[];
   onCopyApproved: (eventId: string) => void;
+  approvalsDisabled?: boolean;
 };
 
 type ColumnKey =
@@ -63,7 +67,11 @@ function updatedAtMs(iso?: string) {
   return Number.isFinite(t) ? t : 0;
 }
 
-export default function RequestsTable({ rows, onCopyApproved }: Props) {
+export default function RequestsTable({
+  rows,
+  onCopyApproved,
+  approvalsDisabled, // ✅ destructure it
+}: Props) {
   const initialSort: SortState<SortKey> = { key: "updatedAt", dir: "desc" };
 
   return (
@@ -78,14 +86,29 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
         const date = event?.date ?? "";
         const time = event?.meetingTime ?? "";
 
+        const newCount = countNewRequests(list);
+
         return {
-          title,
+          title: (
+            <Link
+              href={`/events/${eventId}`}
+              className="group flex items-center gap-2 text-lg font-semibold text-slate-900 hover:text-slate-600"
+            >
+              <span className="group-hover:underline">{title}</span>
+              <span className="text-slate-400 transition group-hover:translate-x-0.5">
+                ›
+              </span>
+            </Link>
+          ),
+
           subtitle: (
             <>
               {date}
               {time ? ` • ${time}` : ""}
               <span className="mx-2 text-slate-300">•</span>
-              {list.length} anmodning{list.length === 1 ? "" : "er"}
+              <span className="text-amber-700 opacity-70">
+                {newCount} nye anmodning{newCount === 1 ? "" : "er"}
+              </span>
             </>
           ),
           right: (
@@ -123,12 +146,12 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
         },
         {
           key: "attendance",
-          header: "Attendance",
-          headerTitle: "Sortér efter attendance",
+          header: "Fremmøde",
+          headerTitle: "Sortér efter fremmøde (attendance)",
           sortValue: (r) => r.attendance ?? "",
           cell: (r) => (
             <span className="text-sm text-slate-700">
-              {r.attendance ?? "—"}
+              {attendanceLabel(r.attendance)}
             </span>
           ),
         },
@@ -136,13 +159,14 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
           key: "status",
           header: "Status",
           headerTitle: "Sortér efter status",
-          sortValue: (r) => r.decision ?? DECISION.Pending,
+          sortValue: (r) => r.decision ?? DECISION.Pending, // ✅ keep sorting by raw enum
           cell: (r) => (
             <span className={statusPill(r.decision)}>
-              {r.decision ?? DECISION.Pending}
+              {statusLabel(r.decision)}
             </span>
           ),
         },
+
         {
           key: "comment",
           header: "Kommentar",
@@ -160,7 +184,6 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
               <span className="text-slate-400">—</span>
             ),
         },
-
         {
           key: "updatedAt",
           header: "Opdateret",
@@ -174,14 +197,14 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
         },
         {
           key: "actions",
-          header: "Actions",
-          align: "right",
+          header: "Handlinger",
           cell: (r) => (
             <RequestApprovalActions
               eventId={r.eventId}
               uid={r.uid}
               decision={r.decision}
               approved={r.approved}
+              disabled={approvalsDisabled}
             />
           ),
         },

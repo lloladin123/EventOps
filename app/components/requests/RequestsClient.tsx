@@ -14,6 +14,7 @@ import OpenCloseButton from "../ui/OpenCloseButton";
 import ViewToggle from "../ui/ViewModeToggle";
 import RequestsTable from "./RequestsTable";
 import RequestsListView from "./RequestsListView";
+import { countNewRequests } from "../utils/requestCounts";
 
 function toIso(x: any): string {
   if (!x) return "";
@@ -159,6 +160,26 @@ export default function RequestsClient() {
     });
   }, [rows, attendanceFilter, statusFilter]);
 
+  const openRowsAll = useMemo(
+    () => rows.filter((r) => isEventOpen(r.event)),
+    [rows]
+  );
+
+  const closedRowsAll = useMemo(
+    () => rows.filter((r) => !isEventOpen(r.event)),
+    [rows]
+  );
+
+  const openNewCount = useMemo(
+    () => countNewRequests(openRowsAll),
+    [openRowsAll]
+  );
+  const closedNewCount = useMemo(
+    () => countNewRequests(closedRowsAll),
+    [closedRowsAll]
+  );
+  const totalNewCount = useMemo(() => countNewRequests(rows), [rows]);
+
   // Split into open/closed buckets (sorted within each bucket)
   const openVisible = useMemo(
     () => filtered.filter((r) => isEventOpen(r.event)).sort(sortRows),
@@ -207,7 +228,7 @@ export default function RequestsClient() {
   if (eventsError) {
     return (
       <div className="p-4 space-y-4">
-        <div className="border rounded p-4 text-sm opacity-80">
+        <div className="border-slate-200 bg-white shadow-sm p-4 text-sm opacity-80">
           Kunne ikke hente events: {eventsError}
         </div>
       </div>
@@ -219,12 +240,9 @@ export default function RequestsClient() {
     (!showClosedEvents || closedVisible.length === 0);
 
   return (
-    <div className="p-4 space-y-4 max-w-6xl mx-auto">
-      <div className="flex flex-wrap gap-3 items-end justify-between">
+    <div className="p-4 mt-6 space-y-4 border-slate-200 bg-white rounded-2xl shadow-sm max-w-6xl mx-auto">
+      <div className="flex flex-wrap gap-3  items-end justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Requests</h1>
-          <p className="opacity-70 text-sm">Firestore RSVP requests</p>
-
           <div className="flex flex-wrap gap-2 items-center">
             <OpenCloseButton
               target={showClosedEvents ? "close" : "open"}
@@ -251,12 +269,12 @@ export default function RequestsClient() {
         <div className="space-y-6">
           {/* OPEN PANEL */}
           {openVisible.length > 0 && (
-            <section className="border rounded-xl p-4 space-y-3">
+            <section className="p-4 space-y-3">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
-                  <h2 className="text-lg font-semibold">Open events</h2>
-                  <span className="text-sm opacity-70">
-                    {openVisible.length} requests
+                  <h2 className="text-lg font-semibold">Åbne events</h2>
+                  <span className="text-sm text-amber-700  opacity-70">
+                    {openNewCount} nye
                   </span>
                 </div>
 
@@ -280,13 +298,10 @@ export default function RequestsClient() {
 
           {/* CLOSED PANEL */}
           {showClosedEvents && closedVisible.length > 0 && (
-            <section className="border rounded-xl p-4 space-y-3 opacity-[0.98]">
+            <section className="border-slate-200 bg-white shadow-sm p-4 space-y-3 opacity-[0.98]">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-lg font-semibold">Closed events</h2>
-                  <span className="text-sm opacity-70">
-                    {closedVisible.length} requests
-                  </span>
                 </div>
 
                 <OpenCloseButton
@@ -302,6 +317,7 @@ export default function RequestsClient() {
                   grouped={groupedClosed}
                   eventsById={eventsById}
                   onCopyApproved={copyApproved}
+                  approvalsDisabled
                 />
               )}
             </section>
@@ -311,12 +327,12 @@ export default function RequestsClient() {
         <div className="space-y-6">
           {/* OPEN PANEL */}
           {openVisible.length > 0 && (
-            <section className="border rounded-xl p-4 space-y-3">
+            <section className="rounded-2xl border-slate-200 bg-white shadow-sm p-4 space-y-3">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
-                  <h2 className="text-lg font-semibold">Open events</h2>
-                  <span className="text-sm opacity-70">
-                    {openVisible.length} requests
+                  <h2 className="text-lg font-semibold">Åbne events</h2>
+                  <span className="text-sm text-amber-700 opacity-70">
+                    {openNewCount} <span>nye</span>
                   </span>
                 </div>
 
@@ -339,13 +355,10 @@ export default function RequestsClient() {
 
           {/* CLOSED PANEL */}
           {showClosedEvents && closedVisible.length > 0 && (
-            <section className="border rounded-xl p-4 space-y-3 opacity-[0.98]">
+            <section className="rounded-2xl border-slate-200 bg-white shadow-sm p-4 space-y-3 opacity-[0.98]">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
-                  <h2 className="text-lg font-semibold">Closed events</h2>
-                  <span className="text-sm opacity-70">
-                    {closedVisible.length} requests
-                  </span>
+                  <h2 className="text-lg font-semibold">Lukkede events </h2>
                 </div>
 
                 <OpenCloseButton
@@ -360,6 +373,7 @@ export default function RequestsClient() {
                 <RequestsTable
                   rows={closedVisible}
                   onCopyApproved={copyApproved}
+                  approvalsDisabled
                 />
               )}
             </section>

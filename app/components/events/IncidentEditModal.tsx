@@ -202,7 +202,7 @@ export default function IncidentEditModal({
         {/* Body */}
         <div className="p-4">
           {error && (
-            <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+            <div className=" rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
               {error}
             </div>
           )}

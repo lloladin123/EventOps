@@ -239,8 +239,7 @@ export default function IncidentTable({
           },
           {
             key: "actions",
-            header: "Actions",
-            align: "right",
+            header: "Handlinger",
             className: "w-[170px]",
             cell: (i) => {
               const canEdit = canEditIncident(i);
@@ -264,7 +263,7 @@ export default function IncidentTable({
                           : "Update kun muligt i 5 min for den der oprettede hændelsen (Admin altid)"
                       }
                     >
-                      Update
+                      Opdater
                     </button>
                   ) : null}
 
@@ -274,7 +273,7 @@ export default function IncidentTable({
                       onClick={() => onDelete(i.id)}
                       className="rounded-lg border border-rose-300 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50"
                     >
-                      Delete
+                      Slet
                     </button>
                   ) : null}
                 </div>
