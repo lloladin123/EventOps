@@ -6,10 +6,12 @@ import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
+import { countNewRequests } from "../utils/requests";
 
 type Props = {
   rows: RSVPRow[];
   onCopyApproved: (eventId: string) => void;
+  approvalsDisabled?: boolean;
 };
 
 type ColumnKey =
@@ -63,7 +65,11 @@ function updatedAtMs(iso?: string) {
   return Number.isFinite(t) ? t : 0;
 }
 
-export default function RequestsTable({ rows, onCopyApproved }: Props) {
+export default function RequestsTable({
+  rows,
+  onCopyApproved,
+  approvalsDisabled, // ✅ destructure it
+}: Props) {
   const initialSort: SortState<SortKey> = { key: "updatedAt", dir: "desc" };
 
   return (
@@ -78,6 +84,8 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
         const date = event?.date ?? "";
         const time = event?.meetingTime ?? "";
 
+        const newCount = countNewRequests(list);
+
         return {
           title,
           subtitle: (
@@ -85,7 +93,7 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
               {date}
               {time ? ` • ${time}` : ""}
               <span className="mx-2 text-slate-300">•</span>
-              {list.length} anmodning{list.length === 1 ? "" : "er"}
+              {newCount} nye anmodning{newCount === 1 ? "" : "er"}
             </>
           ),
           right: (
@@ -123,8 +131,8 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
         },
         {
           key: "attendance",
-          header: "Attendance",
-          headerTitle: "Sortér efter attendance",
+          header: "Fremmøde",
+          headerTitle: "Sortér efter fremmøde (attendance)",
           sortValue: (r) => r.attendance ?? "",
           cell: (r) => (
             <span className="text-sm text-slate-700">
@@ -160,7 +168,6 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
               <span className="text-slate-400">—</span>
             ),
         },
-
         {
           key: "updatedAt",
           header: "Opdateret",
@@ -182,6 +189,7 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
               uid={r.uid}
               decision={r.decision}
               approved={r.approved}
+              disabled={approvalsDisabled}
             />
           ),
         },

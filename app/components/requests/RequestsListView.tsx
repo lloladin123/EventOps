@@ -6,6 +6,7 @@ import type { RSVPRow } from "@/types/requests";
 import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedList from "@/components/ui/GroupedList";
+import { countNewRequests } from "../utils/requests";
 
 type Props = {
   grouped: Map<string, RSVPRow[]>;
@@ -50,6 +51,8 @@ export default function RequestsListView({
         const date = event?.date ?? "";
         const time = event?.meetingTime ?? "";
 
+        const newCount = countNewRequests(list);
+
         return {
           title,
           subtitle: (
@@ -57,7 +60,7 @@ export default function RequestsListView({
               {date}
               {time ? ` • ${time}` : ""}
               <span className="mx-2 text-slate-300">•</span>
-              {list.length} anmodning{list.length === 1 ? "" : "er"}
+              {newCount} nye anmodning{newCount === 1 ? "" : "er"}
             </>
           ),
           right: (
