@@ -25,7 +25,8 @@ function AdminNavLink({ href, label }: AdminNavLinkProps) {
     <Link
       href={href}
       className={cx(
-        "rounded-md px-2 py-1 text-xs font-semibold transition",
+        // mobile: full-width menu item; desktop: compact pill
+        "block w-full rounded-lg px-3 py-2 text-sm font-semibold transition sm:inline-block sm:w-auto sm:rounded-md sm:px-2 sm:py-1 sm:text-xs",
         active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"
       )}
     >
@@ -36,7 +37,13 @@ function AdminNavLink({ href, label }: AdminNavLinkProps) {
 
 export default function AdminNav({ className }: AdminNavProps) {
   return (
-    <nav className={cx("flex items-center gap-2", className)}>
+    <nav
+      className={cx(
+        // mobile: vertical stack; desktop: horizontal row
+        "flex flex-col items-stretch gap-1 sm:flex-row sm:items-center sm:gap-2",
+        className
+      )}
+    >
       <AdminNavLink href="/events" label="Events" />
       <AdminNavLink href="/users" label="Users" />
       <AdminNavLink href="/requests" label="Requests" />

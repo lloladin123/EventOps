@@ -32,8 +32,8 @@ export default function UserListTable({
   );
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <table className="w-full">
+    <div className="relative overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <table className="min-w-[800px] w-full">
         <thead className="bg-slate-50">
           <tr>
             <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">

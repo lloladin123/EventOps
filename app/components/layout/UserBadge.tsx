@@ -23,21 +23,36 @@ export default function UserBadge() {
       : role;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm shadow-sm">
-      <span className="font-medium text-slate-900">Navn</span>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-        {displayName}
-      </span>
+    <div
+      className="
+        flex flex-col gap-2
+        sm:flex-row sm:items-center sm:gap-3
+        rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm
+      "
+    >
+      {/* Name */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+        <span className="font-medium text-slate-900">Navn</span>
+        <span className="w-fit rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+          {displayName}
+        </span>
+      </div>
 
-      <span className="font-medium text-slate-900">Email</span>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-        {user.email ?? "—"}
-      </span>
+      {/* Email */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+        <span className="font-medium text-slate-900">Email</span>
+        <span className="w-fit rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+          {user.email ?? "—"}
+        </span>
+      </div>
 
-      <span className="font-medium text-slate-900">Rolle</span>
-      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
-        {roleLabel}
-      </span>
+      {/* Role */}
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+        <span className="font-medium text-slate-900">Rolle</span>
+        <span className="w-fit rounded-full bg-slate-100 px-2 py-0.5 text-slate-700">
+          {roleLabel}
+        </span>
+      </div>
     </div>
   );
 }
