@@ -315,6 +315,7 @@ export default function RequestsClient() {
                   grouped={groupedClosed}
                   eventsById={eventsById}
                   onCopyApproved={copyApproved}
+                  approvalsDisabled
                 />
               )}
             </section>

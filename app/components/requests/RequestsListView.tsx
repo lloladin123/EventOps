@@ -12,6 +12,7 @@ type Props = {
   grouped: Map<string, RSVPRow[]>;
   eventsById: Map<string, Event>;
   onCopyApproved: (eventId: string) => void;
+  approvalsDisabled?: boolean;
 };
 
 function fmtUpdatedAt(iso?: string) {
@@ -32,6 +33,7 @@ function statusPill(decision?: string) {
 export default function RequestsListView({
   grouped,
   eventsById,
+  approvalsDisabled,
   onCopyApproved,
 }: Props) {
   // Flatten map to rows (GroupedList expects a list and does grouping itself)
@@ -102,7 +104,9 @@ export default function RequestsListView({
               </div>
 
               {r.comment ? (
-                <div className="mt-2 text-sm text-slate-700">{r.comment}</div>
+                <div className="mt-2 max-w-[800px] truncate text-sm text-slate-700">
+                  {r.comment}
+                </div>
               ) : null}
             </div>
 
@@ -112,6 +116,7 @@ export default function RequestsListView({
                 uid={r.uid}
                 decision={r.decision}
                 approved={r.approved}
+                disabled={approvalsDisabled}
               />
             </div>
           </div>
