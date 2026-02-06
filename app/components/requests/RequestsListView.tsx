@@ -8,6 +8,7 @@ import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedList from "@/components/ui/GroupedList";
 import { countNewRequests } from "@/utils/requestCounts";
 import { attendanceLabel, statusLabel } from "@/utils/rsvpLabels";
+import Link from "next/link";
 
 type Props = {
   grouped: Map<string, RSVPRow[]>;
@@ -70,7 +71,18 @@ export default function RequestsListView({
         const newCount = countNewRequests(list);
 
         return {
-          title,
+          title: (
+            <Link
+              href={`/events/${eventId}`}
+              className="group flex items-center gap-2 text-lg font-semibold text-slate-900 hover:text-slate-600"
+            >
+              <span className="group-hover:underline">{title}</span>
+              <span className="text-slate-400 transition group-hover:translate-x-0.5">
+                ›
+              </span>
+            </Link>
+          ),
+
           subtitle: (
             <>
               {date}

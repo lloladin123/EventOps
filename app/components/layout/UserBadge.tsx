@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut } from "lucide-react";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { ROLE } from "@/types/rsvp";
