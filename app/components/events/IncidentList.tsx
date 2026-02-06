@@ -6,6 +6,7 @@ import IncidentListItem from "./IncidentListItem";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin as isAdminRole } from "@/types/rsvp";
 import IncidentTable from "./IncidentTable";
+import ViewModeToggle, { type ViewMode } from "@/components/ViewModeToggle";
 
 type Props = {
   eventId: string;
@@ -14,7 +15,6 @@ type Props = {
   onDelete?: (incidentId: string) => void;
 };
 
-type ViewMode = "list" | "table";
 const VIEW_KEY = "incidentViewMode";
 
 // 🔧 CHANGE THIS FOR TESTING
@@ -77,7 +77,7 @@ export default function IncidentList({
 
   const [view, setView] = React.useState<ViewMode>(() => getInitialView());
 
-  // ✅ ONE BOOLEAN PER INCIDENT — THIS IS THE FIX
+  // ✅ ONE BOOLEAN PER INCIDENT
   const [editableMap, setEditableMap] = React.useState<Record<string, boolean>>(
     () => {
       if (typeof window === "undefined") return {};
@@ -94,9 +94,7 @@ export default function IncidentList({
     setEditableMap((prev) => {
       const next: Record<string, boolean> = {};
       for (const i of safeIncidents) {
-        if (prev[i.id] !== undefined) {
-          next[i.id] = prev[i.id];
-        }
+        if (prev[i.id] !== undefined) next[i.id] = prev[i.id];
       }
       return next;
     });
@@ -111,7 +109,6 @@ export default function IncidentList({
     const now = Date.now();
 
     safeIncidents.forEach((i) => {
-      // already initialized → do nothing
       if (editableMap[i.id] !== undefined) return;
 
       const created = getCreatedMs(i);
@@ -119,16 +116,13 @@ export default function IncidentList({
 
       const expiresAt = created + EDIT_WINDOW_MS;
 
-      // already expired
       if (now >= expiresAt) {
         setEditableMap((m) => ({ ...m, [i.id]: false }));
         return;
       }
 
-      // editable now
       setEditableMap((m) => ({ ...m, [i.id]: true }));
 
-      // flip to false ONCE
       const delay = expiresAt - now;
       window.setTimeout(() => {
         setEditableMap((m) => ({ ...m, [i.id]: false }));
@@ -150,22 +144,7 @@ export default function IncidentList({
           </span>
         </div>
 
-        <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => setView("list")}
-            className={btnCls(view === "list")}
-          >
-            Liste
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("table")}
-            className={btnCls(view === "table")}
-          >
-            Tabel
-          </button>
-        </div>
+        <ViewModeToggle value={view} onChange={setView} />
       </div>
 
       {safeIncidents.length === 0 ? (
@@ -204,13 +183,4 @@ export default function IncidentList({
       )}
     </section>
   );
-}
-
-function btnCls(active: boolean) {
-  return [
-    "rounded-lg px-3 py-1 text-sm font-medium",
-    active
-      ? "bg-slate-900 text-white"
-      : "bg-slate-100 text-slate-600 hover:bg-slate-200",
-  ].join(" ");
 }

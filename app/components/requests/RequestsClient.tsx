@@ -4,13 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import type { Event } from "@/types/event";
 
 import RequestsFilters from "./RequestsFilters";
-import RequestsEventGroup from "./RequestsEventGroup";
+
 import { AttendanceFilter, RSVPRow, StatusFilter } from "@/types/requests";
 import { DECISION } from "@/types/rsvpIndex";
 
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
 import OpenCloseButton from "../ui/OpenCloseButton";
+import ViewToggle from "../ViewModeToggle";
+import RequestsTable from "./RequestsTable";
+import RequestsListView from "./RequestsListView";
 
 function toIso(x: any): string {
   if (!x) return "";
@@ -23,6 +26,15 @@ function toIso(x: any): string {
     }
   }
   return "";
+}
+
+type ViewMode = "list" | "table";
+const VIEW_KEY = "requestsViewMode";
+
+function getInitialView(): ViewMode {
+  if (typeof window === "undefined") return "list";
+  const raw = localStorage.getItem(VIEW_KEY);
+  return raw === "table" || raw === "list" ? raw : "list";
 }
 
 export default function RequestsClient() {
@@ -47,6 +59,12 @@ export default function RequestsClient() {
     for (const e of events) map.set(e.id, e);
     setEventsById(map);
   }, [events]);
+
+  const [view, setView] = useState<ViewMode>(() => getInitialView());
+
+  useEffect(() => {
+    localStorage.setItem(VIEW_KEY, view);
+  }, [view]);
 
   // Subscribe to RSVPs for each event (admin view)
   useEffect(() => {
@@ -78,7 +96,7 @@ export default function RequestsClient() {
             userDisplayName: d.userDisplayName ?? "",
 
             decision:
-              d.decision ?? (d.approved ? DECISION.Approved : DECISION.Pending), // ✅ ADD
+              d.decision ?? (d.approved ? DECISION.Approved : DECISION.Pending),
             approved: !!d.approved,
 
             updatedAt: toIso(d.updatedAt) || toIso(d.approvedAt) || "",
@@ -114,7 +132,6 @@ export default function RequestsClient() {
 
         return true;
       })
-
       .sort((a, b) => {
         const da = a.event?.date ?? "9999-99-99";
         const db = b.event?.date ?? "9999-99-99";
@@ -124,7 +141,6 @@ export default function RequestsClient() {
         const tb = b.event?.meetingTime ?? "99:99";
         if (ta !== tb) return ta.localeCompare(tb);
 
-        // ✅ stable ordering inside event
         const na = (a.userDisplayName?.trim() || a.uid).toLowerCase();
         const nb = (b.userDisplayName?.trim() || b.uid).toLowerCase();
         if (na !== nb) return na.localeCompare(nb);
@@ -173,7 +189,8 @@ export default function RequestsClient() {
         <div>
           <h1 className="text-2xl font-semibold">Requests</h1>
           <p className="opacity-70 text-sm">Firestore RSVP requests</p>
-          <div className="flex gap-2 items-center">
+
+          <div className="flex flex-wrap gap-2 items-center">
             <OpenCloseButton
               target={showClosedEvents ? "close" : "open"}
               onClick={() => setShowClosedEvents((v) => !v)}
@@ -187,22 +204,22 @@ export default function RequestsClient() {
               attendanceFilter={attendanceFilter}
               setAttendanceFilter={setAttendanceFilter}
             />
+
+            <ViewToggle value={view} onChange={setView} />
           </div>
         </div>
       </div>
 
-      {grouped.size === 0 ? (
+      {visible.length === 0 ? (
         <div className="border rounded p-4 opacity-70">No requests found.</div>
+      ) : view === "list" ? (
+        <RequestsListView
+          grouped={grouped}
+          eventsById={eventsById}
+          onCopyApproved={copyApproved}
+        />
       ) : (
-        Array.from(grouped.entries()).map(([eventId, list]) => (
-          <RequestsEventGroup
-            key={eventId}
-            eventId={eventId}
-            event={eventsById.get(eventId)}
-            list={list}
-            onCopyApproved={copyApproved}
-          />
-        ))
+        <RequestsTable rows={visible} onCopyApproved={copyApproved} />
       )}
     </div>
   );
