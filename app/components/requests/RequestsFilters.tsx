@@ -1,16 +1,14 @@
 "use client";
 
-import {
-  DECISION,
-  RSVP_ATTENDANCE,
-  RSVP_ATTENDANCE_LABEL,
-} from "@/types/rsvpIndex";
+import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import type { AttendanceFilter, StatusFilter } from "@/types/requests";
+import { attendanceLabel, statusLabel } from "../utils/rsvpLabels";
 
 const STATUS_OPTIONS: StatusFilter[] = [
+  "all",
   DECISION.Pending,
   DECISION.Approved,
-  "all",
+  DECISION.Unapproved,
 ];
 
 export default function RequestsFilters({
@@ -32,9 +30,11 @@ export default function RequestsFilters({
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
       >
-        {STATUS_OPTIONS.map((s) => (
+        <option value="all">Alle</option>
+
+        {STATUS_OPTIONS.filter((s) => s !== "all").map((s) => (
           <option key={s} value={s}>
-            {s[0].toUpperCase() + s.slice(1)}
+            {statusLabel(s)}
           </option>
         ))}
       </select>
@@ -47,11 +47,11 @@ export default function RequestsFilters({
           setAttendanceFilter(e.target.value as AttendanceFilter)
         }
       >
-        <option value="all">All</option>
+        <option value="all">Alle</option>
 
         {Object.values(RSVP_ATTENDANCE).map((a) => (
           <option key={a} value={a}>
-            {RSVP_ATTENDANCE_LABEL[a]}
+            {attendanceLabel(a)}
           </option>
         ))}
       </select>

@@ -50,7 +50,7 @@ export default function UserListTable({
 
   if (busy) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-slate-200 bg-white text-sm text-slate-600">
         Loading users…
       </div>
     );
@@ -58,7 +58,7 @@ export default function UserListTable({
 
   if (visibleUsers.length === 0) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+      <div className="rounded-xl border border-slate-200 bg-white text-sm text-slate-600">
         No users found.
       </div>
     );
@@ -75,9 +75,14 @@ export default function UserListTable({
         const withoutRole = countUsersWithoutRole(list);
 
         return {
-          title: "Users",
+          title: "Brugere",
           subtitle: (
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex-col flex-wrap items-center gap-2">
+              <span>
+                <p className="mt-1 text-sm text-slate-600">
+                  Tildel roller og crew-underroller.
+                </p>
+              </span>
               <span>
                 {total} bruger{total === 1 ? "" : "e"}
               </span>
@@ -97,7 +102,7 @@ export default function UserListTable({
       columns={[
         {
           key: "user",
-          header: "User",
+          header: "Bruger",
           headerTitle: "Sortér efter navn",
           sortValue: (r) =>
             r.data.displayName?.trim() || r.data.email?.split("@")[0] || r.uid,
@@ -119,7 +124,7 @@ export default function UserListTable({
         },
         {
           key: "role",
-          header: "Role",
+          header: "Rolle",
           headerTitle: "Sortér efter rolle",
           sortValue: (r) => asText(r.data.role ?? ""),
           cell: (r) => {
@@ -147,7 +152,7 @@ export default function UserListTable({
         },
         {
           key: "subRole",
-          header: "SubRole",
+          header: "Under rolle",
           headerTitle: "Sortér efter subrole",
           sortValue: (r) => asText(r.data.subRole ?? ""),
           cell: (r) => {

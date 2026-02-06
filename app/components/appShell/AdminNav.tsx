@@ -9,7 +9,7 @@ import { isAdmin } from "@/types/rsvp";
 
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
-import { countNewRequests } from "@/utils/requestsCounts";
+import { countNewRequests } from "@/components/utils/requestCounts";
 
 import { subscribeUsers } from "@/app/lib/firestore/users";
 import { countUsersWithoutRole, type UserRow } from "@/utils/userCounts";

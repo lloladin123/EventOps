@@ -6,7 +6,8 @@ import type { RSVPRow } from "@/types/requests";
 import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedList from "@/components/ui/GroupedList";
-import { countNewRequests } from "../utils/requestsCounts";
+import { countNewRequests } from "@/utils/requestCounts";
+import { attendanceLabel, statusLabel } from "@/utils/rsvpLabels";
 
 type Props = {
   grouped: Map<string, RSVPRow[]>;
@@ -27,7 +28,20 @@ function statusPill(decision?: string) {
     "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ring-slate-200";
 
   if (d === DECISION.Pending) return `${base} bg-slate-50 text-slate-700`;
+  if (d === DECISION.Approved)
+    return `${base} bg-emerald-50 text-emerald-700 ring-emerald-200`;
+  if (d === DECISION.Unapproved)
+    return `${base} bg-rose-50 text-rose-700 ring-rose-200`;
   return `${base} bg-white text-slate-700`;
+}
+
+function kv(label: string, value: React.ReactNode) {
+  return (
+    <div className="inline-flex items-center gap-1">
+      <span className="text-slate-500">{label}:</span>
+      <span className="text-slate-700">{value}</span>
+    </div>
+  );
 }
 
 export default function RequestsListView({
@@ -85,24 +99,33 @@ export default function RequestsListView({
             : r.userRole
           : "—";
 
+        const statusText = statusLabel(r.decision);
+        const attendanceText = attendanceLabel(r.attendance);
+
         return (
           <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
+              {/* top: who + status */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="truncate font-medium text-slate-900">{who}</div>
-                <span className={statusPill(r.decision)}>
-                  {r.decision ?? DECISION.Pending}
-                </span>
+                <span className={statusPill(r.decision)}>{statusText}</span>
               </div>
 
+              {/* meta line */}
               <div className="mt-1 text-xs text-slate-500">
                 {roleLabel}
-                <span className="mx-2 text-slate-300">•</span>
-                {r.attendance ?? "—"}
                 <span className="mx-2 text-slate-300">•</span>
                 Opdateret: {fmtUpdatedAt(r.updatedAt)}
               </div>
 
+              {/* ✅ RSVP "label layer" (since no table headers) */}
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                {kv("Fremmøde", attendanceText)}
+                <span className="text-slate-300">•</span>
+                {kv("Status", statusText)}
+              </div>
+
+              {/* comment */}
               {r.comment ? (
                 <div className="mt-2 max-w-[800px] truncate text-sm text-slate-700">
                   {r.comment}

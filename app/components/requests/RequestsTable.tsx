@@ -6,7 +6,8 @@ import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
-import { countNewRequests } from "../utils/requestsCounts";
+import { countNewRequests } from "../utils/requestCounts";
+import { attendanceLabel, statusLabel } from "@/utils/rsvpLabels";
 
 type Props = {
   rows: RSVPRow[];
@@ -136,7 +137,7 @@ export default function RequestsTable({
           sortValue: (r) => r.attendance ?? "",
           cell: (r) => (
             <span className="text-sm text-slate-700">
-              {r.attendance ?? "—"}
+              {attendanceLabel(r.attendance)}
             </span>
           ),
         },
@@ -144,13 +145,14 @@ export default function RequestsTable({
           key: "status",
           header: "Status",
           headerTitle: "Sortér efter status",
-          sortValue: (r) => r.decision ?? DECISION.Pending,
+          sortValue: (r) => r.decision ?? DECISION.Pending, // ✅ keep sorting by raw enum
           cell: (r) => (
             <span className={statusPill(r.decision)}>
-              {r.decision ?? DECISION.Pending}
+              {statusLabel(r.decision)}
             </span>
           ),
         },
+
         {
           key: "comment",
           header: "Kommentar",
