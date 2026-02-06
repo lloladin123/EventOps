@@ -20,6 +20,7 @@ type ColumnKey =
   | "type"
   | "from"
   | "incident"
+  | "solution"
   | "loggedBy"
   | "police"
   | "preparedness"
@@ -142,6 +143,35 @@ export default function IncidentTable({
                 <span className="text-slate-400">—</span>
               ),
           },
+          {
+            key: "solution",
+            header: "Løsning",
+            headerTitle: "Sortér efter løsning",
+            sortValue: (i) =>
+              asText(
+                (i as any).loesning ?? (i as any).løsning ?? (i as any).solution
+              ),
+            className: "w-[200px]",
+            cell: (i) => {
+              const value =
+                (i as any).loesning ??
+                (i as any).løsning ??
+                (i as any).solution ??
+                "";
+
+              return value ? (
+                <span
+                  className="block max-w-[200px] truncate text-sm text-slate-800"
+                  title={String(value)}
+                >
+                  {String(value)}
+                </span>
+              ) : (
+                <span className="text-slate-400">—</span>
+              );
+            },
+          },
+
           {
             key: "loggedBy",
             header: "Logget af",

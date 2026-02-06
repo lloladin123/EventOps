@@ -75,9 +75,17 @@ export default function IncidentListView({
         getRowKey={(i) => i.id}
         renderRow={(i) => {
           const canEdit = canEditIncident(i);
+
           const imgCount = Array.isArray((i as any).files)
             ? (i as any).files.length
             : 0;
+
+          const incidentText = (i as any).haendelse ?? "";
+          const solutionText =
+            (i as any).loesning ??
+            (i as any).løsning ??
+            (i as any).solution ??
+            "";
 
           return (
             <div className="p-4">
@@ -102,9 +110,31 @@ export default function IncidentListView({
                   {/* Incident text */}
                   <div className="text-sm text-slate-900">
                     <span className="font-medium">Hændelse:</span>{" "}
-                    <span className="text-slate-700">
-                      {(i as any).haendelse || "—"}
-                    </span>
+                    {incidentText ? (
+                      <span
+                        className="text-slate-700"
+                        title={String(incidentText)}
+                      >
+                        {String(incidentText)}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
+                  </div>
+
+                  {/* ✅ Solution */}
+                  <div className="text-sm text-slate-900">
+                    <span className="font-medium">Løsning:</span>{" "}
+                    {solutionText ? (
+                      <span
+                        className="inline-block max-w-[520px] truncate align-bottom text-slate-700"
+                        title={String(solutionText)}
+                      >
+                        {String(solutionText)}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </div>
 
                   {/* Logged by */}
