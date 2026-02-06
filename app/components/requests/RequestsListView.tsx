@@ -6,7 +6,7 @@ import type { RSVPRow } from "@/types/requests";
 import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedList from "@/components/ui/GroupedList";
-import { countNewRequests } from "../utils/requests";
+import { countNewRequests } from "../utils/requestsCounts";
 
 type Props = {
   grouped: Map<string, RSVPRow[]>;

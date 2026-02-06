@@ -6,7 +6,7 @@ import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
-import { countNewRequests } from "../utils/requests";
+import { countNewRequests } from "../utils/requestsCounts";
 
 type Props = {
   rows: RSVPRow[];

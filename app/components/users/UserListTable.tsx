@@ -7,6 +7,7 @@ import type { UserDoc } from "@/utils/users.firestore";
 
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
+import { countNonAdminUsers, countUsersWithoutRole } from "../utils/userCounts";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
@@ -69,14 +70,30 @@ export default function UserListTable({
       initialSort={initialSort}
       tableMinWidthClassName="min-w-[900px]"
       getGroupId={() => "all"}
-      getGroupMeta={(_gid, list) => ({
-        title: "Users",
-        subtitle: (
-          <>
-            {list.length} bruger{list.length === 1 ? "" : "e"}
-          </>
-        ),
-      })}
+      getGroupMeta={(_gid, list) => {
+        const total = countNonAdminUsers(list);
+        const withoutRole = countUsersWithoutRole(list);
+
+        return {
+          title: "Users",
+          subtitle: (
+            <div className="flex flex-wrap items-center gap-2">
+              <span>
+                {total} bruger{total === 1 ? "" : "e"}
+              </span>
+
+              {withoutRole > 0 && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-amber-700">
+                    {withoutRole} uden rolle
+                  </span>
+                </>
+              )}
+            </div>
+          ),
+        };
+      }}
       columns={[
         {
           key: "user",

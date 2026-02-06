@@ -6,9 +6,13 @@ import { usePathname } from "next/navigation";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
+
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
-import { countNewRequests } from "../utils/requests";
+import { countNewRequests } from "@/utils/requestsCounts";
+
+import { subscribeUsers } from "@/app/lib/firestore/users";
+import { countUsersWithoutRole, type UserRow } from "@/utils/userCounts";
 
 type AdminNavProps = {
   className?: string;
@@ -23,11 +27,26 @@ function cx(...parts: Array<string | undefined | false>) {
   return parts.filter(Boolean).join(" ");
 }
 
-function NewBadge({ count }: { count: number }) {
+function Badge({
+  count,
+  tone = "rose",
+}: {
+  count: number;
+  tone?: "rose" | "amber";
+}) {
   if (count <= 0) return null;
 
+  const toneCls =
+    tone === "rose" ? "bg-rose-600 text-white" : "bg-amber-100 text-amber-900";
+
   return (
-    <span className="ml-1 inline-flex items-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-bold leading-none text-white">
+    <span
+      className={cx(
+        "ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+        toneCls
+      )}
+      title={tone === "rose" ? "Nye anmodninger" : "Brugere uden rolle"}
+    >
       {count}
     </span>
   );
@@ -54,17 +73,16 @@ export default function AdminNav({ className }: AdminNavProps) {
   const { role } = useAuth();
   const admin = isAdmin(role);
 
+  // 🔔 requests badge (open events only)
   const { events } = useEventsFirestore();
-  const [newCount, setNewCount] = React.useState(0);
+  const [newRequestsCount, setNewRequestsCount] = React.useState(0);
 
-  // 🔔 subscribe ONLY for admins + open events
   React.useEffect(() => {
     if (!admin) return;
 
     const openEvents = events.filter((e) => !e.deleted && (e.open ?? true));
-
     if (openEvents.length === 0) {
-      setNewCount(0);
+      setNewRequestsCount(0);
       return;
     }
 
@@ -74,7 +92,7 @@ export default function AdminNav({ className }: AdminNavProps) {
     const flush = () => {
       if (cancelled) return;
       const all = Array.from(perEvent.values()).flat();
-      setNewCount(countNewRequests(all));
+      setNewRequestsCount(countNewRequests(all));
     };
 
     const unsubs = openEvents.map((event) =>
@@ -94,6 +112,28 @@ export default function AdminNav({ className }: AdminNavProps) {
     };
   }, [admin, events]);
 
+  // 👤 users badge (users without role)
+  const [usersNoRoleCount, setUsersNoRoleCount] = React.useState(0);
+
+  React.useEffect(() => {
+    if (!admin) return;
+
+    const unsub = subscribeUsers(
+      (docs) => {
+        // shape into {uid, data} expected by countUsersWithoutRole
+        const rows: UserRow[] = docs.map((d: any) => ({
+          uid: d.id ?? d.uid ?? "",
+          data: d,
+        }));
+
+        setUsersNoRoleCount(countUsersWithoutRole(rows));
+      },
+      (err) => console.error("[AdminNav] subscribeUsers", err)
+    );
+
+    return () => unsub();
+  }, [admin]);
+
   return (
     <nav
       className={cx(
@@ -102,14 +142,23 @@ export default function AdminNav({ className }: AdminNavProps) {
       )}
     >
       <AdminNavLink href="/events" label="Events" />
-      <AdminNavLink href="/users" label="Users" />
+
+      <AdminNavLink
+        href="/users"
+        label={
+          <span className="inline-flex items-center">
+            Users
+            {admin && <Badge count={usersNoRoleCount} tone="amber" />}
+          </span>
+        }
+      />
 
       <AdminNavLink
         href="/requests"
         label={
           <span className="inline-flex items-center">
             Requests
-            {admin && <NewBadge count={newCount} />}
+            {admin && <Badge count={newRequestsCount} tone="amber" />}
           </span>
         }
       />

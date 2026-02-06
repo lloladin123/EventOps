@@ -14,7 +14,7 @@ import OpenCloseButton from "../ui/OpenCloseButton";
 import ViewToggle from "../ui/ViewModeToggle";
 import RequestsTable from "./RequestsTable";
 import RequestsListView from "./RequestsListView";
-import { countNewRequests } from "../utils/requests";
+import { countNewRequests } from "../utils/requestsCounts";
 
 function toIso(x: any): string {
   if (!x) return "";
