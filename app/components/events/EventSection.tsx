@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import OpenCloseButton from "../ui/OpenCloseButton";
 
 type Props = {
   title: string;
@@ -25,13 +26,12 @@ export default function EventSection({
           <p className="text-sm text-slate-600">({count})</p>
         </div>
 
-        <button
-          type="button"
+        <OpenCloseButton
+          target={minimized ? "open" : "close"}
           onClick={() => setMinimized((v) => !v)}
-          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
         >
           {minimized ? "Vis" : "Skjul"}
-        </button>
+        </OpenCloseButton>
       </header>
 
       {!minimized && <div className="mt-4 space-y-3">{children}</div>}

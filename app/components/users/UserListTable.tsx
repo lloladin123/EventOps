@@ -5,6 +5,9 @@ import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/utils/users.firestore";
 
+import GroupedTable from "@/components/ui/GroupedTable";
+import type { SortState } from "@/components/ui/GroupedTable";
+
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
   busy: boolean;
@@ -17,6 +20,18 @@ type Props = {
   ) => void | Promise<void>;
 };
 
+type Row = { uid: string; data: UserDoc };
+
+// Single group id (we’re not actually grouping users by anything here)
+type GroupId = "all";
+
+type ColumnKey = "user" | "uid" | "role" | "subRole" | "status";
+type SortKey = Exclude<ColumnKey, "status">;
+
+function asText(v: unknown) {
+  return (v ?? "").toString().trim().toLowerCase();
+}
+
 export default function UserListTable({
   users,
   busy,
@@ -25,119 +40,135 @@ export default function UserListTable({
   setUserRole,
   setUserSubRole,
 }: Props) {
-  // ✅ Hide admins from the list
   const visibleUsers = React.useMemo(
     () => users.filter(({ data }) => (data.role as Role | null) !== ROLE.Admin),
     [users]
   );
 
+  const initialSort: SortState<SortKey> = { key: "user", dir: "asc" };
+
+  if (busy) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        Loading users…
+      </div>
+    );
+  }
+
+  if (visibleUsers.length === 0) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        No users found.
+      </div>
+    );
+  }
+
   return (
-    <div className="relative overflow-x-auto rounded-xl border border-slate-200 bg-white">
-      <table className="min-w-[800px] w-full">
-        <thead className="bg-slate-50">
-          <tr>
-            <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-              User
-            </th>
-            <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-              UID
-            </th>
-            <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-              Role
-            </th>
-            <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-              SubRole
-            </th>
-            <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">
-              Status
-            </th>
-          </tr>
-        </thead>
+    <GroupedTable<Row, GroupId, ColumnKey, SortKey>
+      rows={visibleUsers}
+      initialSort={initialSort}
+      tableMinWidthClassName="min-w-[900px]"
+      getGroupId={() => "all"}
+      getGroupMeta={(_gid, list) => ({
+        title: "Users",
+        subtitle: (
+          <>
+            {list.length} bruger{list.length === 1 ? "" : "e"}
+          </>
+        ),
+      })}
+      columns={[
+        {
+          key: "user",
+          header: "User",
+          headerTitle: "Sortér efter navn",
+          sortValue: (r) =>
+            r.data.displayName?.trim() || r.data.email?.split("@")[0] || r.uid,
+          cell: (r) => (
+            <div className="text-sm text-slate-900">
+              <div className="font-medium">{r.data.displayName || "—"}</div>
+              <div className="text-xs text-slate-500">
+                {r.data.email || "—"}
+              </div>
+            </div>
+          ),
+        },
+        {
+          key: "uid",
+          header: "UID",
+          headerTitle: "Sortér efter UID",
+          sortValue: (r) => asText(r.uid),
+          cell: (r) => <code className="text-xs text-slate-700">{r.uid}</code>,
+        },
+        {
+          key: "role",
+          header: "Role",
+          headerTitle: "Sortér efter rolle",
+          sortValue: (r) => asText(r.data.role ?? ""),
+          cell: (r) => {
+            const role = (r.data.role ?? null) as Role | null;
 
-        <tbody>
-          {busy ? (
-            <tr>
-              <td className="px-4 py-4 text-sm text-slate-600" colSpan={5}>
-                Loading users…
-              </td>
-            </tr>
-          ) : visibleUsers.length === 0 ? (
-            <tr>
-              <td className="px-4 py-4 text-sm text-slate-600" colSpan={5}>
-                No users found.
-              </td>
-            </tr>
-          ) : (
-            visibleUsers.map(({ uid, data }) => {
-              const role = (data.role ?? null) as Role | null;
-              const subRole = (data.subRole ?? null) as CrewSubRole | null;
-              const isCrew = role === ROLE.Crew;
+            return (
+              <select
+                className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm"
+                value={role ?? ""}
+                onChange={(e) => setUserRole(r.uid, e.target.value as Role)}
+              >
+                <option value="" disabled>
+                  Select role…
+                </option>
+                {roles
+                  .filter((x) => x !== ROLE.Admin)
+                  .map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
+                  ))}
+              </select>
+            );
+          },
+        },
+        {
+          key: "subRole",
+          header: "SubRole",
+          headerTitle: "Sortér efter subrole",
+          sortValue: (r) => asText(r.data.subRole ?? ""),
+          cell: (r) => {
+            const role = (r.data.role ?? null) as Role | null;
+            const subRole = (r.data.subRole ?? null) as CrewSubRole | null;
+            const isCrew = role === ROLE.Crew;
 
-              return (
-                <tr key={uid} className="border-t">
-                  <td className="px-4 py-2 text-sm text-slate-900">
-                    <div className="font-medium">{data.displayName || "—"}</div>
-                    <div className="text-xs text-slate-500">
-                      {data.email || "—"}
-                    </div>
-                  </td>
-
-                  <td className="px-4 py-2 text-xs text-slate-700">
-                    <code className="text-xs">{uid}</code>
-                  </td>
-
-                  <td className="px-4 py-2">
-                    <select
-                      className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm"
-                      value={role ?? ""}
-                      onChange={(e) => setUserRole(uid, e.target.value as Role)}
-                    >
-                      <option value="" disabled>
-                        Select role…
-                      </option>
-                      {roles
-                        .filter((r) => r !== ROLE.Admin)
-                        .map((roleOpt) => (
-                          <option key={roleOpt} value={roleOpt}>
-                            {roleOpt}
-                          </option>
-                        ))}
-                    </select>
-                  </td>
-
-                  <td className="px-4 py-2">
-                    {isCrew ? (
-                      <select
-                        className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm"
-                        value={subRole ?? ""}
-                        onChange={(e) =>
-                          setUserSubRole(
-                            uid,
-                            e.target.value
-                              ? (e.target.value as CrewSubRole)
-                              : null
-                          )
-                        }
-                      >
-                        <option value="">(none)</option>
-                        {crewSubRoles.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="text-sm text-slate-400">—</span>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-2 text-right text-xs text-slate-500"></td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
+            return isCrew ? (
+              <select
+                className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm"
+                value={subRole ?? ""}
+                onChange={(e) =>
+                  setUserSubRole(
+                    r.uid,
+                    e.target.value ? (e.target.value as CrewSubRole) : null
+                  )
+                }
+              >
+                <option value="">(none)</option>
+                {crewSubRoles.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="text-sm text-slate-400">—</span>
+            );
+          },
+        },
+        {
+          key: "status",
+          header: <span className="text-right block">Status</span>,
+          align: "right",
+          // not sortable
+          cell: (_r) => <span className="text-xs text-slate-500"> </span>,
+        },
+      ]}
+    />
   );
 }
