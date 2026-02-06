@@ -7,7 +7,6 @@ import type { Incident } from "@/types/incident";
 
 import EventHeader from "@/components/events/EventHeader";
 import IncidentForm from "@/components/events/IncidentForm";
-import IncidentList from "@/components/events/IncidentList";
 import LoginRedirect from "@/components/layout/LoginRedirect";
 import ApprovedUsers from "@/components/events/ApprovedUsers";
 import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
@@ -21,6 +20,7 @@ import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
 import CloseLog from "@/components/events/CloseLog";
 import EditIncidentModal from "@/components/events/EditIncidentModal";
+import IncidentPanel from "@/components/events/IncidentPanel";
 
 const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
 
@@ -195,13 +195,14 @@ export default function EventDetailPage() {
                 Kunne ikke hente hændelser: {incidentsError}
               </div>
             ) : null}
+            <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
 
             {incidentsLoading ? (
               <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
                 Loader hændelser…
               </div>
             ) : (
-              <IncidentList
+              <IncidentPanel
                 eventId={event.id}
                 incidents={incidents}
                 onEdit={(incident) => setEditing(incident)}

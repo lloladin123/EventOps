@@ -212,7 +212,7 @@ export default function GroupedTable<
 
                 <tbody>
                   {sortedRows.map((row, idx) => (
-                    <tr key={idx} className="border-t">
+                    <tr key={idx} className="group border-t">
                       {columns.map((c) => {
                         const align =
                           c.align === "right" ? "text-right" : "text-left";

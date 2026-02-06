@@ -2,11 +2,12 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
-import IncidentListItem from "./IncidentListItem";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin as isAdminRole } from "@/types/rsvp";
-import IncidentTable from "./IncidentTable";
 import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
+
+import IncidentTable from "./IncidentTable";
+import IncidentListView from "./IncidentListView";
 
 type Props = {
   eventId: string;
@@ -16,9 +17,6 @@ type Props = {
 };
 
 const VIEW_KEY = "incidentViewMode";
-
-// 🔧 CHANGE THIS FOR TESTING
-// const EDIT_WINDOW_MS = 10 * 1000;
 const EDIT_WINDOW_MS = 5 * 60 * 1000;
 
 function getCreatedMs(incident: Incident): number | null {
@@ -28,16 +26,11 @@ function getCreatedMs(incident: Incident): number | null {
     const t = new Date(v).getTime();
     return Number.isFinite(t) ? t : null;
   }
-
   if (v?.toDate && typeof v.toDate === "function") {
     const t = v.toDate().getTime();
     return Number.isFinite(t) ? t : null;
   }
-
-  if (typeof v?.seconds === "number") {
-    return v.seconds * 1000;
-  }
-
+  if (typeof v?.seconds === "number") return v.seconds * 1000;
   return null;
 }
 
@@ -63,7 +56,7 @@ function getInitialView(): ViewMode {
   return raw === "table" || raw === "list" ? raw : "list";
 }
 
-export default function IncidentList({
+export default function IncidentPanel({
   eventId,
   incidents,
   onEdit,
@@ -77,7 +70,6 @@ export default function IncidentList({
 
   const [view, setView] = React.useState<ViewMode>(() => getInitialView());
 
-  // ✅ ONE BOOLEAN PER INCIDENT
   const [editableMap, setEditableMap] = React.useState<Record<string, boolean>>(
     () => {
       if (typeof window === "undefined") return {};
@@ -90,6 +82,7 @@ export default function IncidentList({
     }
   );
 
+  // keep map only for current incidents
   React.useEffect(() => {
     setEditableMap((prev) => {
       const next: Record<string, boolean> = {};
@@ -104,7 +97,7 @@ export default function IncidentList({
     localStorage.setItem("incidentEditableMap", JSON.stringify(editableMap));
   }, [editableMap]);
 
-  // ✅ INIT + EXPIRE EACH INCIDENT ONCE
+  // init + expire each incident once
   React.useEffect(() => {
     const now = Date.now();
 
@@ -134,6 +127,11 @@ export default function IncidentList({
     localStorage.setItem(VIEW_KEY, view);
   }, [view]);
 
+  const canEditIncident = React.useCallback(
+    (i: Incident) => admin || (isOwner(i, uid) && editableMap[i.id] === true),
+    [admin, uid, editableMap]
+  );
+
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-4">
@@ -152,34 +150,27 @@ export default function IncidentList({
           Ingen hændelser endnu — tilføj den første 👇
         </p>
       ) : view === "list" ? (
-        <ul className="mt-4 space-y-3">
-          {safeIncidents.map((i) => {
-            const canEdit =
-              admin || (isOwner(i, uid) && editableMap[i.id] === true);
-
-            return (
-              <IncidentListItem
-                key={i.id}
-                incident={i}
-                canEdit={canEdit}
-                canDelete={admin}
-                onEdit={onEdit}
-                onDelete={onDelete}
-              />
-            );
-          })}
-        </ul>
+        <div className="mt-4">
+          <IncidentListView
+            eventId={eventId}
+            incidents={safeIncidents}
+            canEditIncident={canEditIncident}
+            canDeleteIncident={admin}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        </div>
       ) : (
-        <IncidentTable
-          eventId={eventId}
-          incidents={safeIncidents}
-          canEditIncident={(i) =>
-            admin || (isOwner(i, uid) && editableMap[i.id] === true)
-          }
-          canDeleteIncident={admin}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
+        <div className="mt-4">
+          <IncidentTable
+            eventId={eventId}
+            incidents={safeIncidents}
+            canEditIncident={canEditIncident}
+            canDeleteIncident={admin}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        </div>
       )}
     </section>
   );

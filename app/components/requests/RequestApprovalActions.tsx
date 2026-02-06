@@ -29,14 +29,43 @@ type Decision =
 
 function btnCls(active: boolean, tone: "neutral" | "good" | "bad") {
   const base =
-    "rounded-lg px-3 py-1.5 text-xs font-semibold transition active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed";
+    "rounded-lg px-3 py-1.5 text-xs font-semibold transition " +
+    "active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed";
+
   if (!active) {
-    return `${base} bg-white border border-slate-200 text-slate-700 hover:bg-slate-50`;
+    if (tone === "good") {
+      return (
+        base +
+        " bg-white border border-emerald-600 text-emerald-700 " +
+        "hover:bg-emerald-600/10"
+      );
+    }
+
+    if (tone === "bad") {
+      return (
+        base +
+        " bg-white border border-rose-600 text-rose-700 " +
+        "hover:bg-rose-600/10"
+      );
+    }
+
+    // neutral (pending)
+    return (
+      base +
+      " bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
+    );
   }
-  if (tone === "good")
-    return `${base} bg-emerald-600 text-white hover:bg-emerald-500`;
-  if (tone === "bad") return `${base} bg-rose-600 text-white hover:bg-rose-500`;
-  return `${base} bg-slate-900 text-white hover:bg-slate-800`;
+
+  // ACTIVE = solid color
+  if (tone === "good") {
+    return base + " bg-emerald-600 text-white hover:bg-emerald-600/90";
+  }
+
+  if (tone === "bad") {
+    return base + " bg-rose-600 text-white hover:bg-rose-600/90";
+  }
+
+  return base + " bg-slate-900 text-white hover:bg-slate-900/90";
 }
 
 export default function RequestApprovalActions({
