@@ -311,7 +311,7 @@ export default function RequestsClient() {
         <div className="space-y-6">
           {/* OPEN PANEL */}
           {openVisible.length > 0 && (
-            <section className="border rounded-xl p-4 space-y-3">
+            <section className="rounded-2xl border-slate-200 bg-white shadow-sm p-4 space-y-3">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-lg font-semibold">Open events</h2>
@@ -339,7 +339,7 @@ export default function RequestsClient() {
 
           {/* CLOSED PANEL */}
           {showClosedEvents && closedVisible.length > 0 && (
-            <section className="border rounded-xl p-4 space-y-3 opacity-[0.98]">
+            <section className="rounded-2xl border-slate-200 bg-white shadow-sm p-4 space-y-3 opacity-[0.98]">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-lg font-semibold">Closed events</h2>
