@@ -47,6 +47,7 @@ type Props<
 
   // table
   columns: Array<Column<Row, ColumnKey>>;
+  sortHint?: React.ReactNode; // e.g. "Klik på kolonner for at sortere"
   tableMinWidthClassName?: string; // e.g. "min-w-[1000px]"
 
   // sorting (only sortable keys)
@@ -91,6 +92,7 @@ export default function GroupedTable<
   getGroupId,
   getGroupMeta,
   columns,
+  sortHint = "Klik på kolonner for at sortere",
   tableMinWidthClassName = "min-w-[900px]",
   initialSort,
 }: Props<Row, GroupId, ColumnKey, SortKey>) {
@@ -102,6 +104,11 @@ export default function GroupedTable<
       return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
     });
   };
+
+  const hasSortable = React.useMemo(
+    () => columns.some((c) => typeof c.sortValue === "function"),
+    [columns]
+  );
 
   const grouped = React.useMemo(() => {
     const map = new Map<GroupId, Row[]>();
@@ -167,6 +174,9 @@ export default function GroupedTable<
                 {meta.subtitle ? (
                   <div className="text-xs text-slate-500">{meta.subtitle}</div>
                 ) : null}
+                {hasSortable && sortHint ? (
+                  <div className="mt-1 text-xs text-slate-400">{sortHint}</div>
+                ) : null}
               </div>
 
               {meta.right ? <div className="shrink-0">{meta.right}</div> : null}
@@ -187,7 +197,11 @@ export default function GroupedTable<
                         (sort.key as unknown as string) ===
                           (c.key as unknown as string);
 
-                      const showArrow = isActive ? arrow(sort.dir) : "";
+                      const showArrow = isSortable
+                        ? isActive
+                          ? arrow(sort.dir)
+                          : "↕"
+                        : "";
 
                       return (
                         <th
