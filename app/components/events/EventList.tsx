@@ -28,7 +28,6 @@ export default function EventList() {
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
 
   const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps();
-
   const { events, loading: eventsLoading, error } = useEventsFirestore();
 
   const onDeleteEvent = React.useCallback((event: Event) => {
@@ -49,86 +48,142 @@ export default function EventList() {
   if (authLoading) return null;
   if (eventsLoading) return null;
 
+  // Count shown in the single outer panel
+  const totalCount = admin
+    ? openEvents.length + closedEvents.length
+    : openEvents.length;
+
   if (error) {
     return (
-      <div className="space-y-3">
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Kampe</h2>
+            <p className="text-sm text-slate-600">Kunne ikke hente events</p>
+          </div>
+        </header>
+
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
           Kunne ikke hente events: {error}
         </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <DeletedEventsUndoStack visible={admin} />
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Kampe</h2>
+          <p className="text-sm text-slate-600">({totalCount})</p>
+        </div>
+      </header>
 
-      <EventSection
-        title={admin ? "Åbne kampe" : "Kampe"}
-        count={openEvents.length}
-        minimized={openMinimized}
-        setMinimized={setOpenMinimized}
-      >
-        <ClosedEventsUndoStack visible={admin} />
+      <div className="mt-4 space-y-8">
+        {/* admin-only undo stack is fine inside the single panel */}
+        <DeletedEventsUndoStack visible={admin} />
 
-        {openEvents.length === 0 ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-            Ingen kampe lige nu.
-          </div>
-        ) : (
-          openEvents.map((event) => {
-            const my = myRsvpFor(event.id);
-
-            return (
-              <EventCard
-                key={event.id}
-                event={event}
-                attendanceValue={my?.attendance as RSVPAttendance | undefined}
-                approved={my?.approved}
-                commentValue={my?.comment ?? ""}
-                onChangeAttendance={onChangeAttendance}
-                onChangeComment={onChangeComment}
-                onDelete={admin ? onDeleteEvent : undefined}
-              />
-            );
-          })
-        )}
-      </EventSection>
-
-      {admin && (
-        <EventSection
-          title="Lukkede kampe"
-          count={closedEvents.length}
-          minimized={closedMinimized}
-          setMinimized={setClosedMinimized}
-        >
-          <OpenedEventsUndoStack visible={admin} />
-
-          {closedEvents.length === 0 ? (
+        {/* ✅ NON-ADMIN: no EventSection wrapper, just the list */}
+        {!admin ? (
+          openEvents.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
-              Ingen lukkede kampe.
+              Ingen kampe lige nu.
             </div>
           ) : (
-            closedEvents.map((event) => {
-              const my = myRsvpFor(event.id);
-              const effectiveEvent = { ...event, open: isEventOpen(event) };
+            <div className="space-y-3">
+              {openEvents.map((event) => {
+                const my = myRsvpFor(event.id);
 
-              return (
-                <EventCard
-                  key={event.id}
-                  event={effectiveEvent}
-                  approved={my?.approved}
-                  attendanceValue={my?.attendance as RSVPAttendance | undefined}
-                  commentValue={my?.comment ?? ""}
-                  onChangeAttendance={onChangeAttendance}
-                  onChangeComment={onChangeComment}
-                  onDelete={onDeleteEvent}
-                />
-              );
-            })
-          )}
-        </EventSection>
-      )}
-    </div>
+                return (
+                  <EventCard
+                    key={event.id}
+                    event={event}
+                    attendanceValue={
+                      my?.attendance as RSVPAttendance | undefined
+                    }
+                    approved={my?.approved}
+                    commentValue={my?.comment ?? ""}
+                    onChangeAttendance={onChangeAttendance}
+                    onChangeComment={onChangeComment}
+                  />
+                );
+              })}
+            </div>
+          )
+        ) : (
+          /* ✅ ADMIN: keep the two EventSections with minimize */
+          <>
+            <EventSection
+              title="Åbne kampe"
+              count={openEvents.length}
+              minimized={openMinimized}
+              setMinimized={setOpenMinimized}
+            >
+              <ClosedEventsUndoStack visible={admin} />
+
+              {openEvents.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+                  Ingen kampe lige nu.
+                </div>
+              ) : (
+                openEvents.map((event) => {
+                  const my = myRsvpFor(event.id);
+
+                  return (
+                    <EventCard
+                      key={event.id}
+                      event={event}
+                      attendanceValue={
+                        my?.attendance as RSVPAttendance | undefined
+                      }
+                      approved={my?.approved}
+                      commentValue={my?.comment ?? ""}
+                      onChangeAttendance={onChangeAttendance}
+                      onChangeComment={onChangeComment}
+                      onDelete={onDeleteEvent}
+                    />
+                  );
+                })
+              )}
+            </EventSection>
+
+            <EventSection
+              title="Lukkede kampe"
+              count={closedEvents.length}
+              minimized={closedMinimized}
+              setMinimized={setClosedMinimized}
+            >
+              <OpenedEventsUndoStack visible={admin} />
+
+              {closedEvents.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+                  Ingen lukkede kampe.
+                </div>
+              ) : (
+                closedEvents.map((event) => {
+                  const my = myRsvpFor(event.id);
+                  const effectiveEvent = { ...event, open: isEventOpen(event) };
+
+                  return (
+                    <EventCard
+                      key={event.id}
+                      event={effectiveEvent}
+                      approved={my?.approved}
+                      attendanceValue={
+                        my?.attendance as RSVPAttendance | undefined
+                      }
+                      commentValue={my?.comment ?? ""}
+                      onChangeAttendance={onChangeAttendance}
+                      onChangeComment={onChangeComment}
+                      onDelete={onDeleteEvent}
+                    />
+                  );
+                })
+              )}
+            </EventSection>
+          </>
+        )}
+      </div>
+    </section>
   );
 }
