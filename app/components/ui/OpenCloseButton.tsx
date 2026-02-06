@@ -13,13 +13,11 @@ export default function OpenCloseButton({
 }) {
   const isOpenTarget = target === "open";
 
+  // EventSection button style
   const base =
-    "rounded-xl px-3 py-2 text-sm font-semibold shadow-sm transition active:scale-[0.99]";
-  const enabled = isOpenTarget
-    ? "bg-sky-600 text-white hover:bg-sky-500"
-    : "bg-rose-600 text-white hover:bg-rose-500";
+    "rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 transition active:scale-[0.99]";
   const disabledCls =
-    "bg-slate-200 text-slate-500 cursor-not-allowed shadow-none";
+    "bg-slate-100 text-slate-400 cursor-not-allowed hover:bg-slate-100";
 
   return (
     <button
@@ -27,9 +25,9 @@ export default function OpenCloseButton({
       type={props.type ?? "button"}
       onClick={onClick}
       disabled={disabled}
-      className={[base, disabled ? disabledCls : enabled, className].join(" ")}
+      className={[base, disabled ? disabledCls : "", className].join(" ")}
     >
-      {props.children ?? (isOpenTarget ? "Åbn" : "Luk")}
+      {props.children ?? (isOpenTarget ? "Vis" : "Skjul")}
     </button>
   );
 }

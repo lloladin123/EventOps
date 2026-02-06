@@ -37,12 +37,37 @@ function getInitialView(): ViewMode {
   return raw === "table" || raw === "list" ? raw : "list";
 }
 
+function isEventOpen(e?: Event | null) {
+  // Keep existing behavior: missing "open" counts as open
+  return (e?.open ?? true) === true;
+}
+
+function sortRows(a: RSVPRow, b: RSVPRow) {
+  const da = a.event?.date ?? "9999-99-99";
+  const db = b.event?.date ?? "9999-99-99";
+  if (da !== db) return da.localeCompare(db);
+
+  const ta = a.event?.meetingTime ?? "99:99";
+  const tb = b.event?.meetingTime ?? "99:99";
+  if (ta !== tb) return ta.localeCompare(tb);
+
+  const na = (a.userDisplayName?.trim() || a.uid).toLowerCase();
+  const nb = (b.userDisplayName?.trim() || b.uid).toLowerCase();
+  if (na !== nb) return na.localeCompare(nb);
+
+  return a.uid.localeCompare(b.uid);
+}
+
 export default function RequestsClient() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [attendanceFilter, setAttendanceFilter] =
     useState<AttendanceFilter>("all");
 
   const [showClosedEvents, setShowClosedEvents] = useState(false);
+
+  // NEW: collapse state for panels
+  const [openPanelOpen, setOpenPanelOpen] = useState(true);
+  const [closedPanelOpen, setClosedPanelOpen] = useState(true);
 
   const {
     events,
@@ -119,44 +144,50 @@ export default function RequestsClient() {
     };
   }, [eventsLoading, events, showClosedEvents]);
 
-  const visible = useMemo(() => {
-    return rows
-      .filter((r) => {
-        if (attendanceFilter !== "all" && r.attendance !== attendanceFilter)
-          return false;
+  // Apply attendance/status filtering
+  const filtered = useMemo(() => {
+    return rows.filter((r) => {
+      if (attendanceFilter !== "all" && r.attendance !== attendanceFilter)
+        return false;
 
-        if (statusFilter !== "all") {
-          const d = r.decision ?? DECISION.Pending;
-          if (d !== statusFilter) return false;
-        }
+      if (statusFilter !== "all") {
+        const d = r.decision ?? DECISION.Pending;
+        if (d !== statusFilter) return false;
+      }
 
-        return true;
-      })
-      .sort((a, b) => {
-        const da = a.event?.date ?? "9999-99-99";
-        const db = b.event?.date ?? "9999-99-99";
-        if (da !== db) return da.localeCompare(db);
-
-        const ta = a.event?.meetingTime ?? "99:99";
-        const tb = b.event?.meetingTime ?? "99:99";
-        if (ta !== tb) return ta.localeCompare(tb);
-
-        const na = (a.userDisplayName?.trim() || a.uid).toLowerCase();
-        const nb = (b.userDisplayName?.trim() || b.uid).toLowerCase();
-        if (na !== nb) return na.localeCompare(nb);
-
-        return a.uid.localeCompare(b.uid);
-      });
+      return true;
+    });
   }, [rows, attendanceFilter, statusFilter]);
 
-  const grouped = useMemo(() => {
+  // Split into open/closed buckets (sorted within each bucket)
+  const openVisible = useMemo(
+    () => filtered.filter((r) => isEventOpen(r.event)).sort(sortRows),
+    [filtered]
+  );
+
+  const closedVisible = useMemo(
+    () => filtered.filter((r) => !isEventOpen(r.event)).sort(sortRows),
+    [filtered]
+  );
+
+  // Grouping for list view
+  const groupedOpen = useMemo(() => {
     const map = new Map<string, RSVPRow[]>();
-    for (const r of visible) {
+    for (const r of openVisible) {
       if (!map.has(r.eventId)) map.set(r.eventId, []);
       map.get(r.eventId)!.push(r);
     }
     return map;
-  }, [visible]);
+  }, [openVisible]);
+
+  const groupedClosed = useMemo(() => {
+    const map = new Map<string, RSVPRow[]>();
+    for (const r of closedVisible) {
+      if (!map.has(r.eventId)) map.set(r.eventId, []);
+      map.get(r.eventId)!.push(r);
+    }
+    return map;
+  }, [closedVisible]);
 
   const copyApproved = (eventId: string) => {
     const list = rows
@@ -183,8 +214,12 @@ export default function RequestsClient() {
     );
   }
 
+  const nothingToShow =
+    openVisible.length === 0 &&
+    (!showClosedEvents || closedVisible.length === 0);
+
   return (
-    <div className="p-4 space-y-4">
+    <div className="p-4 space-y-4 max-w-6xl mx-auto">
       <div className="flex flex-wrap gap-3 items-end justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Requests</h1>
@@ -210,16 +245,126 @@ export default function RequestsClient() {
         </div>
       </div>
 
-      {visible.length === 0 ? (
+      {nothingToShow ? (
         <div className="border rounded p-4 opacity-70">No requests found.</div>
       ) : view === "list" ? (
-        <RequestsListView
-          grouped={grouped}
-          eventsById={eventsById}
-          onCopyApproved={copyApproved}
-        />
+        <div className="space-y-6">
+          {/* OPEN PANEL */}
+          {openVisible.length > 0 && (
+            <section className="border rounded-xl p-4 space-y-3">
+              <div className="flex flex-wrap gap-2 items-center justify-between">
+                <div className="flex items-baseline gap-3">
+                  <h2 className="text-lg font-semibold">Open events</h2>
+                  <span className="text-sm opacity-70">
+                    {openVisible.length} requests
+                  </span>
+                </div>
+
+                <OpenCloseButton
+                  target={openPanelOpen ? "close" : "open"}
+                  onClick={() => setOpenPanelOpen((v) => !v)}
+                >
+                  {openPanelOpen ? "Skjul" : "Vis"}
+                </OpenCloseButton>
+              </div>
+
+              {openPanelOpen && (
+                <RequestsListView
+                  grouped={groupedOpen}
+                  eventsById={eventsById}
+                  onCopyApproved={copyApproved}
+                />
+              )}
+            </section>
+          )}
+
+          {/* CLOSED PANEL */}
+          {showClosedEvents && closedVisible.length > 0 && (
+            <section className="border rounded-xl p-4 space-y-3 opacity-[0.98]">
+              <div className="flex flex-wrap gap-2 items-center justify-between">
+                <div className="flex items-baseline gap-3">
+                  <h2 className="text-lg font-semibold">Closed events</h2>
+                  <span className="text-sm opacity-70">
+                    {closedVisible.length} requests
+                  </span>
+                </div>
+
+                <OpenCloseButton
+                  target={closedPanelOpen ? "close" : "open"}
+                  onClick={() => setClosedPanelOpen((v) => !v)}
+                >
+                  {closedPanelOpen ? "Skjul" : "Vis"}
+                </OpenCloseButton>
+              </div>
+
+              {closedPanelOpen && (
+                <RequestsListView
+                  grouped={groupedClosed}
+                  eventsById={eventsById}
+                  onCopyApproved={copyApproved}
+                />
+              )}
+            </section>
+          )}
+        </div>
       ) : (
-        <RequestsTable rows={visible} onCopyApproved={copyApproved} />
+        <div className="space-y-6">
+          {/* OPEN PANEL */}
+          {openVisible.length > 0 && (
+            <section className="border rounded-xl p-4 space-y-3">
+              <div className="flex flex-wrap gap-2 items-center justify-between">
+                <div className="flex items-baseline gap-3">
+                  <h2 className="text-lg font-semibold">Open events</h2>
+                  <span className="text-sm opacity-70">
+                    {openVisible.length} requests
+                  </span>
+                </div>
+
+                <OpenCloseButton
+                  target={openPanelOpen ? "close" : "open"}
+                  onClick={() => setOpenPanelOpen((v) => !v)}
+                >
+                  {openPanelOpen ? "Minimér" : "Vis"}
+                </OpenCloseButton>
+              </div>
+
+              {openPanelOpen && (
+                <RequestsTable
+                  rows={openVisible}
+                  onCopyApproved={copyApproved}
+                />
+              )}
+            </section>
+          )}
+
+          {/* CLOSED PANEL */}
+          {showClosedEvents && closedVisible.length > 0 && (
+            <section className="border rounded-xl p-4 space-y-3 opacity-[0.98]">
+              <div className="flex flex-wrap gap-2 items-center justify-between">
+                <div className="flex items-baseline gap-3">
+                  <h2 className="text-lg font-semibold">Closed events</h2>
+                  <span className="text-sm opacity-70">
+                    {closedVisible.length} requests
+                  </span>
+                </div>
+
+                <OpenCloseButton
+                  target={closedPanelOpen ? "close" : "open"}
+                  onClick={() => setClosedPanelOpen((v) => !v)}
+                >
+                  {closedPanelOpen ? "Minimér" : "Vis"}
+                </OpenCloseButton>
+              </div>
+
+              {closedPanelOpen && (
+                <RequestsTable
+                  rows={closedVisible}
+                  onCopyApproved={copyApproved}
+                />
+              )}
+            </section>
+          )}
+        </div>
       )}
     </div>
   );
