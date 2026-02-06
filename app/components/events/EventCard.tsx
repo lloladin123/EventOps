@@ -73,9 +73,12 @@ export default function EventCard({
   const admin = isAdmin(role);
 
   // ✅ Link only works if user is allowed for this event
+  const isApproved = approved === true; // explicit
+
   const canOpenDetails =
     !!user &&
     !loading &&
+    (admin ? true : isApproved) &&
     canAccessEventDetails({ eventId: event.id, uid: user.uid, role });
 
   const closeNow = () => {
