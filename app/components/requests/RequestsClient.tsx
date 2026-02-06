@@ -11,7 +11,7 @@ import { DECISION } from "@/types/rsvpIndex";
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
 import OpenCloseButton from "../ui/OpenCloseButton";
-import ViewToggle from "../ViewModeToggle";
+import ViewToggle from "../ui/ViewModeToggle";
 import RequestsTable from "./RequestsTable";
 import RequestsListView from "./RequestsListView";
 

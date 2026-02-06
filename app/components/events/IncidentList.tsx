@@ -6,7 +6,7 @@ import IncidentListItem from "./IncidentListItem";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin as isAdminRole } from "@/types/rsvp";
 import IncidentTable from "./IncidentTable";
-import ViewModeToggle, { type ViewMode } from "@/components/ViewModeToggle";
+import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 
 type Props = {
   eventId: string;

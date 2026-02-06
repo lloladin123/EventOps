@@ -4,11 +4,23 @@ import * as React from "react";
 import type { RSVPRow } from "@/types/requests";
 import { DECISION } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
+import GroupedTable from "@/components/ui/GroupedTable";
+import type { SortState } from "@/components/ui/GroupedTable";
 
 type Props = {
   rows: RSVPRow[];
   onCopyApproved: (eventId: string) => void;
 };
+
+type ColumnKey =
+  | "name"
+  | "attendance"
+  | "status"
+  | "comment"
+  | "updatedAt"
+  | "actions";
+
+type SortKey = Exclude<ColumnKey, "actions">;
 
 function fmtUpdatedAt(iso?: string) {
   if (!iso) return "—";
@@ -25,137 +37,131 @@ function statusPill(decision?: string) {
   return `${base} bg-slate-100 text-slate-700`;
 }
 
-export default function RequestsTable({ rows, onCopyApproved }: Props) {
-  const grouped = React.useMemo(() => {
-    const map = new Map<string, RSVPRow[]>();
-    for (const r of rows) {
-      if (!map.has(r.eventId)) map.set(r.eventId, []);
-      map.get(r.eventId)!.push(r);
-    }
-    return map;
-  }, [rows]);
+function updatedAtMs(iso?: string) {
+  if (!iso) return 0;
+  const t = new Date(iso).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
 
-  if (rows.length === 0) return null;
+export default function RequestsTable({ rows, onCopyApproved }: Props) {
+  const initialSort: SortState<SortKey> = { key: "updatedAt", dir: "desc" };
 
   return (
-    <div className="space-y-4">
-      {Array.from(grouped.entries()).map(([eventId, list]) => {
+    <GroupedTable<RSVPRow, string, ColumnKey, SortKey>
+      rows={rows}
+      initialSort={initialSort}
+      tableMinWidthClassName="min-w-[1000px]"
+      getGroupId={(r) => r.eventId}
+      getGroupMeta={(eventId, list) => {
         const event = list[0]?.event;
         const title = event?.title ?? "Event";
         const date = event?.date ?? "";
         const time = event?.meetingTime ?? "";
 
-        return (
-          <section
-            key={eventId}
-            className="rounded-2xl border border-slate-200 bg-white shadow-sm"
-          >
-            {/* Event header */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
-              <div className="min-w-0">
-                <div className="truncate text-base font-semibold text-slate-900">
-                  {title}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {date}
-                  {time ? ` • ${time}` : ""}
-                  <span className="mx-2 text-slate-300">•</span>
-                  {list.length} anmodning{list.length === 1 ? "" : "er"}
-                </div>
+        return {
+          title,
+          subtitle: (
+            <>
+              {date}
+              {time ? ` • ${time}` : ""}
+              <span className="mx-2 text-slate-300">•</span>
+              {list.length} anmodning{list.length === 1 ? "" : "er"}
+            </>
+          ),
+          right: (
+            <button
+              type="button"
+              onClick={() => onCopyApproved(eventId)}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 active:scale-[0.99]"
+            >
+              Kopiér godkendte
+            </button>
+          ),
+        };
+      }}
+      columns={[
+        {
+          key: "name",
+          header: "Navn",
+          headerTitle: "Sortér efter navn",
+          sortValue: (r) => r.userDisplayName?.trim() || r.uid,
+          cell: (r) => {
+            const who = r.userDisplayName?.trim() || r.uid;
+            const roleLabel = r.userRole
+              ? r.userSubRole
+                ? `${r.userRole} – ${r.userSubRole}`
+                : r.userRole
+              : "—";
+
+            return (
+              <div className="text-sm text-slate-900">
+                <div className="font-medium">{who}</div>
+                <div className="text-xs text-slate-500">{roleLabel}</div>
               </div>
-
-              <button
-                type="button"
-                onClick={() => onCopyApproved(eventId)}
-                className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 active:scale-[0.99]"
-              >
-                Kopiér godkendte
-              </button>
-            </div>
-
-            {/* Scroll container */}
-            <div className="overflow-x-auto">
-              <table className="min-w-[1000px] w-full">
-                <thead className="bg-slate-50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-                      Navn
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-                      Attendance
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-                      Status
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-                      Kommentar
-                    </th>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
-                      Opdateret
-                    </th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {list.map((r) => {
-                    const who = r.userDisplayName?.trim() || r.uid;
-                    const roleLabel = r.userRole
-                      ? r.userSubRole
-                        ? `${r.userRole} – ${r.userSubRole}`
-                        : r.userRole
-                      : "—";
-
-                    return (
-                      <tr key={`${r.eventId}:${r.uid}`} className="border-t">
-                        <td className="px-4 py-2 text-sm text-slate-900">
-                          <div className="font-medium">{who}</div>
-                          <div className="text-xs text-slate-500">
-                            {roleLabel}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-2 text-sm text-slate-700">
-                          {r.attendance ?? "—"}
-                        </td>
-
-                        <td className="px-4 py-2">
-                          <span className={statusPill(r.decision)}>
-                            {r.decision ?? DECISION.Pending}
-                          </span>
-                        </td>
-
-                        <td className="px-4 py-2 text-sm text-slate-700">
-                          {r.comment ? (
-                            <span className="line-clamp-2">{r.comment}</span>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-
-                        <td className="px-4 py-2 text-xs text-slate-500">
-                          {fmtUpdatedAt(r.updatedAt)}
-                        </td>
-
-                        <td className="px-4 py-2 text-right">
-                          <RequestApprovalActions
-                            eventId={r.eventId}
-                            uid={r.uid}
-                            decision={r.decision}
-                            approved={r.approved}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        );
-      })}
-    </div>
+            );
+          },
+        },
+        {
+          key: "attendance",
+          header: "Attendance",
+          headerTitle: "Sortér efter attendance",
+          sortValue: (r) => r.attendance ?? "",
+          cell: (r) => (
+            <span className="text-sm text-slate-700">
+              {r.attendance ?? "—"}
+            </span>
+          ),
+        },
+        {
+          key: "status",
+          header: "Status",
+          headerTitle: "Sortér efter status",
+          sortValue: (r) => r.decision ?? DECISION.Pending,
+          cell: (r) => (
+            <span className={statusPill(r.decision)}>
+              {r.decision ?? DECISION.Pending}
+            </span>
+          ),
+        },
+        {
+          key: "comment",
+          header: "Kommentar",
+          headerTitle: "Sortér efter kommentar",
+          sortValue: (r) => r.comment ?? "",
+          cell: (r) =>
+            r.comment ? (
+              <span className="text-sm text-slate-700 line-clamp-2">
+                {r.comment}
+              </span>
+            ) : (
+              <span className="text-slate-400">—</span>
+            ),
+        },
+        {
+          key: "updatedAt",
+          header: "Opdateret",
+          headerTitle: "Sortér efter opdateret",
+          sortValue: (r) => updatedAtMs(r.updatedAt),
+          cell: (r) => (
+            <span className="text-xs text-slate-500">
+              {fmtUpdatedAt(r.updatedAt)}
+            </span>
+          ),
+        },
+        {
+          key: "actions",
+          header: "Actions",
+          align: "right",
+          cell: (r) => (
+            <RequestApprovalActions
+              eventId={r.eventId}
+              uid={r.uid}
+              decision={r.decision}
+              approved={r.approved}
+            />
+          ),
+        },
+      ]}
+    />
   );
 }
