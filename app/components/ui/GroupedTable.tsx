@@ -19,6 +19,12 @@ type Column<Row, ColumnKey extends string> = {
 
   // Optional alignment
   align?: "left" | "right";
+
+  // ✅ NEW: if true, clamp/truncate long content with ellipsis
+  truncate?: boolean;
+
+  // ✅ NEW: optional max width helper (works best with truncate)
+  maxWidthClassName?: string; // e.g. "max-w-[320px]"
 };
 
 type GroupMeta = {
@@ -66,6 +72,13 @@ function thBtnCls(active: boolean) {
 
 function arrow(dir: SortDir) {
   return dir === "asc" ? "↑" : "↓";
+}
+
+function nodeToTitle(node: React.ReactNode): string | undefined {
+  // Only auto-title if it's a simple primitive. Otherwise user can set title themselves in cell().
+  if (typeof node === "string") return node;
+  if (typeof node === "number") return String(node);
+  return undefined;
 }
 
 export default function GroupedTable<
@@ -217,6 +230,20 @@ export default function GroupedTable<
                         const align =
                           c.align === "right" ? "text-right" : "text-left";
 
+                        const content = c.cell(row);
+                        const autoTitle = nodeToTitle(content);
+
+                        // ✅ If truncating, we need a block wrapper w/ max width + truncate
+                        const wrapClass = c.truncate
+                          ? [
+                              "truncate",
+                              // pick a sensible default max width, can be overridden per column
+                              c.maxWidthClassName ?? "max-w-[320px]",
+                              // helps truncate work predictably
+                              "block",
+                            ].join(" ")
+                          : undefined;
+
                         return (
                           <td
                             key={c.key}
@@ -228,7 +255,13 @@ export default function GroupedTable<
                               .filter(Boolean)
                               .join(" ")}
                           >
-                            {c.cell(row)}
+                            {c.truncate ? (
+                              <span className={wrapClass} title={autoTitle}>
+                                {content}
+                              </span>
+                            ) : (
+                              content
+                            )}
                           </td>
                         );
                       })}

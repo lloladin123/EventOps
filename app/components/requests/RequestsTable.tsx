@@ -150,13 +150,17 @@ export default function RequestsTable({ rows, onCopyApproved }: Props) {
           sortValue: (r) => r.comment ?? "",
           cell: (r) =>
             r.comment ? (
-              <span className="text-sm text-slate-700 line-clamp-2">
+              <span
+                className="block max-w-[240px] truncate text-sm text-slate-700"
+                title={r.comment}
+              >
                 {r.comment}
               </span>
             ) : (
               <span className="text-slate-400">—</span>
             ),
         },
+
         {
           key: "updatedAt",
           header: "Opdateret",

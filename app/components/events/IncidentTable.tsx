@@ -3,14 +3,30 @@
 import * as React from "react";
 import type { Incident } from "@/types/incident";
 
+import GroupedTable from "@/components/ui/GroupedTable";
+import type { SortState } from "@/components/ui/GroupedTable";
+
 type Props = {
-  eventId: string; // kept for consistency with parent; not used here (page-level modal handles it)
+  eventId: string;
   incidents: Incident[];
   canEditIncident: (incident: Incident) => boolean;
   canDeleteIncident: boolean;
-  onEdit?: (incident: Incident) => void; // ✅ page-level modal trigger
+  onEdit?: (incident: Incident) => void;
   onDelete?: (incidentId: string) => void;
 };
+
+type ColumnKey =
+  | "time"
+  | "type"
+  | "from"
+  | "incident"
+  | "loggedBy"
+  | "police"
+  | "preparedness"
+  | "images"
+  | "actions";
+
+type SortKey = Exclude<ColumnKey, "actions">;
 
 function YesBadge({ label, emoji }: { label: string; emoji: string }) {
   return (
@@ -29,136 +45,216 @@ function NoBadge() {
   );
 }
 
+function imgCount(i: Incident) {
+  return Array.isArray(i.files) ? i.files.length : 0;
+}
+
+function asText(v: unknown) {
+  return (v ?? "").toString().trim().toLowerCase();
+}
+
 export default function IncidentTable({
-  eventId: _eventId,
+  eventId,
   incidents,
   canEditIncident,
   canDeleteIncident,
   onEdit,
   onDelete,
 }: Props) {
+  const initialSort: SortState<SortKey> = { key: "time", dir: "desc" };
+
+  if (!incidents.length) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
+        Ingen hændelser.
+      </div>
+    );
+  }
+
   return (
-    <div className="mt-4 overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="border-b bg-slate-50 text-left">
-            <th className="px-3 py-2 font-medium">Tid</th>
-            <th className="px-3 py-2 font-medium">Type</th>
-            <th className="px-3 py-2 font-medium">Fra</th>
-            <th className="px-3 py-2 font-medium">Hændelse</th>
-            <th className="px-3 py-2 font-medium">Logget af</th>
-            <th className="px-3 py-2 font-medium text-center">Politi</th>
-            <th className="px-3 py-2 font-medium text-center">Beredskab</th>
-            <th className="px-3 py-2 font-medium text-center">Billeder</th>
-            <th className="px-3 py-2 font-medium text-right">Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {incidents.map((i) => {
-            const canEdit = canEditIncident(i);
-            const imgCount = Array.isArray(i.files) ? i.files.length : 0;
-
-            return (
-              <tr
-                key={i.id}
-                className="border-b last:border-0 align-top hover:bg-slate-50/40"
-              >
-                <td className="px-3 py-2 whitespace-nowrap text-slate-600">
-                  {i.time}
-                </td>
-
-                <td className="px-3 py-2">
-                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium">
-                    {i.type}
-                  </span>
-                </td>
-
-                <td className="px-3 py-2 text-slate-800">{i.modtagetFra}</td>
-
-                <td className="px-3 py-2 max-w-xs truncate">{i.haendelse}</td>
-
-                <td className="px-3 py-2 text-slate-600">{i.loggetAf}</td>
-
-                <td className="px-3 py-2 text-center">
-                  {i.politiInvolveret ? (
-                    <YesBadge emoji="👮" label="Politi" />
-                  ) : (
-                    <NoBadge />
-                  )}
-                </td>
-
-                <td className="px-3 py-2 text-center">
-                  {i.beredskabInvolveret ? (
-                    <YesBadge emoji="🚒" label="Beredskab" />
-                  ) : (
-                    <NoBadge />
-                  )}
-                </td>
-
-                <td className="px-3 py-2 text-center">
-                  {imgCount > 0 ? (
+    <div className="mt-4 space-y-3">
+      <GroupedTable<Incident, string, ColumnKey, SortKey>
+        rows={incidents}
+        initialSort={initialSort}
+        tableMinWidthClassName="min-w-[980px]"
+        getGroupId={() => eventId}
+        getGroupMeta={(_gid, rows) => ({
+          title: "Hændelser",
+          subtitle: (
+            <span className="text-xs text-slate-500">
+              {rows.length} hændelse{rows.length === 1 ? "" : "r"}
+            </span>
+          ),
+        })}
+        columns={[
+          {
+            key: "time",
+            header: "Tid",
+            headerTitle: "Sortér efter tid",
+            sortValue: (i) => asText(i.time),
+            className: "w-[90px]",
+            cell: (i) => (
+              <span className="whitespace-nowrap text-sm text-slate-600">
+                {i.time ?? "—"}
+              </span>
+            ),
+          },
+          {
+            key: "type",
+            header: "Type",
+            headerTitle: "Sortér efter type",
+            sortValue: (i) => asText(i.type),
+            className: "w-[130px]",
+            cell: (i) => (
+              <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium">
+                {i.type ?? "—"}
+              </span>
+            ),
+          },
+          {
+            key: "from",
+            header: "Fra",
+            headerTitle: "Sortér efter fra",
+            sortValue: (i) => asText(i.modtagetFra),
+            className: "w-[160px]",
+            cell: (i) => (
+              <span className="text-sm text-slate-800">
+                {i.modtagetFra ?? "—"}
+              </span>
+            ),
+          },
+          {
+            key: "incident",
+            header: "Hændelse",
+            headerTitle: "Sortér efter hændelse",
+            sortValue: (i) => asText(i.haendelse),
+            // ✅ hard cap the visual width so table never breaks
+            className: "w-[200px]",
+            cell: (i) =>
+              i.haendelse ? (
+                <span
+                  className="block max-w-[200px] truncate text-sm text-slate-800"
+                  title={i.haendelse}
+                >
+                  {i.haendelse}
+                </span>
+              ) : (
+                <span className="text-slate-400">—</span>
+              ),
+          },
+          {
+            key: "loggedBy",
+            header: "Logget af",
+            headerTitle: "Sortér efter logget af",
+            sortValue: (i) => asText(i.loggetAf),
+            className: "w-[160px]",
+            cell: (i) => (
+              <span className="text-sm text-slate-600">
+                {i.loggetAf ?? "—"}
+              </span>
+            ),
+          },
+          {
+            key: "police",
+            header: "Politi",
+            headerTitle: "Sortér efter politi (ja/nej)",
+            sortValue: (i) => (i.politiInvolveret ? 1 : 0),
+            className: "w-[130px]",
+            cell: (i) => (
+              <div className="text-center">
+                {i.politiInvolveret ? (
+                  <YesBadge emoji="👮" label="Politi" />
+                ) : (
+                  <NoBadge />
+                )}
+              </div>
+            ),
+          },
+          {
+            key: "preparedness",
+            header: "Beredskab",
+            headerTitle: "Sortér efter beredskab (ja/nej)",
+            sortValue: (i) => (i.beredskabInvolveret ? 1 : 0),
+            className: "w-[150px]",
+            cell: (i) => (
+              <div className="text-center">
+                {i.beredskabInvolveret ? (
+                  <YesBadge emoji="🚒" label="Beredskab" />
+                ) : (
+                  <NoBadge />
+                )}
+              </div>
+            ),
+          },
+          {
+            key: "images",
+            header: "Billeder",
+            headerTitle: "Sortér efter antal billeder",
+            sortValue: (i) => imgCount(i),
+            className: "w-[120px]",
+            cell: (i) => {
+              const n = imgCount(i);
+              return (
+                <div className="text-center">
+                  {n > 0 ? (
                     <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
-                      🖼️ {imgCount}
+                      🖼️ {n}
                     </span>
                   ) : (
                     <NoBadge />
                   )}
-                </td>
+                </div>
+              );
+            },
+          },
+          {
+            key: "actions",
+            header: "Actions",
+            align: "right",
+            className: "w-[170px]",
+            cell: (i) => {
+              const canEdit = canEditIncident(i);
 
-                <td className="px-3 py-2">
-                  <div className="flex justify-end gap-2">
-                    {canEdit && onEdit ? (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(i)} // ✅ ONLY triggers page-level modal
-                        className="rounded-lg border px-2 py-1 text-xs font-medium hover:bg-slate-50"
-                      >
-                        Update
-                      </button>
-                    ) : (
-                      <span className="text-xs text-slate-400">
-                        {onEdit ? (
-                          <button
-                            type="button"
-                            onClick={() => onEdit(i)}
-                            disabled={!canEdit}
-                            className={[
-                              "rounded-lg border px-2 py-1 text-xs font-medium",
-                              canEdit
-                                ? "hover:bg-slate-50"
-                                : "cursor-not-allowed opacity-40",
-                            ].join(" ")}
-                            title={
-                              canEdit
-                                ? "Update"
-                                : "Update kun muligt i 5 min for den der oprettede hændelsen (Admin altid)"
-                            }
-                          >
-                            Update
-                          </button>
-                        ) : null}
-                      </span>
-                    )}
+              return (
+                <div className="flex justify-end gap-2">
+                  {onEdit ? (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(i)}
+                      disabled={!canEdit}
+                      className={[
+                        "rounded-lg border px-2 py-1 text-xs font-medium",
+                        canEdit
+                          ? "hover:bg-slate-50"
+                          : "cursor-not-allowed opacity-40",
+                      ].join(" ")}
+                      title={
+                        canEdit
+                          ? "Update"
+                          : "Update kun muligt i 5 min for den der oprettede hændelsen (Admin altid)"
+                      }
+                    >
+                      Update
+                    </button>
+                  ) : null}
 
-                    {canDeleteIncident && onDelete ? (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(i.id)}
-                        className="rounded-lg border border-rose-300 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50"
-                      >
-                        Delete
-                      </button>
-                    ) : null}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                  {canDeleteIncident && onDelete ? (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(i.id)}
+                      className="rounded-lg border border-rose-300 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
+                  ) : null}
+                </div>
+              );
+            },
+          },
+        ]}
+      />
 
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="text-xs text-slate-500">
         Update er kun muligt i 5 min efter oprettelse for den der oprettede
         hændelsen (Admin altid).
       </p>
