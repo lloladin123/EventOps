@@ -147,7 +147,7 @@ export default function AdminNav({ className }: AdminNavProps) {
         href="/users"
         label={
           <span className="inline-flex items-center">
-            Users
+            Brugere
             {admin && <Badge count={usersNoRoleCount} tone="amber" />}
           </span>
         }

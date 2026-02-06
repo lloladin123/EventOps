@@ -195,7 +195,7 @@ export default function IncidentListView({
                               : "Update kun muligt i 5 min for den der oprettede hændelsen (Admin altid)"
                           }
                         >
-                          Update
+                          Opdater
                         </button>
                       ) : null}
 
@@ -205,7 +205,7 @@ export default function IncidentListView({
                           onClick={() => onDelete(i.id)}
                           className="rounded-lg border border-rose-300 px-2 py-1 text-xs font-medium text-rose-700 hover:bg-rose-50"
                         >
-                          Delete
+                          Slet
                         </button>
                       ) : null}
                     </div>

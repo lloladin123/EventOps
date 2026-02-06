@@ -273,7 +273,9 @@ export default function RequestsClient() {
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-lg font-semibold">Åbne events</h2>
-                  <span className="text-sm opacity-70">{openNewCount} nye</span>
+                  <span className="text-sm text-amber-700  opacity-70">
+                    {openNewCount} nye
+                  </span>
                 </div>
 
                 <OpenCloseButton
@@ -329,7 +331,9 @@ export default function RequestsClient() {
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <div className="flex items-baseline gap-3">
                   <h2 className="text-lg font-semibold">Åbne events</h2>
-                  <span className="text-sm opacity-70">{openNewCount} nye</span>
+                  <span className="text-sm text-amber-700 opacity-70">
+                    {openNewCount} <span>nye</span>
+                  </span>
                 </div>
 
                 <OpenCloseButton

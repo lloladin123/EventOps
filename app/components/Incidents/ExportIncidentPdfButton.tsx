@@ -57,7 +57,7 @@ export default function ExportIncidentPdfButton({
         .filter(Boolean)
         .join(" ")}
     >
-      {busy ? "Generating…" : "Export PDF"}
+      {busy ? "Generating…" : "Exporter PDF"}
     </button>
   );
 }

@@ -76,7 +76,9 @@ export default function RequestsListView({
               {date}
               {time ? ` • ${time}` : ""}
               <span className="mx-2 text-slate-300">•</span>
-              {newCount} nye anmodning{newCount === 1 ? "" : "er"}
+              <span className="text-amber-700 opacity-70">
+                {newCount} nye anmodning{newCount === 1 ? "" : "er"}
+              </span>
             </>
           ),
           right: (

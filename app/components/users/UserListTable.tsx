@@ -183,13 +183,6 @@ export default function UserListTable({
             );
           },
         },
-        {
-          key: "status",
-          header: <span className="text-right block">Status</span>,
-          align: "right",
-          // not sortable
-          cell: (_r) => <span className="text-xs text-slate-500"> </span>,
-        },
       ]}
     />
   );

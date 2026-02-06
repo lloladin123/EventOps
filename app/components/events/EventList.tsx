@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import type { Event } from "@/types/event";
 
 import EventCard from "@/components/events/EventCard";
@@ -21,6 +22,8 @@ import type { RSVPAttendance } from "@/types/rsvpIndex";
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
 
 export default function EventList() {
+  const searchParams = useSearchParams();
+
   const { role, loading: authLoading } = useAuth();
   const admin = isAdmin(role);
 
@@ -44,6 +47,37 @@ export default function EventList() {
 
   const openEvents = visibleEvents.filter(isOpen);
   const closedEvents = visibleEvents.filter((e) => !isOpen(e));
+
+  // ✅ Scroll to event if URL has ?eventId=...
+  React.useEffect(() => {
+    const id = searchParams.get("eventId");
+    if (!id) return;
+
+    // If user links to a closed event, make sure the closed section isn't minimized
+    if (admin) {
+      const isClosed = closedEvents.some((e) => e.id === id);
+      if (isClosed) setClosedMinimized(false);
+
+      const isOpenEvent = openEvents.some((e) => e.id === id);
+      if (isOpenEvent) setOpenMinimized(false);
+    }
+
+    const t = window.setTimeout(() => {
+      const el = document.getElementById(`event-${id}`);
+      if (!el) return;
+
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+
+      // quick highlight
+      el.classList.add("ring-2", "ring-sky-300", "rounded-2xl");
+      window.setTimeout(() => {
+        el.classList.remove("ring-2", "ring-sky-300", "rounded-2xl");
+      }, 1400);
+    }, 80);
+
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, admin, openEvents, closedEvents]);
 
   if (authLoading) return null;
   if (eventsLoading) return null;
@@ -95,17 +129,22 @@ export default function EventList() {
                 const my = myRsvpFor(event.id);
 
                 return (
-                  <EventCard
+                  <div
                     key={event.id}
-                    event={event}
-                    attendanceValue={
-                      my?.attendance as RSVPAttendance | undefined
-                    }
-                    approved={my?.approved}
-                    commentValue={my?.comment ?? ""}
-                    onChangeAttendance={onChangeAttendance}
-                    onChangeComment={onChangeComment}
-                  />
+                    id={`event-${event.id}`}
+                    className="scroll-mt-24"
+                  >
+                    <EventCard
+                      event={event}
+                      attendanceValue={
+                        my?.attendance as RSVPAttendance | undefined
+                      }
+                      approved={my?.approved}
+                      commentValue={my?.comment ?? ""}
+                      onChangeAttendance={onChangeAttendance}
+                      onChangeComment={onChangeComment}
+                    />
+                  </div>
                 );
               })}
             </div>
@@ -130,18 +169,23 @@ export default function EventList() {
                   const my = myRsvpFor(event.id);
 
                   return (
-                    <EventCard
+                    <div
                       key={event.id}
-                      event={event}
-                      attendanceValue={
-                        my?.attendance as RSVPAttendance | undefined
-                      }
-                      approved={my?.approved}
-                      commentValue={my?.comment ?? ""}
-                      onChangeAttendance={onChangeAttendance}
-                      onChangeComment={onChangeComment}
-                      onDelete={onDeleteEvent}
-                    />
+                      id={`event-${event.id}`}
+                      className="scroll-mt-24"
+                    >
+                      <EventCard
+                        event={event}
+                        attendanceValue={
+                          my?.attendance as RSVPAttendance | undefined
+                        }
+                        approved={my?.approved}
+                        commentValue={my?.comment ?? ""}
+                        onChangeAttendance={onChangeAttendance}
+                        onChangeComment={onChangeComment}
+                        onDelete={onDeleteEvent}
+                      />
+                    </div>
                   );
                 })
               )}
@@ -165,18 +209,23 @@ export default function EventList() {
                   const effectiveEvent = { ...event, open: isEventOpen(event) };
 
                   return (
-                    <EventCard
+                    <div
                       key={event.id}
-                      event={effectiveEvent}
-                      approved={my?.approved}
-                      attendanceValue={
-                        my?.attendance as RSVPAttendance | undefined
-                      }
-                      commentValue={my?.comment ?? ""}
-                      onChangeAttendance={onChangeAttendance}
-                      onChangeComment={onChangeComment}
-                      onDelete={onDeleteEvent}
-                    />
+                      id={`event-${event.id}`}
+                      className="scroll-mt-24"
+                    >
+                      <EventCard
+                        event={effectiveEvent}
+                        approved={my?.approved}
+                        attendanceValue={
+                          my?.attendance as RSVPAttendance | undefined
+                        }
+                        commentValue={my?.comment ?? ""}
+                        onChangeAttendance={onChangeAttendance}
+                        onChangeComment={onChangeComment}
+                        onDelete={onDeleteEvent}
+                      />
+                    </div>
                   );
                 })
               )}
