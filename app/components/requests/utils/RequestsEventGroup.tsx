@@ -4,7 +4,7 @@ import * as React from "react";
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
 import { DECISION, type Decision } from "@/types/rsvpIndex";
-import StateButton from "../ui/StateButton";
+import StateButton from "../../ui/StateButton";
 
 import { setRsvpDecision } from "@/app/lib/firestore/rsvps";
 import { useAuth } from "@/app/components/auth/AuthProvider";
