@@ -14,7 +14,6 @@ export default function AddEventForm({ onAdded }: Props) {
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <header>
         <h2 className="text-lg font-semibold text-slate-900">Opret ny kamp</h2>
-        <p className="text-sm text-slate-600">Kun Admin kan se denne boks.</p>
       </header>
 
       <form

@@ -66,6 +66,14 @@ function attendancePill(a: RSVPAttendance) {
   }
 }
 
+function normalize(r: Row) {
+  return {
+    ...r,
+    attendance: (r.attendance ?? RSVP_ATTENDANCE.Maybe) as RSVPAttendance,
+    comment: r.comment ?? "",
+  };
+}
+
 export default function ApprovedUsers({ eventId }: Props) {
   const [rows, setRows] = React.useState<Row[]>([]);
 
@@ -77,26 +85,34 @@ export default function ApprovedUsers({ eventId }: Props) {
     );
   }, [eventId]);
 
-  const approved = React.useMemo(() => {
+  const approvedAll = React.useMemo(() => {
     return rows
       .filter((r) => {
         const decision: Decision =
           r.decision ?? (r.approved ? DECISION.Approved : DECISION.Pending);
         return decision === DECISION.Approved;
       })
-      .map((r) => ({
-        ...r,
-        attendance: (r.attendance ?? RSVP_ATTENDANCE.Maybe) as RSVPAttendance,
-        comment: r.comment ?? "",
-      }))
+      .map(normalize)
       .sort(
         (a, b) =>
           ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
       );
   }, [rows]);
 
+  // ✅ Split approved into yes/maybe vs no
+  const approvedYesMaybe = React.useMemo(
+    () => approvedAll.filter((r) => r.attendance !== RSVP_ATTENDANCE.No),
+    [approvedAll]
+  );
+
+  const approvedNo = React.useMemo(
+    () => approvedAll.filter((r) => r.attendance === RSVP_ATTENDANCE.No),
+    [approvedAll]
+  );
+
+  // Copy only the people you actually expect to show up (yes/maybe)
   const copy = () => {
-    const lines = approved.map((r) => {
+    const lines = approvedYesMaybe.map((r) => {
       const name = displayNameFromRow(r);
       const note = r.comment ? ` — ${r.comment}` : "";
       const a = RSVP_ATTENDANCE_LABEL[r.attendance];
@@ -106,54 +122,108 @@ export default function ApprovedUsers({ eventId }: Props) {
   };
 
   return (
-    <div className="border-t pt-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-sm font-semibold text-slate-900">
-          Godkendt staff ({approved.length})
+    <div className="border-t pt-3 space-y-4">
+      {/* ✅ Main: approved AND not "No" */}
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-sm font-semibold text-slate-900">
+            Godkendt staff ({approvedYesMaybe.length})
+          </div>
+
+          <button
+            type="button"
+            onClick={copy}
+            className="rounded-lg border px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Copy
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={copy}
-          className="rounded-lg border px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-        >
-          Copy
-        </button>
-      </div>
+        {approvedYesMaybe.length === 0 ? (
+          <div className="mt-2 text-sm text-slate-500">
+            Ingen godkendte (ja/måske) endnu
+          </div>
+        ) : (
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {approvedYesMaybe.map((r) => {
+              const roleLabel = roleLabelFromRow(r);
 
-      {approved.length === 0 ? (
-        <div className="mt-2 text-sm text-slate-500">Ingen godkendte endnu</div>
-      ) : (
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {approved.map((r) => {
-            const roleLabel = roleLabelFromRow(r);
+              return (
+                <div
+                  key={r.uid}
+                  className="rounded-xl border bg-white px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-medium text-slate-900">
+                        {displayNameFromRow(r)}
+                      </div>
 
-            return (
-              <div key={r.uid} className="rounded-xl border bg-white px-3 py-2">
-                <div className="flex items-center justify-between gap-2">
-                  <div>
-                    <div className="text-sm font-medium text-slate-900">
-                      {displayNameFromRow(r)}
+                      {roleLabel ? (
+                        <div className="text-xs text-slate-500">
+                          {roleLabel}
+                        </div>
+                      ) : null}
                     </div>
 
-                    {roleLabel ? (
-                      <div className="text-xs text-slate-500">{roleLabel}</div>
-                    ) : null}
+                    {attendancePill(r.attendance)}
                   </div>
 
-                  {attendancePill(r.attendance)}
+                  {r.comment ? (
+                    <div className="mt-1 text-xs text-slate-600">
+                      Note: {r.comment}
+                    </div>
+                  ) : null}
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-                {r.comment ? (
-                  <div className="mt-1 text-xs text-slate-600">
-                    Note: {r.comment}
+      {/* ✅ Secondary: approved but answered "No" */}
+      {approvedNo.length ? (
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+            Godkendt staff — Svarer nej ({approvedNo.length})
+          </div>
+
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            {approvedNo.map((r) => {
+              const roleLabel = roleLabelFromRow(r);
+
+              return (
+                <div
+                  key={r.uid}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-medium text-slate-900">
+                        {displayNameFromRow(r)}
+                      </div>
+
+                      {roleLabel ? (
+                        <div className="text-xs text-slate-500">
+                          {roleLabel}
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {attendancePill(r.attendance)}
                   </div>
-                ) : null}
-              </div>
-            );
-          })}
+
+                  {r.comment ? (
+                    <div className="mt-1 text-xs text-slate-600">
+                      Note: {r.comment}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
