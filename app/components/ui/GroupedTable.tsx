@@ -53,10 +53,10 @@ type Props<
   // sorting (only sortable keys)
   initialSort: SortState<SortKey>;
 
-  // ✅ NEW: filter the rows shown in the main table per group
+  // ✅ filter the rows shown in the main table per group
   filterGroupRows?: (groupId: GroupId, groupRows: Row[]) => Row[];
 
-  // ✅ NEW: render extra content under each group (e.g. a second table)
+  // ✅ render extra content under each group (e.g. a second table)
   renderGroupAfter?: (groupId: GroupId, groupRows: Row[]) => React.ReactNode;
 };
 
@@ -85,6 +85,15 @@ function nodeToTitle(node: React.ReactNode): string | undefined {
   if (typeof node === "string") return node;
   if (typeof node === "number") return String(node);
   return undefined;
+}
+
+function tdClassName(align: "left" | "right" | undefined, className?: string) {
+  const a = align === "right" ? "text-right" : "text-left";
+  return ["px-4 py-2 align-top", a, className].filter(Boolean).join(" ");
+}
+
+function wrapClassName(maxWidthClassName?: string) {
+  return ["truncate", maxWidthClassName ?? "max-w-[320px]", "block"].join(" ");
 }
 
 export default function GroupedTable<
@@ -149,7 +158,7 @@ export default function GroupedTable<
         const res = cmp(av as any, bv as any);
         if (res !== 0) return res * dir;
 
-        return A.idx - B.idx; // stable fallback
+        return A.idx - B.idx;
       });
 
       return withIndex.map((x) => x.r);
@@ -175,7 +184,6 @@ export default function GroupedTable<
             key={groupId}
             className="rounded-2xl border border-slate-200 bg-white shadow-sm"
           >
-            {/* Card header */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
               <div className="min-w-0">
                 <div className="truncate text-base font-semibold text-slate-900">
@@ -192,7 +200,6 @@ export default function GroupedTable<
               {meta.right ? <div className="shrink-0">{meta.right}</div> : null}
             </div>
 
-            {/* Scroll container */}
             <div className="overflow-x-auto">
               <table className={`${tableMinWidthClassName} w-full`}>
                 <thead className="bg-slate-50">
@@ -249,35 +256,27 @@ export default function GroupedTable<
 
                 <tbody>
                   {sortedRows.map((row, idx) => (
-                    <tr key={idx} className="group border-t">
+                    <tr
+                      key={idx}
+                      className="
+                        border-t transition-colors
+                        focus-within:bg-amber-50
+                      "
+                    >
                       {columns.map((c) => {
-                        const align =
-                          c.align === "right" ? "text-right" : "text-left";
-
                         const content = c.cell(row);
                         const autoTitle = nodeToTitle(content);
-
-                        const wrapClass = c.truncate
-                          ? [
-                              "truncate",
-                              c.maxWidthClassName ?? "max-w-[320px]",
-                              "block",
-                            ].join(" ")
-                          : undefined;
 
                         return (
                           <td
                             key={c.key}
-                            className={[
-                              "px-4 py-2 align-top",
-                              align,
-                              c.className,
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
+                            className={tdClassName(c.align, c.className)}
                           >
                             {c.truncate ? (
-                              <span className={wrapClass} title={autoTitle}>
+                              <span
+                                className={wrapClassName(c.maxWidthClassName)}
+                                title={autoTitle}
+                              >
                                 {content}
                               </span>
                             ) : (

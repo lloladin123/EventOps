@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
-import { db } from "@/app/lib/firebase/client";
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import type { Decision } from "@/types/rsvpIndex";
 import { DECISION } from "@/types/rsvpIndex";
+
+import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
+import { useRevokeRsvpApproval } from "../hooks/useRevokeRsvpApproval";
 
 type Props = {
   eventId: string;
@@ -20,14 +21,12 @@ type Props = {
 
   answeredNo?: boolean;
 
-  // optional: if you want parent to react (not required)
   onDone?: () => void;
-};
 
-type Decision =
-  | typeof DECISION.Approved
-  | typeof DECISION.Unapproved
-  | typeof DECISION.Pending;
+  // optional overrides
+  onSetDecision?: (next: Decision) => void | Promise<void>;
+  onRevokeApproval?: () => void | Promise<void>;
+};
 
 function btnCls(active: boolean, tone: "neutral" | "good" | "bad") {
   const base =
@@ -51,14 +50,12 @@ function btnCls(active: boolean, tone: "neutral" | "good" | "bad") {
       );
     }
 
-    // neutral (pending)
     return (
       base +
       " bg-white border border-slate-200 text-slate-700 hover:bg-slate-50"
     );
   }
 
-  // ACTIVE = solid color
   if (tone === "good") {
     return base + " bg-emerald-600 text-white hover:bg-emerald-600/90";
   }
@@ -79,72 +76,63 @@ export default function RequestApprovalActions({
   className,
   answeredNo,
   onDone,
+  onSetDecision,
+  onRevokeApproval,
 }: Props) {
-  const { user } = useAuth();
-  const adminUid = user?.uid ?? null;
+  // ✅ hooks must be called here (inside component)
+  const setRsvpDecision = useSetRsvpDecision();
+  const revokeRsvpApproval = useRevokeRsvpApproval();
 
   const [busy, setBusy] = React.useState(false);
+
   const effectiveDecision =
     (decision as Decision | null) ??
     (approved ? DECISION.Approved : DECISION.Pending);
 
-  const setDecision = React.useCallback(
+  const hideDecisionButtons = answeredNo === true;
+
+  const runSetDecision = React.useCallback(
     async (next: Decision) => {
       if (disabled || busy) return;
+
       setBusy(true);
       try {
-        const ref = doc(db, "events", eventId, "rsvps", uid);
-
-        // Keep compatibility with your existing fields:
-        // - decision (string)
-        // - approved (boolean)
-        // - approvedAt / approvedByUid (admin action auditing)
-        const isApproved = next === DECISION.Approved;
-
-        await updateDoc(ref, {
-          decision: next,
-          approved: isApproved,
-          approvedAt: isApproved ? serverTimestamp() : null,
-          approvedByUid: isApproved ? adminUid : null,
-          updatedAt: serverTimestamp(),
-        });
-
-        // your app already listens for these
-        window.dispatchEvent(new Event("requests-changed"));
-        window.dispatchEvent(new Event("events-changed"));
-
+        if (onSetDecision) {
+          await onSetDecision(next);
+        } else {
+          await setRsvpDecision(eventId, uid, next);
+        }
         onDone?.();
       } finally {
         setBusy(false);
       }
     },
-    [adminUid, busy, disabled, eventId, onDone, uid]
+    [busy, disabled, eventId, onDone, onSetDecision, setRsvpDecision, uid]
   );
 
-  const hideDecisionButtons = answeredNo === true;
-
-  const revokeApproval = React.useCallback(async () => {
+  const runRevokeApproval = React.useCallback(async () => {
     if (disabled || busy) return;
+
     setBusy(true);
     try {
-      const ref = doc(db, "events", eventId, "rsvps", uid);
-
-      await updateDoc(ref, {
-        decision: DECISION.Pending, // or DECISION.Unapproved if you want it harsher
-        approved: false,
-        approvedAt: null,
-        approvedByUid: null,
-        updatedAt: serverTimestamp(),
-      });
-
-      window.dispatchEvent(new Event("requests-changed"));
-      window.dispatchEvent(new Event("events-changed"));
-
+      if (onRevokeApproval) {
+        await onRevokeApproval();
+      } else {
+        await revokeRsvpApproval(eventId, uid);
+      }
       onDone?.();
     } finally {
       setBusy(false);
     }
-  }, [busy, disabled, eventId, onDone, uid]);
+  }, [
+    busy,
+    disabled,
+    eventId,
+    onDone,
+    onRevokeApproval,
+    revokeRsvpApproval,
+    uid,
+  ]);
 
   return (
     <div
@@ -157,7 +145,7 @@ export default function RequestApprovalActions({
           <button
             type="button"
             disabled={disabled || busy}
-            onClick={() => setDecision(DECISION.Approved)}
+            onClick={() => runSetDecision(DECISION.Approved)}
             className={btnCls(effectiveDecision === DECISION.Approved, "good")}
             title="Godkend"
           >
@@ -167,7 +155,7 @@ export default function RequestApprovalActions({
           <button
             type="button"
             disabled={disabled || busy}
-            onClick={() => setDecision(DECISION.Unapproved)}
+            onClick={() => runSetDecision(DECISION.Unapproved)}
             className={btnCls(effectiveDecision === DECISION.Unapproved, "bad")}
             title="Afvis"
           >
@@ -177,7 +165,7 @@ export default function RequestApprovalActions({
           <button
             type="button"
             disabled={disabled || busy}
-            onClick={() => setDecision(DECISION.Pending)}
+            onClick={() => runSetDecision(DECISION.Pending)}
             className={btnCls(
               effectiveDecision === DECISION.Pending,
               "neutral"
@@ -188,18 +176,17 @@ export default function RequestApprovalActions({
           </button>
         </>
       )}
+
       {hideDecisionButtons && (
-        <>
-          <button
-            type="button"
-            disabled={disabled || busy || !approved}
-            onClick={revokeApproval}
-            className={btnCls(false, "bad")}
-            title="Fjern godkendelse"
-          >
-            Fjern godkendelse
-          </button>
-        </>
+        <button
+          type="button"
+          disabled={disabled || busy || !approved}
+          onClick={runRevokeApproval}
+          className={btnCls(false, "bad")}
+          title="Fjern godkendelse"
+        >
+          Fjern godkendelse
+        </button>
       )}
     </div>
   );

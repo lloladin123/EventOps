@@ -8,6 +8,7 @@ import { RequestsPanel } from "../../ui/RequestsPanel";
 
 import type { RSVPRow } from "@/types/requests";
 import type { Event } from "@/types/event";
+import { Decision } from "@/types/rsvpIndex";
 
 type ViewMode = "list" | "table";
 
@@ -33,6 +34,11 @@ type Props = {
   openNewCount: number;
 
   onCopyApproved: (eventId: string) => void;
+  onSetDecision: (
+    eventId: string,
+    uid: string,
+    decision: Decision
+  ) => void | Promise<void>;
 };
 
 export function RequestsPanels({
@@ -49,6 +55,7 @@ export function RequestsPanels({
   eventsById,
   openNewCount,
   onCopyApproved,
+  onSetDecision,
 }: Props) {
   if (view === "list") {
     return (
@@ -71,6 +78,7 @@ export function RequestsPanels({
               grouped={groupedOpen}
               eventsById={eventsById}
               onCopyApproved={onCopyApproved}
+              onSetDecision={onSetDecision}
             />
           </RequestsPanel>
         )}
@@ -87,6 +95,7 @@ export function RequestsPanels({
               eventsById={eventsById}
               onCopyApproved={onCopyApproved}
               approvalsDisabled
+              onSetDecision={onSetDecision}
             />
           </RequestsPanel>
         )}
@@ -111,7 +120,11 @@ export function RequestsPanels({
             </>
           }
         >
-          <RequestsTable rows={openVisible} onCopyApproved={onCopyApproved} />
+          <RequestsTable
+            rows={openVisible}
+            onCopyApproved={onCopyApproved}
+            onSetDecision={onSetDecision}
+          />
         </RequestsPanel>
       )}
 
@@ -126,6 +139,7 @@ export function RequestsPanels({
             rows={closedVisible}
             onCopyApproved={onCopyApproved}
             approvalsDisabled
+            onSetDecision={onSetDecision}
           />
         </RequestsPanel>
       )}

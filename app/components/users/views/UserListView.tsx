@@ -17,6 +17,7 @@ import { useUserListRowFocus } from "../hooks/useUserListRowFocus";
 import { useUserListRenderRow } from "../hooks/useUserListRenderRow";
 import { visibleNonAdminUsers } from "../utils/usersVisible";
 import { useFlashFocus } from "../hooks/useFlashFocus";
+import { UserHotkeysHint } from "./UserHotkeysHint";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
@@ -86,6 +87,7 @@ export default function UserListView({
         getGroupId={() => "all"}
         getGroupMeta={usersGroupMeta}
         getRowKey={(r) => r.uid}
+        sortHint={<UserHotkeysHint />}
         renderRow={renderRow}
       />
     </UsersViewState>

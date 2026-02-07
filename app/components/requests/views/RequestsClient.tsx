@@ -16,6 +16,8 @@ import { useCopyApproved } from "../hooks/useCopyApproved";
 import { RequestsPanels } from "./RequestsPanels";
 import { usePersistedViewMode } from "../hooks/usePersistedViewMode";
 import { useRequestsPanelState } from "../hooks/useRequestsPanelState";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 
 type ViewMode = "list" | "table";
 
@@ -66,6 +68,9 @@ export default function RequestsClient() {
 
   const copyApproved = useCopyApproved({ rows, eventsById });
 
+  const { user } = useAuth();
+  const adminUid = user?.uid ?? null;
+
   if (eventsError) {
     return (
       <div className="p-4 space-y-4">
@@ -79,6 +84,8 @@ export default function RequestsClient() {
   const nothingToShow =
     openVisible.length === 0 &&
     (!showClosedEvents || closedVisible.length === 0);
+
+  const onSetDecision = useSetRsvpDecision();
 
   return (
     <div className="p-4 mt-6 space-y-4 border-slate-200 bg-white rounded-2xl shadow-sm max-w-6xl mx-auto">
@@ -121,6 +128,7 @@ export default function RequestsClient() {
           eventsById={eventsById}
           openNewCount={openNewCount}
           onCopyApproved={copyApproved}
+          onSetDecision={onSetDecision}
         />
       )}
     </div>

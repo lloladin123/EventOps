@@ -17,6 +17,8 @@ type Props<Row, GroupId extends string> = {
   getRowKey: (row: Row) => string;
   renderRow: (row: Row) => React.ReactNode;
 
+  sortHint?: React.ReactNode;
+
   // ✅ NEW: filter the rows shown in the main list per group
   filterGroupRows?: (groupId: GroupId, groupRows: Row[]) => Row[];
 
@@ -34,6 +36,7 @@ export default function GroupedList<Row, GroupId extends string>({
   renderRow,
   filterGroupRows,
   renderGroupAfter,
+  sortHint,
   className,
 }: Props<Row, GroupId>) {
   const grouped = React.useMemo(() => {
@@ -70,6 +73,10 @@ export default function GroupedList<Row, GroupId extends string>({
                 </div>
                 {meta.subtitle ? (
                   <div className="text-xs text-slate-500">{meta.subtitle}</div>
+                ) : null}
+
+                {sortHint ? (
+                  <div className="mt-1 text-xs text-slate-400">{sortHint}</div>
                 ) : null}
               </div>
 

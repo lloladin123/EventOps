@@ -18,7 +18,6 @@ export default function ViewModeToggle({ value, onChange }: Props) {
         target &&
         (target.tagName === "INPUT" ||
           target.tagName === "TEXTAREA" ||
-          target.tagName === "SELECT" ||
           target.isContentEditable)
       ) {
         return;

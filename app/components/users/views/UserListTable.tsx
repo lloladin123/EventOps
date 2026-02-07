@@ -17,6 +17,7 @@ import { usersGroupMeta } from "../config/usersGroupMeta";
 import { buildUserTableColumns } from "../builders/buildUserTableColumns";
 import { visibleNonAdminUsers } from "../utils/usersVisible";
 import { useFlashFocus } from "../hooks/useFlashFocus";
+import { UserHotkeysHint } from "./UserHotkeysHint";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
@@ -139,6 +140,7 @@ export default function UserListTable({
         initialSort={initialSort}
         tableMinWidthClassName="min-w-[980px]"
         getGroupId={() => "all"}
+        sortHint={<UserHotkeysHint />}
         getGroupMeta={usersGroupMeta}
         columns={columns}
       />
