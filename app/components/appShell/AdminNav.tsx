@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
@@ -25,6 +25,21 @@ type AdminNavLinkProps = {
 
 function cx(...parts: Array<string | undefined | false>) {
   return parts.filter(Boolean).join(" ");
+}
+
+function KbdHint({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="ml-1 hidden rounded border border-slate-300 bg-slate-100 px-1 text-[10px] font-mono text-slate-500 group-hover:inline">
+      {children}
+    </kbd>
+  );
+}
+
+function isTypingTarget(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
 }
 
 function Badge({
@@ -72,6 +87,7 @@ function AdminNavLink({ href, label }: AdminNavLinkProps) {
 export default function AdminNav({ className }: AdminNavProps) {
   const { role } = useAuth();
   const admin = isAdmin(role);
+  const router = useRouter();
 
   // 🔔 requests badge (open events only)
   const { events } = useEventsFirestore();
@@ -120,7 +136,6 @@ export default function AdminNav({ className }: AdminNavProps) {
 
     const unsub = subscribeUsers(
       (docs) => {
-        // shape into {uid, data} expected by countUsersWithoutRole
         const rows: UserRow[] = docs.map((d: any) => ({
           uid: d.id ?? d.uid ?? "",
           data: d,
@@ -134,21 +149,97 @@ export default function AdminNav({ className }: AdminNavProps) {
     return () => unsub();
   }, [admin]);
 
+  // ⌨️ Keybindings: g + (e/b/a)  => events/brugere/anmodninger
+  React.useEffect(() => {
+    if (!admin) return;
+
+    let pendingG = false;
+    let timer: number | null = null;
+
+    const clear = () => {
+      pendingG = false;
+      if (timer) window.clearTimeout(timer);
+      timer = null;
+    };
+
+    const arm = () => {
+      pendingG = true;
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(clear, 500); // small window
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (isTypingTarget(e.target)) return;
+
+      const key = e.key.toLowerCase();
+
+      if (!pendingG) {
+        if (key === "g") {
+          e.preventDefault();
+          arm();
+        }
+        return;
+      }
+
+      // second key after g
+      if (key === "e") {
+        e.preventDefault();
+        clear();
+        router.push("/events");
+        return;
+      }
+
+      if (key === "b") {
+        e.preventDefault();
+        clear();
+        router.push("/users");
+        return;
+      }
+
+      if (key === "a") {
+        e.preventDefault();
+        clear();
+        router.push("/requests");
+        return;
+      }
+
+      // any other key cancels
+      clear();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      clear();
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [admin, router]);
+
   return (
     <nav
       className={cx(
         "flex flex-col items-stretch gap-1 sm:flex-row sm:items-center sm:gap-2",
         className
       )}
+      aria-label="Admin navigation"
     >
-      <AdminNavLink href="/events" label="Events" />
+      <AdminNavLink
+        href="/events"
+        label={
+          <span className="group inline-flex items-center">
+            Events
+            <KbdHint>g e</KbdHint>
+          </span>
+        }
+      />
 
       <AdminNavLink
         href="/users"
         label={
-          <span className="inline-flex items-center">
+          <span className="group inline-flex items-center">
             Brugere
             {admin && <Badge count={usersNoRoleCount} tone="amber" />}
+            <KbdHint>g b</KbdHint>
           </span>
         }
       />
@@ -156,9 +247,10 @@ export default function AdminNav({ className }: AdminNavProps) {
       <AdminNavLink
         href="/requests"
         label={
-          <span className="inline-flex items-center">
-            Requests
+          <span className="group inline-flex items-center">
+            Anmodninger
             {admin && <Badge count={newRequestsCount} tone="amber" />}
+            <KbdHint>g a</KbdHint>
           </span>
         }
       />

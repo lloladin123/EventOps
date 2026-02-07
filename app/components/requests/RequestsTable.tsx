@@ -247,10 +247,21 @@ export default function RequestsTable({
                 : r.userRole
               : "—";
 
+            const isPending =
+              (r.decision ?? DECISION.Pending) === DECISION.Pending;
+
             return (
-              <div className="text-sm text-slate-900">
-                <div className="font-medium">{who}</div>
-                <div className="text-xs text-slate-500">{roleLabel}</div>
+              <div className="flex items-stretch gap-3">
+                {isPending ? (
+                  <span className="w-1 shrink-0 rounded-full bg-amber-400" />
+                ) : (
+                  <span className="w-1 shrink-0 rounded-full bg-transparent" />
+                )}
+
+                <div className="text-sm text-slate-900">
+                  <div className="font-medium">{who}</div>
+                  <div className="text-xs text-slate-500">{roleLabel}</div>
+                </div>
               </div>
             );
           },

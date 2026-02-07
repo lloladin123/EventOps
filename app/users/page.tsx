@@ -1,25 +1,36 @@
 "use client";
 
 import * as React from "react";
-import { doc, deleteDoc } from "firebase/firestore";
-
-import { db } from "@/app/lib/firebase/client";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { useUsersAdmin } from "@/utils/useUsersAdmin";
+
 import UserListTable from "@/components/users/UserListTable";
-import { ROLES, CREW_SUBROLES, isAdmin } from "@/types/rsvp";
+import UserListView from "@/components/users/UserListView";
+import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
+
+import { ROLE, ROLES, CREW_SUBROLES, isAdmin } from "@/types/rsvp";
+import { deleteDoc, doc } from "firebase/firestore";
+import { db } from "../lib/firebase/client";
 
 export default function UsersPage() {
   const { role: myRole, loading } = useAuth();
+  const isAllowed = isAdmin(myRole);
 
-  const { users, busy, setUserRole, setUserSubRole } = useUsersAdmin(
-    isAdmin(myRole)
-  );
+  const { users, busy, setUserRole, setUserSubRole } = useUsersAdmin(isAllowed);
 
   const deleteUser = React.useCallback(async (uid: string) => {
-    // Deletes the user document in Firestore: /users/{uid}
     await deleteDoc(doc(db, "users", uid));
   }, []);
+
+  // 🔁 view mode (persisted)
+  const [view, setView] = React.useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "table";
+    return (localStorage.getItem("users:view") as ViewMode) ?? "table";
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem("users:view", view);
+  }, [view]);
 
   if (loading) {
     return (
@@ -29,8 +40,7 @@ export default function UsersPage() {
     );
   }
 
-  // ⚠️ your current check is wrong: `if (!isAdmin)` checks the function, not your role
-  if (!isAdmin(myRole)) {
+  if (!isAllowed) {
     return (
       <div className="mx-auto max-w-6xl px-6 py-6">
         <h1 className="text-lg font-semibold text-slate-900">Users</h1>
@@ -40,16 +50,35 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-6">
-      <UserListTable
-        users={users}
-        busy={busy}
-        roles={ROLES}
-        crewSubRoles={CREW_SUBROLES}
-        setUserRole={setUserRole}
-        setUserSubRole={setUserSubRole}
-        deleteUser={deleteUser}
-      />
+    <div className="mx-auto max-w-6xl px-6 py-6 space-y-4">
+      {/* Header */}
+      <div className="flex gap-4">
+        <h1 className="text-lg font-semibold text-slate-900">Users</h1>
+        <ViewModeToggle value={view} onChange={setView} />
+      </div>
+
+      {/* Content */}
+      {view === "table" ? (
+        <UserListTable
+          users={users}
+          busy={busy}
+          roles={ROLES}
+          crewSubRoles={CREW_SUBROLES}
+          setUserRole={setUserRole}
+          setUserSubRole={setUserSubRole}
+          deleteUser={deleteUser}
+        />
+      ) : (
+        <UserListView
+          users={users}
+          busy={busy}
+          roles={ROLES}
+          crewSubRoles={CREW_SUBROLES}
+          setUserRole={setUserRole}
+          setUserSubRole={setUserSubRole}
+          deleteUser={deleteUser}
+        />
+      )}
     </div>
   );
 }

@@ -63,11 +63,17 @@ function RowCard({
 
   const statusText = statusLabel(r.decision);
   const attendanceText = attendanceLabel(r.attendance);
+  const isPending =
+    (r.decision ?? DECISION.Pending) === DECISION.Pending &&
+    r.attendance !== RSVP_ATTENDANCE.No;
 
   return (
     <div
       className={[
         "flex flex-col gap-2 p-4 sm:flex-row sm:items-start sm:justify-between",
+        // ✅ pending accent
+        isPending ? "border-l-4 border-l-amber-400" : "",
+        // ✅ keep "No section" styling
         subtle ? "bg-slate-50" : "",
       ]
         .filter(Boolean)
