@@ -17,10 +17,11 @@ type Props = {
 };
 
 const VIEW_KEY = "incidentViewMode";
-const EDIT_WINDOW_MS = 5 * 60 * 1000;
+const EDIT_WINDOW_MS = 10 * 1000;
 
 function getCreatedMs(incident: Incident): number | null {
-  const v: any = (incident as any).createdAt;
+  const anyI: any = incident;
+  const v: any = anyI.createdAt;
 
   if (typeof v === "string" || typeof v === "number" || v instanceof Date) {
     const t = new Date(v).getTime();
@@ -31,6 +32,7 @@ function getCreatedMs(incident: Incident): number | null {
     return Number.isFinite(t) ? t : null;
   }
   if (typeof v?.seconds === "number") return v.seconds * 1000;
+
   return null;
 }
 
@@ -70,26 +72,21 @@ export default function IncidentPanel({
 
   const [view, setView] = React.useState<ViewMode>(() => getInitialView());
 
+  // No persistence: refresh/new tab/new device always starts locked.
   const [editableMap, setEditableMap] = React.useState<Record<string, boolean>>(
-    () => {
-      if (typeof window === "undefined") return {};
-      try {
-        const raw = localStorage.getItem("incidentEditableMap");
-        return raw ? JSON.parse(raw) : {};
-      } catch {
-        return {};
-      }
-    }
+    {}
   );
 
   const timersRef = React.useRef<Record<string, number>>({});
-  const firstSeenRef = React.useRef<Record<string, number>>({});
 
+  // 🔒 Session gate: anything created before this page-load is NEVER editable.
+  const sessionStartRef = React.useRef<number>(Date.now());
+
+  // Cleanup timers on unmount only
   React.useEffect(() => {
     return () => {
       for (const t of Object.values(timersRef.current)) window.clearTimeout(t);
       timersRef.current = {};
-      firstSeenRef.current = {};
     };
   }, []);
 
@@ -97,7 +94,7 @@ export default function IncidentPanel({
     const now = Date.now();
     const incidentIds = new Set(safeIncidents.map((i) => i.id));
 
-    // 1) Clear timers for incidents that no longer exist
+    // Clear timers for incidents that no longer exist
     for (const id of Object.keys(timersRef.current)) {
       if (!incidentIds.has(id)) {
         window.clearTimeout(timersRef.current[id]);
@@ -105,14 +102,10 @@ export default function IncidentPanel({
       }
     }
 
-    for (const id of Object.keys(firstSeenRef.current)) {
-      if (!incidentIds.has(id)) delete firstSeenRef.current[id];
-    }
-
     setEditableMap((prev) => {
       let changed = false;
 
-      // prune keys that are not in current incidents
+      // Keep only keys for current incidents
       const next: Record<string, boolean> = {};
       for (const i of safeIncidents) {
         if (prev[i.id] !== undefined) next[i.id] = prev[i.id];
@@ -122,12 +115,21 @@ export default function IncidentPanel({
       for (const i of safeIncidents) {
         if (next[i.id] !== undefined) continue;
 
-        const created = getCreatedMs(i) ?? (firstSeenRef.current[i.id] ??= now);
+        const created = getCreatedMs(i);
 
-        if (created == null) continue;
+        // No timestamp => locked
+        if (created == null) {
+          next[i.id] = false;
+          changed = true;
+          continue;
+        }
 
         const expiresAt = created + EDIT_WINDOW_MS;
-        const stillEditable = now < expiresAt;
+
+        // ✅ THE FIX:
+        // Only allow edits for incidents created AFTER this page session started.
+        const stillEditable =
+          created >= sessionStartRef.current && now < expiresAt;
 
         next[i.id] = stillEditable;
         changed = true;
@@ -152,10 +154,6 @@ export default function IncidentPanel({
 
     return undefined;
   }, [safeIncidents]);
-
-  React.useEffect(() => {
-    localStorage.setItem("incidentEditableMap", JSON.stringify(editableMap));
-  }, [editableMap]);
 
   React.useEffect(() => {
     localStorage.setItem(VIEW_KEY, view);
