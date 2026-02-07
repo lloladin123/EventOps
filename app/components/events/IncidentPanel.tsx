@@ -17,7 +17,7 @@ type Props = {
 };
 
 const VIEW_KEY = "incidentViewMode";
-const EDIT_WINDOW_MS = 10 * 1000;
+const EDIT_WINDOW_MS = 5 * 60 * 1000;
 
 function getCreatedMs(incident: Incident): number | null {
   const anyI: any = incident;
