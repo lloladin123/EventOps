@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { RSVPRow } from "@/types/requests";
-import { DECISION } from "@/types/rsvpIndex";
+import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import RequestApprovalActions from "./RequestApprovalActions";
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
@@ -67,10 +67,13 @@ function updatedAtMs(iso?: string) {
   return Number.isFinite(t) ? t : 0;
 }
 
+// ✅ adjust this if your enum uses another value than "no"
+const ATTENDANCE_NO = "no";
+
 export default function RequestsTable({
   rows,
   onCopyApproved,
-  approvalsDisabled, // ✅ destructure it
+  approvalsDisabled,
 }: Props) {
   const initialSort: SortState<SortKey> = { key: "updatedAt", dir: "desc" };
 
@@ -100,7 +103,6 @@ export default function RequestsTable({
               </span>
             </Link>
           ),
-
           subtitle: (
             <>
               {date}
@@ -121,6 +123,115 @@ export default function RequestsTable({
             </button>
           ),
         };
+      }}
+      // ✅ Main table hides "no"
+      filterGroupRows={(_, list) =>
+        list.filter((r) => r.attendance !== ATTENDANCE_NO)
+      }
+      // ✅ Under each event, show a "No" mini-table
+      renderGroupAfter={(_, list) => {
+        const noRows = list.filter((r) => r.attendance === ATTENDANCE_NO);
+        if (!noRows.length) return null;
+
+        const sortedNo = noRows
+          .slice()
+          .sort((a, b) => updatedAtMs(b.updatedAt) - updatedAtMs(a.updatedAt));
+
+        return (
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Svarer nej ({sortedNo.length})
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-50">
+              <table className="min-w-[1000px] w-full">
+                <thead className="bg-slate-100">
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
+                      Navn
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
+                      Fremmøde
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
+                      Status
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
+                      Kommentar
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
+                      Opdateret
+                    </th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
+                      Handlinger
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {sortedNo.map((r) => {
+                    const who = r.userDisplayName?.trim() || r.uid;
+                    const roleLabel = r.userRole
+                      ? r.userSubRole
+                        ? `${r.userRole} – ${r.userSubRole}`
+                        : r.userRole
+                      : "—";
+
+                    return (
+                      <tr key={r.uid} className="border-t">
+                        <td className="px-4 py-2 align-top">
+                          <div className="text-sm text-slate-900">
+                            <div className="font-medium">{who}</div>
+                            <div className="text-xs text-slate-500">
+                              {roleLabel}
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-2 align-top text-sm text-slate-700">
+                          {attendanceLabel(r.attendance)}
+                        </td>
+
+                        <td className="px-4 py-2 align-top">
+                          <span className={statusPill(r.decision)}>
+                            {statusLabel(r.decision)}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-2 align-top">
+                          {r.comment ? (
+                            <span
+                              className="block max-w-[420px] truncate text-sm text-slate-700"
+                              title={r.comment}
+                            >
+                              {r.comment}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-2 align-top text-xs text-slate-500">
+                          {fmtUpdatedAt(r.updatedAt)}
+                        </td>
+                        <td className="px-4 py-2 align-top">
+                          <RequestApprovalActions
+                            eventId={r.eventId}
+                            uid={r.uid}
+                            decision={r.decision}
+                            approved={r.approved}
+                            disabled={approvalsDisabled}
+                            answeredNo={r.attendance === RSVP_ATTENDANCE.No}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
       }}
       columns={[
         {
@@ -159,14 +270,13 @@ export default function RequestsTable({
           key: "status",
           header: "Status",
           headerTitle: "Sortér efter status",
-          sortValue: (r) => r.decision ?? DECISION.Pending, // ✅ keep sorting by raw enum
+          sortValue: (r) => r.decision ?? DECISION.Pending,
           cell: (r) => (
             <span className={statusPill(r.decision)}>
               {statusLabel(r.decision)}
             </span>
           ),
         },
-
         {
           key: "comment",
           header: "Kommentar",

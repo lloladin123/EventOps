@@ -18,6 +18,8 @@ type Props = {
   disabled?: boolean;
   className?: string;
 
+  answeredNo?: boolean;
+
   // optional: if you want parent to react (not required)
   onDone?: () => void;
 };
@@ -75,6 +77,7 @@ export default function RequestApprovalActions({
   approved,
   disabled,
   className,
+  answeredNo,
   onDone,
 }: Props) {
   const { user } = useAuth();
@@ -118,41 +121,86 @@ export default function RequestApprovalActions({
     [adminUid, busy, disabled, eventId, onDone, uid]
   );
 
+  const hideDecisionButtons = answeredNo === true;
+
+  const revokeApproval = React.useCallback(async () => {
+    if (disabled || busy) return;
+    setBusy(true);
+    try {
+      const ref = doc(db, "events", eventId, "rsvps", uid);
+
+      await updateDoc(ref, {
+        decision: DECISION.Pending, // or DECISION.Unapproved if you want it harsher
+        approved: false,
+        approvedAt: null,
+        approvedByUid: null,
+        updatedAt: serverTimestamp(),
+      });
+
+      window.dispatchEvent(new Event("requests-changed"));
+      window.dispatchEvent(new Event("events-changed"));
+
+      onDone?.();
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, disabled, eventId, onDone, uid]);
+
   return (
     <div
       className={["flex flex-wrap items-center gap-2", className]
         .filter(Boolean)
         .join(" ")}
     >
-      <button
-        type="button"
-        disabled={disabled || busy}
-        onClick={() => setDecision(DECISION.Approved)}
-        className={btnCls(effectiveDecision === DECISION.Approved, "good")}
-        title="Godkend"
-      >
-        Godkend
-      </button>
+      {!hideDecisionButtons && (
+        <>
+          <button
+            type="button"
+            disabled={disabled || busy}
+            onClick={() => setDecision(DECISION.Approved)}
+            className={btnCls(effectiveDecision === DECISION.Approved, "good")}
+            title="Godkend"
+          >
+            Godkend
+          </button>
 
-      <button
-        type="button"
-        disabled={disabled || busy}
-        onClick={() => setDecision(DECISION.Unapproved)}
-        className={btnCls(effectiveDecision === DECISION.Unapproved, "bad")}
-        title="Afvis"
-      >
-        Afvis
-      </button>
+          <button
+            type="button"
+            disabled={disabled || busy}
+            onClick={() => setDecision(DECISION.Unapproved)}
+            className={btnCls(effectiveDecision === DECISION.Unapproved, "bad")}
+            title="Afvis"
+          >
+            Afvis
+          </button>
 
-      <button
-        type="button"
-        disabled={disabled || busy}
-        onClick={() => setDecision(DECISION.Pending)}
-        className={btnCls(effectiveDecision === DECISION.Pending, "neutral")}
-        title="Sæt til afventer"
-      >
-        Afventer
-      </button>
+          <button
+            type="button"
+            disabled={disabled || busy}
+            onClick={() => setDecision(DECISION.Pending)}
+            className={btnCls(
+              effectiveDecision === DECISION.Pending,
+              "neutral"
+            )}
+            title="Sæt til afventer"
+          >
+            Afventer
+          </button>
+        </>
+      )}
+      {hideDecisionButtons && (
+        <>
+          <button
+            type="button"
+            disabled={disabled || busy || !approved}
+            onClick={revokeApproval}
+            className={btnCls(false, "bad")}
+            title="Fjern godkendelse"
+          >
+            Fjern godkendelse
+          </button>
+        </>
+      )}
     </div>
   );
 }

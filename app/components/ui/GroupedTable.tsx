@@ -20,10 +20,10 @@ type Column<Row, ColumnKey extends string> = {
   // Optional alignment
   align?: "left" | "right";
 
-  // ✅ NEW: if true, clamp/truncate long content with ellipsis
+  // ✅ clamp/truncate long content with ellipsis
   truncate?: boolean;
 
-  // ✅ NEW: optional max width helper (works best with truncate)
+  // ✅ optional max width helper (works best with truncate)
   maxWidthClassName?: string; // e.g. "max-w-[320px]"
 };
 
@@ -52,6 +52,12 @@ type Props<
 
   // sorting (only sortable keys)
   initialSort: SortState<SortKey>;
+
+  // ✅ NEW: filter the rows shown in the main table per group
+  filterGroupRows?: (groupId: GroupId, groupRows: Row[]) => Row[];
+
+  // ✅ NEW: render extra content under each group (e.g. a second table)
+  renderGroupAfter?: (groupId: GroupId, groupRows: Row[]) => React.ReactNode;
 };
 
 function asText(v: unknown) {
@@ -76,7 +82,6 @@ function arrow(dir: SortDir) {
 }
 
 function nodeToTitle(node: React.ReactNode): string | undefined {
-  // Only auto-title if it's a simple primitive. Otherwise user can set title themselves in cell().
   if (typeof node === "string") return node;
   if (typeof node === "number") return String(node);
   return undefined;
@@ -95,6 +100,8 @@ export default function GroupedTable<
   sortHint = "Klik på kolonner for at sortere",
   tableMinWidthClassName = "min-w-[900px]",
   initialSort,
+  filterGroupRows,
+  renderGroupAfter,
 }: Props<Row, GroupId, ColumnKey, SortKey>) {
   const [sort, setSort] = React.useState<SortState<SortKey>>(initialSort);
 
@@ -124,7 +131,6 @@ export default function GroupedTable<
     (groupRows: Row[]) => {
       const dir = sort.dir === "asc" ? 1 : -1;
 
-      // Find the active sort column (must be sortable)
       const activeCol = columns.find(
         (c) => c.key === (sort.key as unknown as ColumnKey)
       );
@@ -143,8 +149,7 @@ export default function GroupedTable<
         const res = cmp(av as any, bv as any);
         if (res !== 0) return res * dir;
 
-        // stable fallback
-        return A.idx - B.idx;
+        return A.idx - B.idx; // stable fallback
       });
 
       return withIndex.map((x) => x.r);
@@ -158,7 +163,12 @@ export default function GroupedTable<
     <div className="space-y-4">
       {Array.from(grouped.entries()).map(([groupId, groupRows]) => {
         const meta = getGroupMeta(groupId, groupRows);
-        const sortedRows = sortGroup(groupRows);
+
+        const visibleRows = filterGroupRows
+          ? filterGroupRows(groupId, groupRows)
+          : groupRows;
+
+        const sortedRows = sortGroup(visibleRows);
 
         return (
           <section
@@ -247,13 +257,10 @@ export default function GroupedTable<
                         const content = c.cell(row);
                         const autoTitle = nodeToTitle(content);
 
-                        // ✅ If truncating, we need a block wrapper w/ max width + truncate
                         const wrapClass = c.truncate
                           ? [
                               "truncate",
-                              // pick a sensible default max width, can be overridden per column
                               c.maxWidthClassName ?? "max-w-[320px]",
-                              // helps truncate work predictably
                               "block",
                             ].join(" ")
                           : undefined;
@@ -284,6 +291,12 @@ export default function GroupedTable<
                 </tbody>
               </table>
             </div>
+
+            {renderGroupAfter ? (
+              <div className="border-t border-slate-200 p-4">
+                {renderGroupAfter(groupId, groupRows)}
+              </div>
+            ) : null}
           </section>
         );
       })}

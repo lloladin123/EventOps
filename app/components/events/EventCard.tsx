@@ -14,7 +14,11 @@ import { setEventOpen } from "@/app/lib/firestore/events";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
-import type { Decision, RSVPAttendance } from "@/types/rsvpIndex";
+import {
+  RSVP_ATTENDANCE,
+  type Decision,
+  type RSVPAttendance,
+} from "@/types/rsvpIndex";
 import { canAccessEventDetails } from "@/utils/eventAccess";
 import EventCardMembers from "./EventCardMembers";
 
@@ -75,10 +79,12 @@ export default function EventCard({
   // ✅ Link only works if user is allowed for this event
   const isApproved = approved === true; // explicit
 
+  const isAttending = attendanceValue !== RSVP_ATTENDANCE.No;
+
   const canOpenDetails =
     !!user &&
     !loading &&
-    (admin ? true : isApproved) &&
+    (admin ? true : isApproved && isAttending) &&
     canAccessEventDetails({ eventId: event.id, uid: user.uid, role });
 
   const closeNow = () => {
