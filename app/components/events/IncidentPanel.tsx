@@ -82,46 +82,80 @@ export default function IncidentPanel({
     }
   );
 
-  // keep map only for current incidents
+  const timersRef = React.useRef<Record<string, number>>({});
+  const firstSeenRef = React.useRef<Record<string, number>>({});
+
   React.useEffect(() => {
+    return () => {
+      for (const t of Object.values(timersRef.current)) window.clearTimeout(t);
+      timersRef.current = {};
+      firstSeenRef.current = {};
+    };
+  }, []);
+
+  React.useEffect(() => {
+    const now = Date.now();
+    const incidentIds = new Set(safeIncidents.map((i) => i.id));
+
+    // 1) Clear timers for incidents that no longer exist
+    for (const id of Object.keys(timersRef.current)) {
+      if (!incidentIds.has(id)) {
+        window.clearTimeout(timersRef.current[id]);
+        delete timersRef.current[id];
+      }
+    }
+
+    for (const id of Object.keys(firstSeenRef.current)) {
+      if (!incidentIds.has(id)) delete firstSeenRef.current[id];
+    }
+
     setEditableMap((prev) => {
+      let changed = false;
+
+      // prune keys that are not in current incidents
       const next: Record<string, boolean> = {};
       for (const i of safeIncidents) {
         if (prev[i.id] !== undefined) next[i.id] = prev[i.id];
       }
-      return next;
+      if (Object.keys(next).length !== Object.keys(prev).length) changed = true;
+
+      for (const i of safeIncidents) {
+        if (next[i.id] !== undefined) continue;
+
+        const created = getCreatedMs(i) ?? (firstSeenRef.current[i.id] ??= now);
+
+        if (created == null) continue;
+
+        const expiresAt = created + EDIT_WINDOW_MS;
+        const stillEditable = now < expiresAt;
+
+        next[i.id] = stillEditable;
+        changed = true;
+
+        if (stillEditable) {
+          const delay = expiresAt - now;
+
+          if (timersRef.current[i.id])
+            window.clearTimeout(timersRef.current[i.id]);
+
+          timersRef.current[i.id] = window.setTimeout(() => {
+            setEditableMap((m) =>
+              m[i.id] === false ? m : { ...m, [i.id]: false }
+            );
+            delete timersRef.current[i.id];
+          }, delay);
+        }
+      }
+
+      return changed ? next : prev;
     });
+
+    return undefined;
   }, [safeIncidents]);
 
   React.useEffect(() => {
     localStorage.setItem("incidentEditableMap", JSON.stringify(editableMap));
   }, [editableMap]);
-
-  // init + expire each incident once
-  React.useEffect(() => {
-    const now = Date.now();
-
-    safeIncidents.forEach((i) => {
-      if (editableMap[i.id] !== undefined) return;
-
-      const created = getCreatedMs(i);
-      if (created == null) return;
-
-      const expiresAt = created + EDIT_WINDOW_MS;
-
-      if (now >= expiresAt) {
-        setEditableMap((m) => ({ ...m, [i.id]: false }));
-        return;
-      }
-
-      setEditableMap((m) => ({ ...m, [i.id]: true }));
-
-      const delay = expiresAt - now;
-      window.setTimeout(() => {
-        setEditableMap((m) => ({ ...m, [i.id]: false }));
-      }, delay);
-    });
-  }, [safeIncidents, editableMap]);
 
   React.useEffect(() => {
     localStorage.setItem(VIEW_KEY, view);
