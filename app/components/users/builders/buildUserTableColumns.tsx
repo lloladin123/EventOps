@@ -5,11 +5,11 @@ import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/utils/users.firestore";
 
-import { UserIdentityCell } from "./UserIdentityCell";
-import { RoleSelectCell } from "./RoleSelectCell";
-import { SubRoleSelect } from "./SubRoleSelect";
-import { DeleteUserButton } from "./DeleteUserButton";
-import { confirmDeleteUser } from "./confirmDeleteUser";
+import { UserIdentityCell } from "../cells/UserIdentityCell";
+import { RoleSelectCell } from "../cells/RoleSelectCell";
+import { SubRoleSelect } from "../cells/SubRoleSelect";
+import { DeleteUserButton } from "../cells/DeleteUserButton";
+import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 
 type Row = { uid: string; data: UserDoc };
 type ColumnKey = "user" | "uid" | "role" | "subRole" | "actions";

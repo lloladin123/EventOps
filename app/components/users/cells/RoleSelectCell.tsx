@@ -2,9 +2,9 @@
 
 import * as React from "react";
 import type { Role } from "@/types/rsvp";
-import { roleSelectClass } from "./userSelectStyles";
-import { RoleOptions } from "./RoleOptions";
-import { useRoleSelectHandlers } from "./useRoleSelectHandlers";
+import { roleSelectClass } from "../config/userSelectStyles";
+import { RoleOptions } from "../config/RoleOptions";
+import { useRoleSelectHandlers } from "../hooks/useRoleSelectHandlers";
 
 type Props = {
   uid: string;

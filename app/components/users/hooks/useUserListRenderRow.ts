@@ -4,8 +4,8 @@ import * as React from "react";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/utils/users.firestore";
 
-import { buildUserListRenderRow } from "./buildUserListRenderRow";
-import { confirmDeleteUser } from "./confirmDeleteUser";
+import { buildUserListRenderRow } from "../builders/buildUserListRenderRow";
+import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 
 type Row = { uid: string; data: UserDoc };
 

@@ -4,8 +4,8 @@ import * as React from "react";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 import { useUsersAdmin } from "@/utils/useUsersAdmin";
 
-import UserListTable from "@/components/users/UserListTable";
-import UserListView from "@/components/users/UserListView";
+import UserListTable from "@/components/users/views/UserListTable";
+import UserListView from "@/components/users/views/UserListView";
 import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 
 import { ROLE, ROLES, CREW_SUBROLES, isAdmin } from "@/types/rsvp";

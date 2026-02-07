@@ -7,16 +7,16 @@ import type { UserDoc } from "@/utils/users.firestore";
 
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
-import { useUserHotkeys } from "./useUserHotkeys";
-import { useFlashUid } from "./useFlashUid";
-import { useUserRowFocus } from "./useUserRowFocus";
-import { useMissingRoleNavigator } from "./useMissingRoleNavigator";
-import { confirmDeleteUser } from "./confirmDeleteUser";
+import { useUserHotkeys } from "../hooks/useUserHotkeys";
+import { useFlashUid } from "../hooks/useFlashUid";
+import { useUserRowFocus } from "../hooks/useUserRowFocus";
+import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";
+import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 import { UsersViewState } from "./UsersViewState";
-import { usersGroupMeta } from "./usersGroupMeta";
-import { buildUserTableColumns } from "./buildUserTableColumns";
-import { visibleNonAdminUsers } from "./usersVisible";
-import { useFlashFocus } from "./useFlashFocus";
+import { usersGroupMeta } from "../config/usersGroupMeta";
+import { buildUserTableColumns } from "../builders/buildUserTableColumns";
+import { visibleNonAdminUsers } from "../utils/usersVisible";
+import { useFlashFocus } from "../hooks/useFlashFocus";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;

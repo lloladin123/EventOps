@@ -5,8 +5,11 @@ import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/utils/users.firestore";
 
-import { neutralSelectClass, roleSelectClass } from "./userSelectStyles";
-import { RoleOptions } from "./RoleOptions";
+import {
+  neutralSelectClass,
+  roleSelectClass,
+} from "../config/userSelectStyles";
+import { RoleOptions } from "../config/RoleOptions";
 
 type Row = { uid: string; data: UserDoc };
 

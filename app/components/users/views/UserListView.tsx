@@ -7,16 +7,16 @@ import type { UserDoc } from "@/utils/users.firestore";
 
 import GroupedList from "@/components/ui/GroupedList";
 import { UsersViewState } from "./UsersViewState";
-import { usersGroupMeta } from "./usersGroupMeta";
+import { usersGroupMeta } from "../config/usersGroupMeta";
 
-import { useFlashUid } from "./useFlashUid";
-import { useMissingRoleNavigator } from "./useMissingRoleNavigator";
-import { useUserHotkeys } from "./useUserHotkeys";
-import { confirmDeleteUser } from "./confirmDeleteUser";
-import { useUserListRowFocus } from "./useUserListRowFocus";
-import { useUserListRenderRow } from "./useUserListRenderRow";
-import { visibleNonAdminUsers } from "./usersVisible";
-import { useFlashFocus } from "./useFlashFocus";
+import { useFlashUid } from "../hooks/useFlashUid";
+import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";
+import { useUserHotkeys } from "../hooks/useUserHotkeys";
+import { confirmDeleteUser } from "../utils/confirmDeleteUser";
+import { useUserListRowFocus } from "../hooks/useUserListRowFocus";
+import { useUserListRenderRow } from "../hooks/useUserListRenderRow";
+import { visibleNonAdminUsers } from "../utils/usersVisible";
+import { useFlashFocus } from "../hooks/useFlashFocus";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
