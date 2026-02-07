@@ -19,15 +19,18 @@ type Props = {
     uid: string,
     nextSubRole: CrewSubRole | null
   ) => void | Promise<void>;
+
+  // ✅ NEW
+  deleteUser: (uid: string) => void | Promise<void>;
 };
 
 type Row = { uid: string; data: UserDoc };
 
-// Single group id (we’re not actually grouping users by anything here)
+// Single group id
 type GroupId = "all";
 
-type ColumnKey = "user" | "uid" | "role" | "subRole" | "status";
-type SortKey = Exclude<ColumnKey, "status">;
+type ColumnKey = "user" | "uid" | "role" | "subRole" | "actions";
+type SortKey = Exclude<ColumnKey, "actions">;
 
 function asText(v: unknown) {
   return (v ?? "").toString().trim().toLowerCase();
@@ -40,6 +43,7 @@ export default function UserListTable({
   crewSubRoles,
   setUserRole,
   setUserSubRole,
+  deleteUser,
 }: Props) {
   const visibleUsers = React.useMemo(
     () => users.filter(({ data }) => (data.role as Role | null) !== ROLE.Admin),
@@ -68,7 +72,7 @@ export default function UserListTable({
     <GroupedTable<Row, GroupId, ColumnKey, SortKey>
       rows={visibleUsers}
       initialSort={initialSort}
-      tableMinWidthClassName="min-w-[900px]"
+      tableMinWidthClassName="min-w-[980px]"
       getGroupId={() => "all"}
       getGroupMeta={(_gid, list) => {
         const total = countNonAdminUsers(list);
@@ -182,6 +186,34 @@ export default function UserListTable({
               <span className="text-sm text-slate-400">—</span>
             );
           },
+        },
+        {
+          key: "actions",
+          header: " ",
+          align: "right",
+          cell: (r) => (
+            <button
+              type="button"
+              onClick={async () => {
+                const name =
+                  r.data.displayName?.trim() ||
+                  r.data.email?.trim() ||
+                  r.uid.slice(0, 8);
+
+                const ok = window.confirm(
+                  `Slet bruger "${name}"?\n\nDette kan ikke fortrydes.`
+                );
+                if (!ok) return;
+
+                await deleteUser(r.uid);
+              }}
+              className="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 active:scale-[0.99]"
+              title="Slet bruger"
+              aria-label="Slet bruger"
+            >
+              Slet
+            </button>
+          ),
         },
       ]}
     />

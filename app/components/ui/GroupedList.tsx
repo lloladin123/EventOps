@@ -17,6 +17,12 @@ type Props<Row, GroupId extends string> = {
   getRowKey: (row: Row) => string;
   renderRow: (row: Row) => React.ReactNode;
 
+  // ✅ NEW: filter the rows shown in the main list per group
+  filterGroupRows?: (groupId: GroupId, groupRows: Row[]) => Row[];
+
+  // ✅ NEW: render extra content under each group (e.g. a "No" section)
+  renderGroupAfter?: (groupId: GroupId, groupRows: Row[]) => React.ReactNode;
+
   className?: string;
 };
 
@@ -26,6 +32,8 @@ export default function GroupedList<Row, GroupId extends string>({
   getGroupMeta,
   getRowKey,
   renderRow,
+  filterGroupRows,
+  renderGroupAfter,
   className,
 }: Props<Row, GroupId>) {
   const grouped = React.useMemo(() => {
@@ -44,6 +52,10 @@ export default function GroupedList<Row, GroupId extends string>({
     <div className={["space-y-4", className].filter(Boolean).join(" ")}>
       {Array.from(grouped.entries()).map(([groupId, groupRows]) => {
         const meta = getGroupMeta(groupId, groupRows);
+
+        const visibleRows = filterGroupRows
+          ? filterGroupRows(groupId, groupRows)
+          : groupRows;
 
         return (
           <section
@@ -66,10 +78,17 @@ export default function GroupedList<Row, GroupId extends string>({
 
             {/* Rows */}
             <ul className="divide-y divide-slate-200">
-              {groupRows.map((row) => (
+              {visibleRows.map((row) => (
                 <li key={getRowKey(row)}>{renderRow(row)}</li>
               ))}
             </ul>
+
+            {/* Extra content under each group */}
+            {renderGroupAfter ? (
+              <div className="border-t border-slate-200 p-4">
+                {renderGroupAfter(groupId, groupRows)}
+              </div>
+            ) : null}
           </section>
         );
       })}

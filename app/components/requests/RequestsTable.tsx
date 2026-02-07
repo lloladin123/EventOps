@@ -75,7 +75,7 @@ export default function RequestsTable({
   onCopyApproved,
   approvalsDisabled,
 }: Props) {
-  const initialSort: SortState<SortKey> = { key: "updatedAt", dir: "desc" };
+  const initialSort: SortState<SortKey> = { key: "name", dir: "desc" };
 
   return (
     <GroupedTable<RSVPRow, string, ColumnKey, SortKey>
