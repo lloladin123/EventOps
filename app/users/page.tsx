@@ -49,6 +49,14 @@ export default function UsersPage() {
     return (localStorage.getItem("users:view") as ViewMode) ?? "table";
   });
 
+  const selectableRoles = React.useMemo(
+    () =>
+      myRole === ROLE.Admin
+        ? ROLES
+        : ROLES.filter((r) => r !== ROLE.Sikkerhedsledelse),
+    [myRole]
+  );
+
   React.useEffect(() => {
     localStorage.setItem("users:view", view);
   }, [view]);
@@ -83,7 +91,7 @@ export default function UsersPage() {
         <UserListTable
           users={users}
           busy={busy}
-          roles={ROLES}
+          roles={selectableRoles}
           crewSubRoles={CREW_SUBROLES}
           setUserRole={setUserRole}
           setUserSubRole={setUserSubRole}
@@ -93,7 +101,7 @@ export default function UsersPage() {
         <UserListView
           users={users}
           busy={busy}
-          roles={ROLES}
+          roles={selectableRoles}
           crewSubRoles={CREW_SUBROLES}
           setUserRole={setUserRole}
           setUserSubRole={setUserSubRole}

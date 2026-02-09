@@ -5,7 +5,11 @@ import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
 import { ROLE, type Role } from "@/types/rsvp";
 
-const CAN_CLOSE = new Set<Role>([ROLE.Admin, ROLE.Logfører]);
+const CAN_CLOSE = new Set<Role>([
+  ROLE.Admin,
+  ROLE.Sikkerhedsledelse,
+  ROLE.Logfører,
+]);
 
 export function useAuthAndClosed(eventId: string) {
   const authAny = useAuth() as any;

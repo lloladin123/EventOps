@@ -56,7 +56,10 @@ export default function UserListTable({
   deleteUser,
 }: Props) {
   const visibleUsers = React.useMemo(
-    () => visibleNonAdminUsers(users),
+    () =>
+      visibleNonAdminUsers(users).filter(
+        (u) => u.data.role !== ROLE.Sikkerhedsledelse
+      ),
     [users]
   );
 

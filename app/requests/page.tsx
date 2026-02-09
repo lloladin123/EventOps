@@ -5,7 +5,7 @@ import { ROLE } from "@/types/rsvp";
 export default function RequestsPage() {
   return (
     <LoginRedirect
-      allowedRoles={[ROLE.Admin]}
+      allowedRoles={[ROLE.Admin, ROLE.Sikkerhedsledelse]}
       unauthorizedRedirectTo="/login"
       description="Du har ikke adgang til Requests."
     >

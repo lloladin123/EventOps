@@ -13,7 +13,7 @@ import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfBut
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
 import { useAuth } from "@/app/components/auth/AuthProvider";
-import { ROLE, type Role } from "@/types/rsvp";
+import { isAdmin, ROLE, type Role } from "@/types/rsvp";
 import { canAccessEventDetails } from "@/utils/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
@@ -22,7 +22,11 @@ import CloseLog from "@/components/events/CloseLog";
 import EditIncidentModal from "@/components/events/EditIncidentModal";
 import IncidentPanel from "@/components/events/IncidentPanel";
 
-const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
+const ALLOWED_ROLES: Role[] = [
+  ROLE.Admin,
+  ROLE.Sikkerhedsledelse,
+  ROLE.Logfører,
+];
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -59,6 +63,7 @@ export default function EventDetailPage() {
 
   // access control
   const allowed = React.useMemo(() => {
+    if (isAdmin(role)) return true; // Admin + Sikkerhedsledelse
     return canAccessEventDetails({ eventId: id, uid, role });
   }, [id, uid, role, tick]);
 

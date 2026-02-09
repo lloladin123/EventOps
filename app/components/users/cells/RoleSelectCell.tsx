@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import type { Role } from "@/types/rsvp";
+import { ROLE } from "@/types/rsvp";
+import { useAuth } from "@/app/components/auth/AuthProvider";
 import { roleSelectClass } from "../config/userSelectStyles";
-import { RoleOptions } from "../config/RoleOptions";
 import { useRoleSelectHandlers } from "../hooks/useRoleSelectHandlers";
 
 type Props = {
@@ -27,6 +28,21 @@ export function RoleSelectCell({
 }: Props) {
   const pending = !role;
 
+  const { user, role: myRole } = useAuth();
+
+  const isSelf = user?.uid === uid;
+  const isAdmin = myRole === ROLE.Admin;
+  const isSafetyManager = myRole === ROLE.Sikkerhedsledelse;
+
+  // ❌ Rule 1: SafetyManager cannot edit themself
+  const disableSelect = isSafetyManager && !isAdmin && isSelf;
+
+  // ❌ Rule 2: SafetyManager cannot promote to SafetyManager
+  const visibleRoles =
+    isSafetyManager && !isAdmin
+      ? roles.filter((r) => r !== ROLE.Sikkerhedsledelse)
+      : roles;
+
   const { onKeyDown, onChange } = useRoleSelectHandlers({
     uid,
     setUserRole,
@@ -38,15 +54,20 @@ export function RoleSelectCell({
     <select
       ref={(el) => setRoleRef?.(uid, el)}
       data-uid={uid}
-      className={roleSelectClass(pending)}
+      className={roleSelectClass(pending || disableSelect)}
       value={role ?? ""}
+      disabled={disableSelect}
       onKeyDown={onKeyDown}
       onChange={onChange}
     >
-      {/* ✅ reset / placeholder */}
+      {/* reset / placeholder */}
       <option value="">{role ? "— Nulstil rolle —" : "Vælg rolle…"}</option>
 
-      <RoleOptions roles={roles} />
+      {visibleRoles.map((r) => (
+        <option key={r} value={r}>
+          {r}
+        </option>
+      ))}
     </select>
   );
 }
