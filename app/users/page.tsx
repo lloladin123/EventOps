@@ -8,15 +8,36 @@ import UserListTable from "@/components/users/views/UserListTable";
 import UserListView from "@/components/users/views/UserListView";
 import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 
-import { ROLE, ROLES, CREW_SUBROLES, isAdmin } from "@/types/rsvp";
-import { deleteDoc, doc } from "firebase/firestore";
+import { ROLE, ROLES, CREW_SUBROLES, isAdmin, Role } from "@/types/rsvp";
+import { deleteDoc, deleteField, doc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase/client";
 
 export default function UsersPage() {
   const { role: myRole, loading } = useAuth();
   const isAllowed = isAdmin(myRole);
 
-  const { users, busy, setUserRole, setUserSubRole } = useUsersAdmin(isAllowed);
+  const {
+    users,
+    busy,
+    setUserRole: setUserRoleStrict,
+    setUserSubRole,
+  } = useUsersAdmin(isAllowed);
+
+  const setUserRole = React.useCallback(
+    async (uid: string, nextRole: Role | null) => {
+      if (nextRole === null) {
+        // reset role + subRole in Firestore
+        await updateDoc(doc(db, "users", uid), {
+          role: deleteField(),
+          subRole: deleteField(),
+        });
+        return;
+      }
+
+      await Promise.resolve(setUserRoleStrict(uid, nextRole));
+    },
+    [setUserRoleStrict]
+  );
 
   const deleteUser = React.useCallback(async (uid: string) => {
     await deleteDoc(doc(db, "users", uid));

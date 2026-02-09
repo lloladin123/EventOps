@@ -8,17 +8,12 @@ import { isAdmin } from "@/types/rsvp";
 import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
 import AttendanceButtons from "./AttendanceButtons";
-import { attendanceBadge } from "./attendanceBadge";
 import { cn } from "@/components/ui/classNames";
 import { setEventOpen } from "@/app/lib/firestore/events";
 import { useAuth } from "@/app/components/auth/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
-import {
-  RSVP_ATTENDANCE,
-  type Decision,
-  type RSVPAttendance,
-} from "@/types/rsvpIndex";
+import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 import { canAccessEventDetails } from "@/utils/eventAccess";
 import EventCardMembers from "./EventCardMembers";
 
@@ -29,36 +24,38 @@ type Props = {
   commentValue: string;
   onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
   onChangeComment: (eventId: string, comment: string) => void;
-  onDelete?: (event: Event) => void; // ✅ delete hook (admin only)
+  onDelete?: (event: Event) => void;
 };
 
-function decisionText(decision?: Decision) {
-  switch (decision) {
-    case "approved":
-      return "Din anmodning er godkendt";
-    case "unapproved":
-      return "Din anmodning blev afvist";
-    case "pending":
-      return "Afventer godkendelse";
-    default:
-      return "Du har ikke anmodet om deltagelse";
-  }
-}
-
-function userStatusText(attendance?: RSVPAttendance, approved?: boolean) {
-  if (!attendance) {
-    return "Du har ikke anmodet om deltagelse";
+// ✅ Badge that includes approval state (color) instead of a separate status bar
+function requestBadge(attendance?: RSVPAttendance, approved?: boolean) {
+  // No request made
+  if (!attendance || attendance === RSVP_ATTENDANCE.No) {
+    return {
+      text: "Ingen anmodning",
+      cls: "bg-slate-50 text-slate-700 ring-slate-200",
+    };
   }
 
+  // Approved / rejected / pending
   if (approved === true) {
-    return "Din anmodning er godkendt";
+    return {
+      text: "Din anmodning er godkendt",
+      cls: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+    };
   }
 
   if (approved === false) {
-    return "Din anmodning blev afvist";
+    return {
+      text: "Din anmodning blev afvist",
+      cls: "bg-rose-50 text-rose-800 ring-rose-200",
+    };
   }
 
-  return "Afventer godkendelse";
+  return {
+    text: "Afventer godkendelse",
+    cls: "bg-amber-50 text-amber-900 ring-amber-200",
+  };
 }
 
 export default function EventCard({
@@ -70,15 +67,12 @@ export default function EventCard({
   onChangeComment,
   onDelete,
 }: Props) {
-  const b = attendanceBadge(attendanceValue);
-
   const { user, role, loading } = useAuth();
-
   const admin = isAdmin(role);
 
-  // ✅ Link only works if user is allowed for this event
-  const isApproved = approved === true; // explicit
+  const badge = requestBadge(attendanceValue, approved);
 
+  const isApproved = approved === true;
   const isAttending = attendanceValue !== RSVP_ATTENDANCE.No;
 
   const canOpenDetails =
@@ -87,15 +81,15 @@ export default function EventCard({
     (admin ? true : isApproved && isAttending) &&
     canAccessEventDetails({ eventId: event.id, uid: user.uid, role });
 
-  const closeNow = () => {
-    void setEventOpen(event.id, false);
+  const closeNow = async () => {
+    await setEventOpen(event.id, false);
     window.dispatchEvent(
       new CustomEvent<Event>("event-closed", { detail: event })
     );
   };
 
-  const openNow = () => {
-    void setEventOpen(event.id, true);
+  const openNow = async () => {
+    await setEventOpen(event.id, true);
     window.dispatchEvent(
       new CustomEvent<Event>("event-opened", { detail: event })
     );
@@ -137,21 +131,17 @@ export default function EventCard({
             </span>
           )}
 
+          {/* ✅ Status is now color-coded here (no need for separate bar) */}
           {!admin && (
-            <div className="flex flex-col gap-1">
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1",
-                  b.cls
-                )}
-              >
-                {b.text}
-              </span>
-
-              <span className="text-xs text-slate-500">
-                {userStatusText(attendanceValue, approved)}
-              </span>
-            </div>
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1",
+                badge.cls
+              )}
+              title="Status for din anmodning"
+            >
+              {badge.text}
+            </span>
           )}
 
           {!event.open && (

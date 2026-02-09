@@ -15,7 +15,7 @@ export default function AppHeader() {
   const showAdminNav = !loading && isAdmin(role);
 
   return (
-    <header className="sticky top-0 z-10 border-b border-slate-200 bg-white">
+    <header className="top-0 z-10 border-b border-slate-200 bg-white">
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6">
         {/* MOBILE: 2 columns (nav | auth). DESKTOP: classic flex */}
         <div className="grid grid-cols-2 items-start gap-3 sm:flex sm:items-center sm:justify-between">

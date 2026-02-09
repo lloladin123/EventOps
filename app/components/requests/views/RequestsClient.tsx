@@ -3,23 +3,24 @@
 import { useState } from "react";
 
 import RequestsFilters from "../utils/RequestsFilters";
-
 import { useRequestsFilters } from "../hooks/useRequestsFilters";
 
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
 import OpenCloseButton from "../../ui/OpenCloseButton";
-import ViewToggle from "../../ui/ViewModeToggle";
+
 import { useRequestsRows } from "../hooks/useRequestsRows";
 import { useRequestsBuckets } from "../hooks/useRequestsBuckets";
 
 import { useCopyApproved } from "../hooks/useCopyApproved";
 import { RequestsPanels } from "./RequestsPanels";
+
 import { usePersistedViewMode } from "../hooks/usePersistedViewMode";
 import { useRequestsPanelState } from "../hooks/useRequestsPanelState";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 
-type ViewMode = "list" | "table";
+// ✅ only this one (it owns L/T/V hotkeys)
+import ViewModeToggle, { type ViewMode } from "../../ui/ViewModeToggle";
 
 export default function RequestsClient() {
   const [showClosedEvents, setShowClosedEvents] = useState(false);
@@ -31,6 +32,7 @@ export default function RequestsClient() {
     setClosedPanelOpen,
   } = useRequestsPanelState();
 
+  // ✅ keep persisted state here, hotkeys are inside ViewModeToggle
   const [view, setView] = usePersistedViewMode<ViewMode>(
     "requestsViewMode",
     "list",
@@ -89,7 +91,7 @@ export default function RequestsClient() {
 
   return (
     <div className="p-4 mt-6 space-y-4 border-slate-200 bg-white rounded-2xl shadow-sm max-w-6xl mx-auto">
-      <div className="flex flex-wrap gap-3  items-end justify-between">
+      <div className="flex flex-wrap gap-3 items-end justify-between">
         <div>
           <div className="flex flex-wrap gap-2 items-center">
             <OpenCloseButton
@@ -106,7 +108,8 @@ export default function RequestsClient() {
               setAttendanceFilter={setAttendanceFilter}
             />
 
-            <ViewToggle value={view} onChange={setView} />
+            {/* ✅ hotkeys (L/T/V) live inside this component */}
+            <ViewModeToggle value={view} onChange={setView} />
           </div>
         </div>
       </div>

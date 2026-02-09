@@ -11,7 +11,7 @@ type Props = {
   role: Role | null;
   roles: readonly Role[];
   setRoleRef?: (uid: string, el: HTMLSelectElement | null) => void;
-  setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
+  setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
   focusSubRoleSelect: (uid: string) => void;
   focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
 };
@@ -43,6 +43,9 @@ export function RoleSelectCell({
       onKeyDown={onKeyDown}
       onChange={onChange}
     >
+      {/* ✅ reset / placeholder */}
+      <option value="">{role ? "— Nulstil rolle —" : "Vælg rolle…"}</option>
+
       <RoleOptions roles={roles} />
     </select>
   );

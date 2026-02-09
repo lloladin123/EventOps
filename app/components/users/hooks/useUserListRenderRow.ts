@@ -22,6 +22,8 @@ type Params = {
   focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
 
   flashUid: string | null;
+  flash: (uid: string) => void; // ✅ add
+  focusRoleSelect: (uid: string) => void;
 
   setRowRef: (uid: string, el: HTMLElement | null) => void;
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
@@ -35,6 +37,8 @@ export function useUserListRenderRow({
   deleteUser,
   focusMissingRelative,
   flashUid,
+  flash,
+  focusRoleSelect,
   setRowRef,
   setRoleRef,
 }: Params) {
@@ -48,6 +52,8 @@ export function useUserListRenderRow({
         deleteUser,
         focusMissingRelative,
         flashUid,
+        flash,
+        focusRoleSelect,
         setRowRef,
         setRoleRef,
         confirmDeleteUser,

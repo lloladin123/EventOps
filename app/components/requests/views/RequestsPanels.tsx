@@ -65,6 +65,7 @@ export function RequestsPanels({
             variant="plain"
             isOpen={openPanelOpen}
             onToggle={() => setOpenPanelOpen((v) => !v)}
+            focusKey={view}
             title={
               <>
                 <h2 className="text-lg font-semibold">Åbne events</h2>
