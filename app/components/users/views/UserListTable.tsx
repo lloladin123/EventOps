@@ -24,7 +24,7 @@ type Props = {
   busy: boolean;
   roles: readonly Role[];
   crewSubRoles: readonly CrewSubRole[];
-  setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
+  setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
   setUserSubRole: (
     uid: string,
     nextSubRole: CrewSubRole | null
@@ -91,6 +91,7 @@ export default function UserListTable({
         focusSubRoleSelect,
         focusMissingRelative,
         flashUid,
+        flash,
       }),
     [
       roles,

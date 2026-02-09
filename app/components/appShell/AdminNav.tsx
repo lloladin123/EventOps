@@ -89,50 +89,82 @@ export default function AdminNav({ className }: AdminNavProps) {
   const admin = isAdmin(role);
   const router = useRouter();
 
-  // 🔔 requests badge (open events only)
   const { events } = useEventsFirestore();
-  const [newRequestsCount, setNewRequestsCount] = React.useState(0);
+
+  // --- 🔔 Requests badge plumbing (NO setState inside subscription loop) ---
+  const perEventRef = React.useRef<Map<string, any[]>>(new Map());
+  const [rsvpVersion, bumpRsvpVersion] = React.useReducer((x) => x + 1, 0);
+
+  const newRequestsCount = React.useMemo(() => {
+    const all = Array.from(perEventRef.current.values()).flat();
+    return countNewRequests(all);
+  }, [rsvpVersion]);
 
   React.useEffect(() => {
-    if (!admin) return;
+    if (!admin) {
+      perEventRef.current.clear();
+      // bump once so badge clears immediately
+      bumpRsvpVersion();
+      return;
+    }
 
     const openEvents = events.filter((e) => !e.deleted && (e.open ?? true));
+    const openIds = new Set(openEvents.map((e) => e.id));
+
+    // prune map entries for events that are no longer open
+    for (const id of Array.from(perEventRef.current.keys())) {
+      if (!openIds.has(id)) perEventRef.current.delete(id);
+    }
+
     if (openEvents.length === 0) {
-      setNewRequestsCount(0);
+      // clear any leftover data
+      perEventRef.current.clear();
+      bumpRsvpVersion();
       return;
     }
 
     let cancelled = false;
-    const perEvent = new Map<string, any[]>();
 
-    const flush = () => {
+    // throttle version bumps (avoid re-render storms)
+    let flushTimer: number | null = null;
+    const scheduleFlush = () => {
       if (cancelled) return;
-      const all = Array.from(perEvent.values()).flat();
-      setNewRequestsCount(countNewRequests(all));
+      if (flushTimer != null) return;
+      flushTimer = window.setTimeout(() => {
+        flushTimer = null;
+        if (!cancelled) bumpRsvpVersion();
+      }, 50);
     };
 
     const unsubs = openEvents.map((event) =>
       subscribeEventRsvps(
         event.id,
         (docs) => {
-          perEvent.set(event.id, docs);
-          flush();
+          perEventRef.current.set(event.id, docs);
+          scheduleFlush();
         },
         (err) => console.error("[AdminNav] subscribeEventRsvps", event.id, err)
       )
     );
 
+    // initial bump so badge updates once subscriptions start
+    scheduleFlush();
+
     return () => {
       cancelled = true;
+      if (flushTimer != null) window.clearTimeout(flushTimer);
       unsubs.forEach((u) => u());
     };
   }, [admin, events]);
 
-  // 👤 users badge (users without role)
+  // --- 👤 Users badge (users without role) ---
   const [usersNoRoleCount, setUsersNoRoleCount] = React.useState(0);
 
   React.useEffect(() => {
-    if (!admin) return;
+    if (!admin) {
+      setUsersNoRoleCount(0);
+      return;
+    }
 
     const unsub = subscribeUsers(
       (docs) => {
@@ -149,7 +181,7 @@ export default function AdminNav({ className }: AdminNavProps) {
     return () => unsub();
   }, [admin]);
 
-  // ⌨️ Keybindings: g + (e/b/a)  => events/brugere/anmodninger
+  // ⌨️ Keybindings: g + (e/b/a)
   React.useEffect(() => {
     if (!admin) return;
 
@@ -165,7 +197,7 @@ export default function AdminNav({ className }: AdminNavProps) {
     const arm = () => {
       pendingG = true;
       if (timer) window.clearTimeout(timer);
-      timer = window.setTimeout(clear, 500); // small window
+      timer = window.setTimeout(clear, 500);
     };
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -182,7 +214,6 @@ export default function AdminNav({ className }: AdminNavProps) {
         return;
       }
 
-      // second key after g
       if (key === "e") {
         e.preventDefault();
         clear();
@@ -204,7 +235,6 @@ export default function AdminNav({ className }: AdminNavProps) {
         return;
       }
 
-      // any other key cancels
       clear();
     };
 

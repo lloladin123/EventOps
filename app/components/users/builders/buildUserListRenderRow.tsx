@@ -28,6 +28,9 @@ type Params = {
 
   // ui helpers
   flashUid: string | null;
+  flash: (uid: string) => void; // ✅ add
+  focusRoleSelect: (uid: string) => void;
+
   setRowRef: (uid: string, el: HTMLElement | null) => void;
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
 
@@ -43,6 +46,8 @@ export function buildUserListRenderRow({
   deleteUser,
   focusMissingRelative,
   flashUid,
+  flash,
+  focusRoleSelect,
   setRowRef,
   setRoleRef,
   confirmDeleteUser,
@@ -55,15 +60,24 @@ export function buildUserListRenderRow({
 
     const needsRole = !role;
     const isCrew = role === ROLE.Crew;
-    const isFlashing = flashUid === r.uid;
 
     return (
       <div
         ref={(el) => setRowRef(r.uid, el)}
+        tabIndex={0}
+        data-uid={r.uid}
+        onClick={(e) => {
+          const t = e.target as HTMLElement | null;
+          if (t?.closest("button,a,input,select,textarea,[role='button']"))
+            return;
+          flash(r.uid);
+          focusRoleSelect(r.uid);
+          (e.currentTarget as HTMLElement).focus();
+        }}
         className={[
           "flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between transition-colors duration-300",
           needsRole ? "border-l-4 border-l-amber-400" : "",
-          isFlashing ? "bg-amber-100" : "bg-white",
+          flashUid === r.uid ? "bg-amber-100" : "", // ✅ highlight
         ]
           .filter(Boolean)
           .join(" ")}

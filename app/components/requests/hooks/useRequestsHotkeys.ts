@@ -59,6 +59,9 @@ type Params = {
 
   onRevokeApproval?: (eventId: string, uid: string) => void | Promise<void>;
 
+  onArrowRow?: (from: FocusKey | null, dir: 1 | -1) => void;
+  onArrowEvent?: (from: FocusKey | null, dir: 1 | -1) => void;
+
   // niceties
   needsAction?: (row: RSVPRow) => boolean;
   getRowLabel?: (row: RSVPRow) => string;
@@ -71,6 +74,9 @@ export function useRequestHotkeys({
   onJump,
   onSetDecision,
   onCopyApproved,
+
+  onArrowEvent,
+  onArrowRow,
 
   needsAction = defaultNeedsAction,
   getRowLabel = defaultRowLabel,
@@ -93,6 +99,8 @@ export function useRequestHotkeys({
   const needsActionRef = useLatestRef(needsAction);
   const getRowLabelRef = useLatestRef(getRowLabel);
   const confirmDecisionRef = useLatestRef(confirmDecision);
+  const onArrowRowRef = useLatestRef(onArrowRow);
+  const onArrowEventRef = useLatestRef(onArrowEvent);
 
   React.useEffect(() => {
     const applyDecision = (decision: Decision) => {
@@ -116,6 +124,20 @@ export function useRequestHotkeys({
       if (isTypingTarget(e.target)) return;
 
       const key = e.key;
+
+      // Arrow navigation
+      if (key === "ArrowDown" || key === "ArrowUp") {
+        e.preventDefault();
+        const from = currentRequestKeyFromFocus();
+        const dir: 1 | -1 = key === "ArrowDown" ? 1 : -1;
+
+        if (e.shiftKey) {
+          onArrowEventRef.current?.(from, dir);
+        } else {
+          onArrowRowRef.current?.(from, dir);
+        }
+        return;
+      }
 
       // n / Shift+n => jump to next "needs action" row (by default: Pending)
       if (key === "n" || key === "N") {

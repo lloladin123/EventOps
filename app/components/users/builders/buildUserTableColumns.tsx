@@ -22,7 +22,7 @@ function asText(v: unknown) {
 type Params = {
   roles: readonly Role[];
   crewSubRoles: readonly CrewSubRole[];
-  setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
+  setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
   setUserSubRole: (
     uid: string,
     nextSubRole: CrewSubRole | null
@@ -39,6 +39,7 @@ type Params = {
 
   // flash state
   flashUid: string | null;
+  flash: (uid: string) => void;
 };
 
 export function buildUserTableColumns({
@@ -53,6 +54,7 @@ export function buildUserTableColumns({
   focusSubRoleSelect,
   focusMissingRelative,
   flashUid,
+  flash,
 }: Params) {
   const columns: Array<{
     key: ColumnKey;
@@ -72,8 +74,8 @@ export function buildUserTableColumns({
         <UserIdentityCell
           uid={r.uid}
           data={r.data}
-          isFlashing={flashUid === r.uid}
           setRowRef={setRowRef}
+          onActivate={() => flash(r.uid)}
         />
       ),
     },

@@ -76,6 +76,8 @@ export default function UserListView({
     deleteUser,
     focusMissingRelative,
     flashUid,
+    flash,
+    focusRoleSelect,
     setRowRef,
     setRoleRef,
   });

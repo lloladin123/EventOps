@@ -6,12 +6,9 @@ import type { Event } from "@/types/event";
 
 import EventCard from "@/components/events/EventCard";
 import EventSection from "@/components/events/EventSection";
-import DeletedEventsUndoStack from "@/components/events/DeletedEventsUndoStack";
-import ClosedEventsUndoStack from "@/components/events/ClosedEventsUndoStack";
-import OpenedEventsUndoStack from "@/components/events/OpenedEventsUndoStack";
 
-import { isEventOpen } from "@/utils/eventStatus";
-import { softDeleteEvent } from "@/app/lib/firestore/events";
+import { isEventOpen, setEventClosed } from "@/utils/eventStatus";
+import { setEventOpen, softDeleteEvent } from "@/app/lib/firestore/events";
 
 import { useRsvps } from "@/utils/useRsvps";
 import { useUiToggle } from "@/utils/useUiToggle";
@@ -20,6 +17,9 @@ import { useAuth } from "@/app/components/auth/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 import type { RSVPAttendance } from "@/types/rsvpIndex";
 import { useEventsFirestore } from "@/utils/useEventsFirestore";
+
+import EventUndoStack from "./EventUndoStack";
+import { setEventDeleted } from "../utils/eventDeleted";
 
 export default function EventList() {
   const searchParams = useSearchParams();
@@ -41,25 +41,105 @@ export default function EventList() {
     });
   }, []);
 
-  const visibleEvents = events.filter((e) => !e.deleted);
+  // --- Source of truth filters ---
+  const visibleEvents = React.useMemo(
+    () => events.filter((e) => !e.deleted),
+    [events]
+  );
 
-  const isOpen = (e: Event) => e.open ?? true;
+  const isOpen = React.useCallback((e: Event) => e.open ?? true, []);
 
-  const openEvents = visibleEvents.filter(isOpen);
-  const closedEvents = visibleEvents.filter((e) => !isOpen(e));
+  const openEvents = React.useMemo(
+    () => visibleEvents.filter(isOpen),
+    [visibleEvents, isOpen]
+  );
+
+  const closedEvents = React.useMemo(
+    () => visibleEvents.filter((e) => !isOpen(e)),
+    [visibleEvents, isOpen]
+  );
+
+  // --- Undo stack helpers (driven by Firestore data) ---
+  const exists = React.useCallback(
+    (id: string) => events.some((e) => e.id === id),
+    [events]
+  );
+
+  const isDeletedId = React.useCallback(
+    (id: string) => {
+      const ev = events.find((e) => e.id === id);
+      return !!ev && ev.deleted === true;
+    },
+    [events]
+  );
+
+  const isOpenId = React.useCallback(
+    (id: string) => {
+      const ev = events.find((e) => e.id === id);
+      return !!ev && (ev.open ?? true) === true && ev.deleted !== true;
+    },
+    [events]
+  );
+
+  const isClosedId = React.useCallback(
+    (id: string) => {
+      const ev = events.find((e) => e.id === id);
+      return !!ev && (ev.open ?? true) === false && ev.deleted !== true;
+    },
+    [events]
+  );
+
+  // --- ✅ Memo configs (no inline objects) ---
+  const deletedUndoConfig = React.useMemo(
+    () => ({
+      pushEventName: "event-deleted",
+      verbLabel: "Slettede",
+      buttonTitle: "Fortryd seneste sletning",
+      undo: (id: string) => softDeleteEvent(id, false),
+      isStillRelevant: isDeletedId,
+      exists,
+      onlyLatest: true,
+    }),
+    [exists, isDeletedId]
+  );
+
+  const openedUndoConfig = React.useMemo(
+    () => ({
+      pushEventName: "event-opened",
+      pruneOnEventName: "event-closed",
+      verbLabel: "Åbnede",
+      buttonTitle: "Fortryd åbning (luk igen)",
+      undo: (id: string) => setEventOpen(id, false), // ✅ was setEventClosed
+      isStillRelevant: isOpenId,
+      exists,
+    }),
+    [exists, isOpenId]
+  );
+
+  const closedUndoConfig = React.useMemo(
+    () => ({
+      pushEventName: "event-closed",
+      pruneOnEventName: "event-opened",
+      verbLabel: "Lukkede",
+      buttonTitle: "Fortryd lukning (åbn igen)",
+      undo: (id: string) => setEventOpen(id, true), // ✅ was setEventClosed
+      isStillRelevant: isClosedId,
+      exists,
+    }),
+    [exists, isClosedId]
+  );
 
   // ✅ Scroll to event if URL has ?eventId=...
   React.useEffect(() => {
     const id = searchParams.get("eventId");
     if (!id) return;
 
-    // If user links to a closed event, make sure the closed section isn't minimized
     if (admin) {
-      const isClosed = closedEvents.some((e) => e.id === id);
-      if (isClosed) setClosedMinimized(false);
+      const isClosedTarget = closedEvents.some((e) => e.id === id);
+      if (isClosedTarget) setClosedMinimized(false);
 
-      const isOpenEvent = openEvents.some((e) => e.id === id);
-      if (isOpenEvent) setOpenMinimized(false);
+      const isOpenTarget = openEvents.some((e) => e.id === id);
+      if (isOpenTarget) setOpenMinimized(false);
     }
 
     const t = window.setTimeout(() => {
@@ -68,7 +148,6 @@ export default function EventList() {
 
       el.scrollIntoView({ behavior: "smooth", block: "start" });
 
-      // quick highlight
       el.classList.add("ring-2", "ring-sky-300", "rounded-2xl");
       window.setTimeout(() => {
         el.classList.remove("ring-2", "ring-sky-300", "rounded-2xl");
@@ -82,7 +161,6 @@ export default function EventList() {
   if (authLoading) return null;
   if (eventsLoading) return null;
 
-  // Count shown in the single outer panel
   const totalCount = admin
     ? openEvents.length + closedEvents.length
     : openEvents.length;
@@ -114,8 +192,15 @@ export default function EventList() {
       </header>
 
       <div className="mt-4 space-y-8">
-        {/* admin-only undo stack is fine inside the single panel */}
-        <DeletedEventsUndoStack visible={admin} />
+        {admin ? (
+          <div className="sticky top-3 z-30 -mx-4 px-4 pb-2">
+            <div className="space-y-2">
+              <EventUndoStack visible={true} config={deletedUndoConfig} />
+              <EventUndoStack visible={true} config={openedUndoConfig} />
+              <EventUndoStack visible={true} config={closedUndoConfig} />
+            </div>
+          </div>
+        ) : null}
 
         {/* ✅ NON-ADMIN: no EventSection wrapper, just the list */}
         {!admin ? (
@@ -158,8 +243,6 @@ export default function EventList() {
               minimized={openMinimized}
               setMinimized={setOpenMinimized}
             >
-              <ClosedEventsUndoStack visible={admin} />
-
               {openEvents.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
                   Ingen kampe lige nu.
@@ -197,8 +280,6 @@ export default function EventList() {
               minimized={closedMinimized}
               setMinimized={setClosedMinimized}
             >
-              <OpenedEventsUndoStack visible={admin} />
-
               {closedEvents.length === 0 ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
                   Ingen lukkede kampe.

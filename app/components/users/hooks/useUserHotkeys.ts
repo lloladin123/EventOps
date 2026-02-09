@@ -14,10 +14,21 @@ function isTypingTarget(target: EventTarget | null) {
   return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
 }
 
-function currentUidFromFocus(): string | null {
+const ROW_SELECTOR = '[data-userfocus="row"][data-uid]';
+
+function currentRowElFromFocus(): HTMLElement | null {
   const a = document.activeElement as HTMLElement | null;
   if (!a) return null;
-  return a.getAttribute("data-uid") || null;
+  return a.closest<HTMLElement>(ROW_SELECTOR) ?? null;
+}
+
+function currentUidFromFocus(): string | null {
+  const row = currentRowElFromFocus();
+  return row?.getAttribute("data-uid") ?? null;
+}
+
+function orderedRowEls(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>(ROW_SELECTOR));
 }
 
 function defaultDeleteLabel<TUser extends UserLike>(row: TUser) {
@@ -42,7 +53,6 @@ type Params<TUser extends UserLike> = {
   onJumpMissing: (fromUid: string | null, dir: 1 | -1) => void;
   onDeleteUser: (uid: string) => void | Promise<void>;
 
-  // optional niceties
   getDeleteLabel?: (row: TUser) => string;
   confirmDelete?: (label: string, row: TUser) => boolean;
 };
@@ -56,7 +66,6 @@ export function useUserHotkeys<TUser extends UserLike>({
   confirmDelete = (label) =>
     window.confirm(`Slet bruger "${label}"?\n\nDette kan ikke fortrydes.`),
 }: Params<TUser>) {
-  // keep latest values without re-binding the event listener
   const enabledRef = useLatestRef(enabled);
   const usersRef = useLatestRef(users);
   const onJumpMissingRef = useLatestRef(onJumpMissing);
@@ -72,6 +81,31 @@ export function useUserHotkeys<TUser extends UserLike>({
 
       const key = e.key;
 
+      // ✅ Arrow navigation by DOM order (respects sorting)
+      if (key === "ArrowDown" || key === "ArrowUp") {
+        const dir: 1 | -1 = key === "ArrowDown" ? 1 : -1;
+
+        // Shift+Arrow: keep your "missing role" jump behavior
+        if (e.shiftKey) {
+          e.preventDefault();
+          const uidNow = currentUidFromFocus();
+          onJumpMissingRef.current(uidNow, dir);
+          return;
+        }
+
+        const rows = orderedRowEls();
+        if (rows.length === 0) return;
+
+        e.preventDefault();
+
+        const cur = currentRowElFromFocus();
+        const idx = cur ? rows.indexOf(cur) : -1;
+
+        const nextIndex = (idx + dir + rows.length) % rows.length;
+        rows[nextIndex]?.focus();
+        return;
+      }
+
       // n / Shift+n => cycle missing role
       if (key === "n" || key === "N") {
         e.preventDefault();
@@ -80,7 +114,7 @@ export function useUserHotkeys<TUser extends UserLike>({
         return;
       }
 
-      // s => slet (delete) currently focused user
+      // s => delete focused user
       if (key === "s" || key === "S") {
         e.preventDefault();
 
