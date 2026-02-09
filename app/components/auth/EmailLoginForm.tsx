@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useEmailLogin } from "./useEmailLogin";
+import Link from "next/link";
 
 export default function EmailLoginForm() {
   const {
@@ -36,7 +37,7 @@ export default function EmailLoginForm() {
   ].join(" ");
 
   return (
-    <>
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <p className="mt-1 text-sm text-slate-600">
         Log ind med email og password
       </p>
@@ -80,6 +81,22 @@ export default function EmailLoginForm() {
       </button>
 
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-    </>
+      {/* Actions */}
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <Link
+          href="/forgotPassword"
+          className="text-slate-600 hover:text-slate-900 underline"
+        >
+          Glemt password?
+        </Link>
+
+        <Link
+          href="/signUp"
+          className="font-medium text-slate-900 hover:text-slate-700 underline"
+        >
+          Opret bruger
+        </Link>
+      </div>
+    </div>
   );
 }

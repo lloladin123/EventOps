@@ -103,7 +103,7 @@ export default function SignupCard() {
   ].join(" ");
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm mx-auto flex min-h-[60vh] max-w-md flex-col justify-center gap-6 p-6">
       <h1 className="text-xl font-semibold text-slate-900">Opret bruger</h1>
       <p className="mt-1 text-sm text-slate-600">
         Opret din konto. En admin tildeler rolle bagefter.
