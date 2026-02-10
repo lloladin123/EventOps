@@ -79,7 +79,7 @@ EventOps addresses <strong>two concrete operational problems</strong>:
 <ul>
   <li><strong>Frontend:</strong> Next.js, React, TypeScript</li>
   <li><strong>Styling:</strong> Tailwind CSS</li>
-  <li><strong>Backend:</strong> Firebase (Authentication, Firestore)</li>
+  <li><strong>Backend:</strong> Firebase (Authentication, Firestore, storage, Rules)</li>
   <li><strong>Deployment:</strong> Vercel</li>
 </ul>
 
