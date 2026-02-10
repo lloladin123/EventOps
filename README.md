@@ -8,8 +8,13 @@ It replaces Messenger-based coordination and introduces
 </p>
 
 <p>
-🚧 <em>Actively in development</em> — scheduled for use at upcoming events.
+🚧 Core workflows implemented and being finalized for live deployment.
 </p>
+
+<h2>👤 Project Ownership</h2>
+
+<p>This project was designed and implemented end-to-end, including domain modeling, role-based access control, Firestore security rules, and deployment.  
+Operational workflows were defined together with the product owner before development.</p>
 
 <hr />
 
@@ -63,7 +68,7 @@ EventOps addresses <strong>two concrete operational problems</strong>:
   <li>Role-based authentication and access control</li>
   <li>Admin dashboard for managing users and events</li>
   <li>Live incident reporting during events</li>
-  <li>Firebase-backed data model structured for production use</li>
+  <li>Firebase-backed data model with security rules enforcing role-based permissions and write access</li>
   <li>Clean, responsive UI focused on fast on-site usage</li>
 </ul>
 
@@ -83,8 +88,9 @@ EventOps addresses <strong>two concrete operational problems</strong>:
 <h2>📦 Project Status</h2>
 
 <p>
-🚧 <strong>Actively in development</strong>
+🚧 <strong>Stabilization phase</strong>
 </p>
+
 
 <p>
 Core workflows are implemented. Features are prioritized based on feedback
@@ -158,4 +164,6 @@ Runs locally at <code>http://localhost:3000</code>
 EventOps was built to solve real organizational problems observed during football
 events — not as a technology showcase, but as a practical tool designed for use
 under real-world conditions.
+</p>
+<p>The project emphasizes real-world constraints such as access control, operational ownership, and clean handover after deployment.
 </p>
