@@ -4,7 +4,7 @@ import {
   type PDFFont,
   type PDFPage,
 } from "pdf-lib";
-import type { Layout } from "./pdfLayout";
+import type { pdfLayout } from "./pdfLayout";
 import type { Theme } from "./theme";
 
 export type RenderCtx = {
@@ -12,7 +12,7 @@ export type RenderCtx = {
   font: PDFFont;
   fontBold: PDFFont;
 
-  layout: Layout;
+  layout: pdfLayout;
   theme: Theme;
 
   pages: PDFPage[];
@@ -34,7 +34,7 @@ export type RenderCtx = {
 
 export async function createRenderCtx(
   pdf: PDFDocument,
-  layout: Layout,
+  layout: pdfLayout,
   theme: Theme,
 ): Promise<RenderCtx> {
   const font = await pdf.embedFont(StandardFonts.Helvetica);
