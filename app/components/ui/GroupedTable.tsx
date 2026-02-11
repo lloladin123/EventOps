@@ -50,6 +50,11 @@ type Props<
   sortHint?: React.ReactNode; // e.g. "Klik på kolonner for at sortere"
   tableMinWidthClassName?: string; // e.g. "min-w-[1000px]"
 
+  // ✅ add row props hook
+  getRowProps?: (row: Row) => React.HTMLAttributes<HTMLTableRowElement>;
+
+  disableRowHover?: boolean;
+
   // sorting (only sortable keys)
   initialSort: SortState<SortKey>;
 
@@ -67,18 +72,6 @@ function asText(v: unknown) {
 function cmp(a: string | number, b: string | number) {
   if (a === b) return 0;
   return a < b ? -1 : 1;
-}
-
-function thBtnCls(active: boolean) {
-  return [
-    "group inline-flex items-center gap-1 select-none",
-    "hover:text-slate-900",
-    active ? "text-slate-900" : "text-slate-600",
-  ].join(" ");
-}
-
-function arrow(dir: SortDir) {
-  return dir === "asc" ? "↑" : "↓";
 }
 
 function nodeToTitle(node: React.ReactNode): string | undefined {
@@ -111,6 +104,8 @@ export default function GroupedTable<
   initialSort,
   filterGroupRows,
   renderGroupAfter,
+  getRowProps,
+  disableRowHover = false,
 }: Props<Row, GroupId, ColumnKey, SortKey>) {
   const [sort, setSort] = React.useState<SortState<SortKey>>(initialSort);
 
@@ -202,91 +197,49 @@ export default function GroupedTable<
 
             <div className="overflow-x-auto">
               <table className={`${tableMinWidthClassName} w-full`}>
-                <thead className="bg-slate-50">
-                  <tr>
-                    {columns.map((c) => {
-                      const align =
-                        c.align === "right" ? "text-right" : "text-left";
-
-                      const isSortable = typeof c.sortValue === "function";
-                      const isActive =
-                        isSortable &&
-                        (sort.key as unknown as string) ===
-                          (c.key as unknown as string);
-
-                      const showArrow = isSortable
-                        ? isActive
-                          ? arrow(sort.dir)
-                          : "↕"
-                        : "";
-
-                      return (
-                        <th
-                          key={c.key}
-                          className={[
-                            "px-4 py-2 text-xs font-semibold text-slate-600",
-                            align,
-                            c.className,
-                          ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        >
-                          {isSortable ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                toggleSort(c.key as unknown as SortKey)
-                              }
-                              className={thBtnCls(isActive)}
-                              title={c.headerTitle}
-                            >
-                              {c.header}{" "}
-                              <span className="text-slate-400">
-                                {showArrow}
-                              </span>
-                            </button>
-                          ) : (
-                            c.header
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                </thead>
+                <thead className="bg-slate-50"></thead>
 
                 <tbody>
-                  {sortedRows.map((row, idx) => (
-                    <tr
-                      key={idx}
-                      className="
-                        border-t transition-colors
-                        focus-within:bg-amber-50
-                      "
-                    >
-                      {columns.map((c) => {
-                        const content = c.cell(row);
-                        const autoTitle = nodeToTitle(content);
+                  {sortedRows.map((row, idx) => {
+                    const rp = getRowProps?.(row);
 
-                        return (
-                          <td
-                            key={c.key}
-                            className={tdClassName(c.align, c.className)}
-                          >
-                            {c.truncate ? (
-                              <span
-                                className={wrapClassName(c.maxWidthClassName)}
-                                title={autoTitle}
-                              >
-                                {content}
-                              </span>
-                            ) : (
-                              content
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                    return (
+                      <tr
+                        key={idx}
+                        {...rp}
+                        className={[
+                          "border-t transition-colors",
+                          !disableRowHover && "hover:bg-amber-50",
+                          "focus:bg-amber-50 focus:outline-none", // ✅ row itself can be focused
+                          "focus-within:bg-amber-50", // keep old behavior too
+                          rp?.className ?? "",
+                        ].join(" ")}
+                      >
+                        {columns.map((c) => {
+                          const content = c.cell(row);
+                          const autoTitle = nodeToTitle(content);
+
+                          return (
+                            <td
+                              key={c.key}
+                              className={tdClassName(c.align, c.className)}
+                            >
+                              {c.truncate ? (
+                                <span
+                                  className={wrapClassName(c.maxWidthClassName)}
+                                  title={autoTitle}
+                                >
+                                  {content}
+                                </span>
+                              ) : (
+                                content
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

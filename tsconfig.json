@@ -23,9 +23,10 @@
       "@/data/*": ["./app/data/*"],
       "@/types/*": ["./app/types/*"],
       "@/components/*": ["./app/components/*"],
-      "@/utils/*": ["./app/components/utils/*"],
+      "@/utils/*": ["./app/utils*"],
       "@/ui/*": ["./app/components/ui/*"],
-      "@/lib/*": ["./app/lib*"],
+      "@/lib/*": ["./app/lib/*"],
+      "@/features/*": ["./app/features/*"],
       "@/*": ["./*"]
     }
   },

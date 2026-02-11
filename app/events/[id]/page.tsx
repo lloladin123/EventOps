@@ -5,24 +5,28 @@ import { useParams, useRouter } from "next/navigation";
 
 import type { Incident } from "@/types/incident";
 
-import EventHeader from "@/components/events/EventHeader";
-import IncidentForm from "@/components/events/IncidentForm";
+import EventHeader from "@/features//events/event/EventHeader";
 import LoginRedirect from "@/components/layout/LoginRedirect";
-import ApprovedUsers from "@/components/events/ApprovedUsers";
-import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
+import ApprovedUsers from "@/features//events/attendance/ApprovedUsers";
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
-import { useAuth } from "@/app/components/auth/AuthProvider";
-import { ROLE, type Role } from "@/types/rsvp";
-import { canAccessEventDetails } from "@/utils/eventAccess";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { isAdmin, ROLE, type Role } from "@/types/rsvp";
+import { canAccessEventDetails } from "@/features//events/lib/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
-import CloseLog from "@/components/events/CloseLog";
-import EditIncidentModal from "@/components/events/EditIncidentModal";
-import IncidentPanel from "@/components/events/IncidentPanel";
+import CloseLog from "@/features//events/close/CloseLog";
+import IncidentForm from "@/features//incidents/ui/IncidentForm";
+import IncidentPanel from "@/features//incidents/ui/IncidentPanel";
+import EditIncidentModal from "@/features//incidents/modals/EditIncidentModal";
+import ExportIncidentPdfButton from "@/features//incidents/ui/ExportIncidentPdfButton";
 
-const ALLOWED_ROLES: Role[] = [ROLE.Admin, ROLE.Logfører];
+const ALLOWED_ROLES: Role[] = [
+  ROLE.Admin,
+  ROLE.Sikkerhedsledelse,
+  ROLE.Logfører,
+];
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -59,6 +63,7 @@ export default function EventDetailPage() {
 
   // access control
   const allowed = React.useMemo(() => {
+    if (isAdmin(role)) return true; // Admin + Sikkerhedsledelse
     return canAccessEventDetails({ eventId: id, uid, role });
   }, [id, uid, role, tick]);
 
@@ -195,7 +200,11 @@ export default function EventDetailPage() {
                 Kunne ikke hente hændelser: {incidentsError}
               </div>
             ) : null}
-            <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
+            <ExportIncidentPdfButton
+              eventId={event.id}
+              eventTitle={event.title}
+              incidents={incidents}
+            />
 
             {incidentsLoading ? (
               <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
@@ -217,7 +226,11 @@ export default function EventDetailPage() {
               />
             )}
 
-            <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
+            <ExportIncidentPdfButton
+              eventId={event.id}
+              eventTitle={event.title}
+              incidents={incidents}
+            />
           </div>
         </main>
       )}

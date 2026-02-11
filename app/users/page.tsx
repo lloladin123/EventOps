@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@/app/components/auth/AuthProvider";
-import { useUsersAdmin } from "@/utils/useUsersAdmin";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useUsersAdmin } from "@/features//users/hooks/useUsersAdmin";
 
-import UserListTable from "@/components/users/views/UserListTable";
-import UserListView from "@/components/users/views/UserListView";
+import UserListTable from "@/features//users/views/UserListTable";
+import UserListView from "@/features//users/views/UserListView";
 import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 
 import { ROLE, ROLES, CREW_SUBROLES, isAdmin, Role } from "@/types/rsvp";
@@ -49,6 +49,14 @@ export default function UsersPage() {
     return (localStorage.getItem("users:view") as ViewMode) ?? "table";
   });
 
+  const selectableRoles = React.useMemo(
+    () =>
+      myRole === ROLE.Admin
+        ? ROLES
+        : ROLES.filter((r) => r !== ROLE.Sikkerhedsledelse),
+    [myRole]
+  );
+
   React.useEffect(() => {
     localStorage.setItem("users:view", view);
   }, [view]);
@@ -83,7 +91,7 @@ export default function UsersPage() {
         <UserListTable
           users={users}
           busy={busy}
-          roles={ROLES}
+          roles={selectableRoles}
           crewSubRoles={CREW_SUBROLES}
           setUserRole={setUserRole}
           setUserSubRole={setUserSubRole}
@@ -93,7 +101,7 @@ export default function UsersPage() {
         <UserListView
           users={users}
           busy={busy}
-          roles={ROLES}
+          roles={selectableRoles}
           crewSubRoles={CREW_SUBROLES}
           setUserRole={setUserRole}
           setUserSubRole={setUserSubRole}

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { Role } from "@/types/rsvp";
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
 
 type Props = {
   children: React.ReactNode;
