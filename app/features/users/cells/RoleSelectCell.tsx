@@ -34,10 +34,11 @@ export function RoleSelectCell({
   const disableSelect = isSafetyManager && !isAdmin && isSelf;
 
   // ❌ Rule 2: SafetyManager cannot promote to SafetyManager
-  const visibleRoles =
-    isSafetyManager && !isAdmin
-      ? roles.filter((r) => r !== ROLE.Sikkerhedsledelse)
-      : roles;
+  const visibleRoles = roles.filter((r) => {
+    if (r === ROLE.Admin) return false; // never show Admin
+    if (r === ROLE.Sikkerhedsledelse && !isAdmin) return false; // only Admin sees it
+    return true;
+  });
 
   const { onKeyDown, onChange } = useRoleSelectHandlers({
     uid,

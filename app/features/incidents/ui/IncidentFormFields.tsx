@@ -43,11 +43,48 @@ const TYPE_OPTIONS: IncidentType[] = [
   "Generelle info",
 ];
 
+const LIMITS = {
+  time: 5, // "HH:mm" max (we also allow 4 digits but we still cap at 5 with optional colon)
+  modtagetFra: 60,
+  haendelse: 800,
+  loesning: 800,
+} as const;
+
+function clampText(value: string, max: number) {
+  // Trim only the left side so the user can keep typing naturally
+  const cleaned = value.replace(/\s+/g, " ").trimStart();
+  return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
+}
+
+function sanitizeTimeInput(raw: string) {
+  // allow only digits and colon, cap length to something reasonable
+  const cleaned = raw.replace(/[^\d:]/g, "").slice(0, 5);
+
+  // prevent more than one colon
+  const parts = cleaned.split(":");
+  if (parts.length > 2)
+    return parts[0] + ":" + parts.slice(1).join("").slice(0, 2);
+
+  // if colon exists, cap minutes to 2 digits
+  if (parts.length === 2) {
+    const hh = parts[0].slice(0, 2);
+    const mm = parts[1].slice(0, 2);
+    return `${hh}:${mm}`;
+  }
+
+  // no colon: cap to 4 digits (1245)
+  return cleaned.slice(0, 4);
+}
+
 export default function IncidentFormFields(props: Props) {
   const normalizedTime = React.useMemo(
     () => parseTimeToHHmm(props.time),
     [props.time],
   );
+
+  const onTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    props.setTime(sanitizeTimeInput(e.target.value));
+  };
 
   const onTimeBlur = () => {
     const parsed = parseTimeToHHmm(props.time);
@@ -65,9 +102,12 @@ export default function IncidentFormFields(props: Props) {
           type="text"
           inputMode="numeric"
           value={props.time}
-          onChange={(e) => props.setTime(e.target.value)}
+          onChange={onTimeChange}
           onBlur={onTimeBlur}
           placeholder="12:45 eller 1245"
+          // helps mobile keyboards + blocks some invalid typing patterns
+          pattern="^(\d{4}|\d{1,2}:\d{2})$"
+          maxLength={LIMITS.time}
           className={[
             "mt-2 w-full rounded-xl border px-3 py-2 text-sm shadow-sm outline-none",
             normalizedTime
@@ -106,11 +146,17 @@ export default function IncidentFormFields(props: Props) {
         <input
           type="text"
           value={props.modtagetFra}
-          onChange={(e) => props.setModtagetFra(e.target.value)}
+          maxLength={LIMITS.modtagetFra}
+          onChange={(e) =>
+            props.setModtagetFra(clampText(e.target.value, LIMITS.modtagetFra))
+          }
           placeholder="Fx: Vagtleder, dommer, publikum…"
           className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           required
         />
+        <p className="mt-1 text-xs text-slate-500">
+          {props.modtagetFra.length}/{LIMITS.modtagetFra}
+        </p>
       </div>
 
       {/* Hændelse */}
@@ -120,12 +166,18 @@ export default function IncidentFormFields(props: Props) {
         </label>
         <textarea
           value={props.haendelse}
-          onChange={(e) => props.setHaendelse(e.target.value)}
+          maxLength={LIMITS.haendelse}
+          onChange={(e) =>
+            props.setHaendelse(clampText(e.target.value, LIMITS.haendelse))
+          }
           rows={3}
           placeholder="Beskriv hændelsen…"
           className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           required
         />
+        <p className="mt-1 text-xs text-slate-500">
+          {props.haendelse.length}/{LIMITS.haendelse}
+        </p>
       </div>
 
       {/* Løsning */}
@@ -135,11 +187,17 @@ export default function IncidentFormFields(props: Props) {
         </label>
         <textarea
           value={props.loesning}
-          onChange={(e) => props.setLoesning(e.target.value)}
+          maxLength={LIMITS.loesning}
+          onChange={(e) =>
+            props.setLoesning(clampText(e.target.value, LIMITS.loesning))
+          }
           rows={3}
           placeholder="Hvad blev gjort / hvad er planen?"
           className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         />
+        <p className="mt-1 text-xs text-slate-500">
+          {props.loesning.length}/{LIMITS.loesning}
+        </p>
       </div>
 
       {/* Upload */}
