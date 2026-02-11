@@ -8,6 +8,7 @@ import {
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/app/lib/firebase/client";
+import { ensureUserDoc } from "@/lib//firebase/ensureUserDoc";
 
 export function useEmailLogin() {
   const router = useRouter();
@@ -46,7 +47,10 @@ export function useEmailLogin() {
       if (!auth) throw new Error("Auth not available");
 
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const res = await signInWithPopup(auth, provider);
+
+      // ✅ Create/merge Firestore user doc right away
+      await ensureUserDoc(res.user);
 
       router.push("/events"); // ✅ redirect
     } catch (e: any) {
