@@ -66,8 +66,8 @@ export default function StateButton({
         disabled
           ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
           : active
-          ? styles.active
-          : styles.inactive,
+            ? styles.active
+            : styles.inactive,
         className,
       ].join(" ")}
     >

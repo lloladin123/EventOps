@@ -6,7 +6,7 @@ import type { Role } from "@/types/rsvp";
 import { useAuth } from "@/features//auth/provider/AuthProvider";
 
 import GuardCard from "./GuardCard";
-import { PrimaryButton, SecondaryButton } from "./GuardButtons";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   children: React.ReactNode;
@@ -36,20 +36,20 @@ export default function LoginRedirect({
 
   if (loading) return null;
 
+  // Not logged in
   if (!user) {
     return (
       <GuardCard
         title={title}
         description={description}
         actions={
-          <PrimaryButton onClick={() => router.push(redirectTo)}>
-            Gå til login
-          </PrimaryButton>
+          <Button onClick={() => router.push(redirectTo)}>Gå til login</Button>
         }
       />
     );
   }
 
+  // Logged in but no role yet
   if (!role) {
     return (
       <GuardCard
@@ -62,13 +62,11 @@ export default function LoginRedirect({
         }
         actions={
           <>
-            <PrimaryButton onClick={() => window.location.reload()}>
-              Opdater
-            </PrimaryButton>
+            <Button onClick={() => window.location.reload()}>Opdater</Button>
 
-            <SecondaryButton onClick={() => router.push("/login")}>
+            <Button variant="secondary" onClick={() => router.push("/login")}>
               Skift bruger
-            </SecondaryButton>
+            </Button>
           </>
         }
         footer={<>Tip: Hvis du lige er blevet godkendt, så tryk “Opdater”.</>}
@@ -76,6 +74,7 @@ export default function LoginRedirect({
     );
   }
 
+  // Wrong role
   if (allowedRoles && !allowedRoles.includes(role)) {
     return (
       <GuardCard
@@ -87,9 +86,9 @@ export default function LoginRedirect({
           </>
         }
         actions={
-          <PrimaryButton onClick={() => router.push(unauthorizedRedirectTo)}>
+          <Button onClick={() => router.push(unauthorizedRedirectTo)}>
             Videre
-          </PrimaryButton>
+          </Button>
         }
       />
     );
