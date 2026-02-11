@@ -162,7 +162,6 @@ export default function AdminNav({ className }: AdminNavProps) {
     };
   }, [admin, events]);
 
-  // --- 👤 Users badge (users without role) ---
   const [usersNoRoleCount, setUsersNoRoleCount] = React.useState(0);
 
   React.useEffect(() => {
@@ -171,17 +170,9 @@ export default function AdminNav({ className }: AdminNavProps) {
       return;
     }
 
-    const unsub = subscribeUsers(
-      (docs) => {
-        const rows: UserRow[] = docs.map((d: any) => ({
-          uid: d.id ?? d.uid ?? "",
-          data: d,
-        }));
-
-        setUsersNoRoleCount(countUsersWithoutRole(rows));
-      },
-      (err) => console.error("[AdminNav] subscribeUsers", err),
-    );
+    const unsub = subscribeUsers((rows) => {
+      setUsersNoRoleCount(countUsersWithoutRole(rows));
+    });
 
     return () => unsub();
   }, [admin]);
