@@ -8,7 +8,7 @@ import { isAdmin } from "@/types/rsvp";
 
 import { cx } from "./cx";
 import AdminNavLink from "./AdminNavLink";
-import Badge from "./Badge";
+import Badge from "../Badge";
 import KbdHint from "./KbdHint";
 
 import { useAdminRsvpRequestsCount } from "./hooks/useAdminRsvpRequestsCount";
