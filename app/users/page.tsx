@@ -173,19 +173,6 @@ export default function UsersPage() {
         <ViewModeToggle value={view} onChange={setView} />
       </div>
 
-      {/* Optional: tiny undo banner */}
-      {undoStack.length > 0 && (
-        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
-          Seneste: <span className="font-semibold">{undoStack[0].label}</span>
-          <button
-            className="ml-3 rounded-lg bg-slate-900 px-2 py-1 text-white"
-            onClick={() => popUndo()}
-          >
-            Fortryd (Ctrl+Z)
-          </button>
-        </div>
-      )}
-
       {/* Content */}
       {view === "table" ? (
         <UserListTable
