@@ -7,9 +7,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 
-import { useEventsFirestore } from "@/features//events/hooks/useEventsFirestore";
+import { useEventsFirestore } from "@/features/events/hooks/useEventsFirestore";
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
-import { countNewRequests } from "@/features//users/lib/requestCounts";
+import { countNewRequests } from "@/features/users/lib/requestCounts";
 
 import {
   countUsersWithoutRole,

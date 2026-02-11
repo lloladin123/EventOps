@@ -25,8 +25,8 @@
       "@/components/*": ["./app/components/*"],
       "@/utils/*": ["./app/utils*"],
       "@/ui/*": ["./app/components/ui/*"],
-      "@/lib/*": ["./app/lib*"],
-      "@/features/*": ["./app/features*"],
+      "@/lib/*": ["./app/lib/*"],
+      "@/features/*": ["./app/features/*"],
       "@/*": ["./*"]
     }
   },
