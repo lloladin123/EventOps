@@ -81,7 +81,7 @@ export default function ApprovedUsers({ eventId }: Props) {
     return subscribeEventRsvps(
       eventId,
       (docs) => setRows(docs as Row[]),
-      (err) => console.error("[ApprovedUsers] subscribeEventRsvps", err)
+      (err) => console.error("[ApprovedUsers] subscribeEventRsvps", err),
     );
   }, [eventId]);
 
@@ -95,19 +95,19 @@ export default function ApprovedUsers({ eventId }: Props) {
       .map(normalize)
       .sort(
         (a, b) =>
-          ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
+          ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance],
       );
   }, [rows]);
 
   // ✅ Split approved into yes/maybe vs no
   const approvedYesMaybe = React.useMemo(
     () => approvedAll.filter((r) => r.attendance !== RSVP_ATTENDANCE.No),
-    [approvedAll]
+    [approvedAll],
   );
 
   const approvedNo = React.useMemo(
     () => approvedAll.filter((r) => r.attendance === RSVP_ATTENDANCE.No),
-    [approvedAll]
+    [approvedAll],
   );
 
   // Copy only the people you actually expect to show up (yes/maybe)
@@ -170,7 +170,7 @@ export default function ApprovedUsers({ eventId }: Props) {
                   </div>
 
                   {r.comment ? (
-                    <div className="mt-1 text-xs text-slate-600">
+                    <div className="mt-1 text-xs text-slate-600 whitespace-pre-line break-words">
                       Note: {r.comment}
                     </div>
                   ) : null}
