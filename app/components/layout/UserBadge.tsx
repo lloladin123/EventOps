@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
-import { useAuth } from "@/app/auth/provider/AuthProvider";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { ROLE } from "@/types/rsvp";
 
 function IconButton({

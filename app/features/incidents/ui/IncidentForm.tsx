@@ -3,11 +3,11 @@
 import * as React from "react";
 import type { Incident, IncidentType } from "@/types/incident";
 
-import CloseLog from "@/components/events/close/CloseLog";
+import CloseLog from "@/features//events/close/CloseLog";
 
 import { nowHHmm, parseTimeToHHmm } from "@/app/utils/time";
-import { useAuthAndClosed } from "@/components/events/hooks/useAuthAndClosed";
-import { useAuth } from "@/app/auth/provider/AuthProvider";
+import { useAuthAndClosed } from "@/features//events/hooks/useAuthAndClosed";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { createIncidentFirestore } from "@/app/lib/firestore/incidents";
 import { uploadIncidentImages } from "@/lib//uploadIncidentImages";
 import IncidentSubmitButton from "./IncidentSubmitButton";

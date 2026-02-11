@@ -5,7 +5,7 @@ import type { Incident } from "@/types/incident";
 import IncidentFormFields from "../ui/IncidentFormFields";
 import { updateIncidentFirestore } from "@/app/lib/firestore/incidents";
 
-import { useAuth } from "@/app/auth/provider/AuthProvider";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
 import {
   UploadedIncidentFile,
   uploadIncidentImages,

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
-import { useAuth } from "@/app/auth/provider/AuthProvider";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { DECISION, type Decision } from "@/types/rsvpIndex";
 import { db } from "@/lib//firebase/client";
 

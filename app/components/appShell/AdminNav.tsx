@@ -4,18 +4,18 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { useAuth } from "@/app/auth/provider/AuthProvider";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 
-import { useEventsFirestore } from "@/components/events/hooks/useEventsFirestore";
+import { useEventsFirestore } from "@/features//events/hooks/useEventsFirestore";
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
-import { countNewRequests } from "@/components/users/lib/requestCounts";
+import { countNewRequests } from "@/features//users/lib/requestCounts";
 
 import { subscribeUsers } from "@/app/lib/firestore/users";
 import {
   countUsersWithoutRole,
   type UserRow,
-} from "@/components/users/lib/userCounts";
+} from "@/features//users/lib/userCounts";
 
 type AdminNavProps = {
   className?: string;

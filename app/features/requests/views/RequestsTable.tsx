@@ -3,16 +3,16 @@
 import * as React from "react";
 import type { RSVPRow } from "@/types/requests";
 import { Decision, DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
-import RequestApprovalActions from "../utils/RequestApprovalActions";
+import RequestApprovalActions from "../components/RequestApprovalActions";
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
-import { requestsGroupMeta } from "../ui/RequestsGroupMetaa";
-import { RequestsNoResponsesTable } from "../utils/RequestsNoResponsesTable";
+import { requestsGroupMeta } from "../ui/RequestsGroupMeta";
+import { RequestsNoResponsesTable } from "../components/RequestsNoResponsesTable";
 import {
   attendanceLabel,
   statusLabel,
-} from "@/components/events/lib/rsvpLabels";
-import { RequestNameCell } from "../utils/RequestNameCell";
+} from "@/features//rsvp/labels/rsvpLabels";
+import { RequestNameCell } from "../components/RequestNameCell";
 import { statusPillClass, fmtUpdatedAt, updatedAtMs } from "../ui/requestUi";
 import {
   findNextActionableRow,

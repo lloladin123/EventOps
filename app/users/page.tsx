@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@/app/auth/provider/AuthProvider";
-import { useUsersAdmin } from "@/components/users/hooks/useUsersAdmin";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useUsersAdmin } from "@/features//users/hooks/useUsersAdmin";
 
-import UserListTable from "@/components/users/views/UserListTable";
-import UserListView from "@/components/users/views/UserListView";
+import UserListTable from "@/features//users/views/UserListTable";
+import UserListView from "@/features//users/views/UserListView";
 import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 
 import { ROLE, ROLES, CREW_SUBROLES, isAdmin, Role } from "@/types/rsvp";

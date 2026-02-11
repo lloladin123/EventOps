@@ -7,9 +7,9 @@ import { DECISION, type Decision, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 
 import GroupedList from "@/components/ui/GroupedList";
 
-import { requestsGroupMeta } from "../ui/RequestsGroupMetaa";
-import { RequestRowCard } from "../utils/RequestRowCard";
-import { RequestsNoResponsesList } from "../utils/RequestsNoResponsesList";
+import { requestsGroupMeta } from "../ui/RequestsGroupMeta";
+import { RequestRowCard } from "../components/RequestRowCard";
+import { RequestsNoResponsesList } from "../components/RequestsNoResponsesList";
 import {
   findNextActionableRow,
   useRequestHotkeys,

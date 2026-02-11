@@ -5,18 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 
 import type { Incident } from "@/types/incident";
 
-import EventHeader from "@/components/events/event/EventHeader";
+import EventHeader from "@/features//events/event/EventHeader";
 import LoginRedirect from "@/components/layout/LoginRedirect";
-import ApprovedUsers from "@/components/events/attendance/ApprovedUsers";
+import ApprovedUsers from "@/features//events/attendance/ApprovedUsers";
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
-import { useAuth } from "@/app/auth/provider/AuthProvider";
+import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { isAdmin, ROLE, type Role } from "@/types/rsvp";
-import { canAccessEventDetails } from "@/components/events/lib/eventAccess";
+import { canAccessEventDetails } from "@/features//events/lib/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
-import CloseLog from "@/components/events/close/CloseLog";
+import CloseLog from "@/features//events/close/CloseLog";
 import IncidentForm from "@/features//incidents/ui/IncidentForm";
 import IncidentPanel from "@/features//incidents/ui/IncidentPanel";
 import EditIncidentModal from "@/features//incidents/modals/EditIncidentModal";

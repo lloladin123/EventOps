@@ -2,8 +2,8 @@
 
 import type { ReactNode } from "react";
 import AppHeader from "@/components/appShell/AppHeader";
-import { mockEvents } from "@/components/events/data/event";
-import { hydrateClosedDefaults } from "@/components/events/lib/eventStatus";
+import { mockEvents } from "@/features//events/data/event";
+import { hydrateClosedDefaults } from "@/features//events/lib/eventStatus";
 import React from "react";
 
 export default function AppShell({ children }: { children: ReactNode }) {
