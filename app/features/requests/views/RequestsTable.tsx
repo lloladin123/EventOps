@@ -191,7 +191,6 @@ export default function RequestsTable({
       rows={rows}
       initialSort={initialSort}
       tableMinWidthClassName="min-w-[1000px]"
-      sortHint={<RequestsHotkeysHint />}
       getGroupId={(r) => r.eventId}
       getGroupMeta={requestsGroupMeta({ onCopyApproved })}
       getRowProps={(r) => ({

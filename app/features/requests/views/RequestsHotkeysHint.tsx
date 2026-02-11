@@ -5,7 +5,7 @@ export function RequestsHotkeysHint() {
     "ml-1 rounded border bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-400";
 
   return (
-    <div className="flex w-full flex-wrap whitespace-normal gap-x-3 space-y-1">
+    <div className="flex w-full flex-wrap text-slate-400 text-xs whitespace-normal gap-x-3 space-y-1">
       <span>Klik på kolonner for at sortere</span>
 
       <span>⌨️ Genveje:</span>
