@@ -1,7 +1,7 @@
 // app/api/upload-slots/route.ts
 export const runtime = "nodejs";
 
-import { getAdmin } from "@/lib//firebase/Admins";
+import { getAdmin } from "@/lib//firebase/Admin";
 import { NextResponse } from "next/server";
 
 type Body = {
