@@ -51,13 +51,53 @@ export default function ExportIncidentPdfButton({
       onClick={onExport}
       disabled={busy}
       className={[
-        "inline-flex items-center rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60",
+        "inline-flex items-center gap-2 rounded-xl",
+        "bg-slate-900 text-white",
+        "px-4 py-2 text-sm font-semibold",
+        "shadow-sm transition-all",
+        "hover:bg-slate-800 hover:shadow-md",
+        "active:scale-[0.98]",
+        "disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:shadow-sm",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      {busy ? "Generating…" : "Exporter PDF"}
+      {busy ? (
+        <>
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            />
+          </svg>
+          Genererer…
+        </>
+      ) : (
+        <>
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M12 3v12" />
+            <path d="M7 10l5 5 5-5" />
+            <path d="M5 21h14" />
+          </svg>
+          Eksporter PDF
+        </>
+      )}
     </button>
   );
 }
