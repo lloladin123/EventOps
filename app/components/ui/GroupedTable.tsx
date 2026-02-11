@@ -72,18 +72,6 @@ function cmp(a: string | number, b: string | number) {
   return a < b ? -1 : 1;
 }
 
-function thBtnCls(active: boolean) {
-  return [
-    "group inline-flex items-center gap-1 select-none",
-    "hover:text-slate-900",
-    active ? "text-slate-900" : "text-slate-600",
-  ].join(" ");
-}
-
-function arrow(dir: SortDir) {
-  return dir === "asc" ? "↑" : "↓";
-}
-
 function nodeToTitle(node: React.ReactNode): string | undefined {
   if (typeof node === "string") return node;
   if (typeof node === "number") return String(node);
@@ -206,48 +194,7 @@ export default function GroupedTable<
 
             <div className="overflow-x-auto">
               <table className={`${tableMinWidthClassName} w-full`}>
-                <thead className="bg-slate-50">
-                  {sortedRows.map((row, idx) => {
-                    const rp = getRowProps?.(row);
-
-                    return (
-                      <tr
-                        key={idx}
-                        {...rp}
-                        className={[
-                          "border-t transition-colors",
-                          "hover:bg-slate-50", // optional but feels right
-                          "focus:bg-amber-50 focus:outline-none", // ✅ row itself can be focused
-                          "focus-within:bg-amber-50", // keep old behavior too
-                          rp?.className ?? "",
-                        ].join(" ")}
-                      >
-                        {columns.map((c) => {
-                          const content = c.cell(row);
-                          const autoTitle = nodeToTitle(content);
-
-                          return (
-                            <td
-                              key={c.key}
-                              className={tdClassName(c.align, c.className)}
-                            >
-                              {c.truncate ? (
-                                <span
-                                  className={wrapClassName(c.maxWidthClassName)}
-                                  title={autoTitle}
-                                >
-                                  {content}
-                                </span>
-                              ) : (
-                                content
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    );
-                  })}
-                </thead>
+                <thead className="bg-slate-50"></thead>
 
                 <tbody>
                   {sortedRows.map((row, idx) => (
