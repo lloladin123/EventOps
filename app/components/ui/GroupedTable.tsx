@@ -53,6 +53,8 @@ type Props<
   // ✅ add row props hook
   getRowProps?: (row: Row) => React.HTMLAttributes<HTMLTableRowElement>;
 
+  disableRowHover?: boolean;
+
   // sorting (only sortable keys)
   initialSort: SortState<SortKey>;
 
@@ -103,6 +105,7 @@ export default function GroupedTable<
   filterGroupRows,
   renderGroupAfter,
   getRowProps,
+  disableRowHover = false,
 }: Props<Row, GroupId, ColumnKey, SortKey>) {
   const [sort, setSort] = React.useState<SortState<SortKey>>(initialSort);
 
@@ -206,7 +209,7 @@ export default function GroupedTable<
                         {...rp}
                         className={[
                           "border-t transition-colors",
-                          "hover:bg-amber-50", // optional but feels right
+                          !disableRowHover && "hover:bg-amber-50",
                           "focus:bg-amber-50 focus:outline-none", // ✅ row itself can be focused
                           "focus-within:bg-amber-50", // keep old behavior too
                           rp?.className ?? "",

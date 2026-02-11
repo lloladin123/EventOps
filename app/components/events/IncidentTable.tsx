@@ -79,6 +79,7 @@ export default function IncidentTable({
         initialSort={initialSort}
         tableMinWidthClassName="min-w-[980px]"
         getGroupId={() => eventId}
+        disableRowHover={true}
         getGroupMeta={(_gid, rows) => ({
           title: "Hændelser",
           subtitle: (
