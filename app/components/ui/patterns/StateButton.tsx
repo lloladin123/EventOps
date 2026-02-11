@@ -1,7 +1,12 @@
 "use client";
 
-import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import * as React from "react";
+import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
+import {
+  Button,
+  type ButtonProps,
+} from "@/app/components/ui/primitives/button";
+import { cn } from "@/app/components/ui/utils/cn";
 
 export type StateVariant =
   | (typeof DECISION)[keyof typeof DECISION]
@@ -9,7 +14,7 @@ export type StateVariant =
 
 const VARIANT_STYLES: Record<
   StateVariant,
-  { active: string; inactive: string; disabled?: string }
+  { active: string; inactive: string }
 > = {
   approved: {
     active: "bg-green-600 text-white cursor-default",
@@ -24,7 +29,6 @@ const VARIANT_STYLES: Record<
     inactive: "border border-red-600 text-red-700 hover:bg-red-50",
   },
 
-  // ✅ attendance variants (match your current colors)
   yes: {
     active: "border-green-700 bg-green-600 text-white ring-2 ring-green-300",
     inactive:
@@ -42,36 +46,35 @@ const VARIANT_STYLES: Record<
   },
 };
 
+export type StateButtonProps = Omit<ButtonProps, "variant"> & {
+  variant: StateVariant;
+  active?: boolean;
+};
+
 export default function StateButton({
   variant,
   active,
-  children,
-  className = "",
+  className,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant: StateVariant;
-  active?: boolean;
-}) {
+}: StateButtonProps) {
   const styles = VARIANT_STYLES[variant];
 
-  const disabled = !!props.disabled;
-
   return (
-    <button
+    <Button
       {...props}
       aria-pressed={!!active}
-      className={[
-        "whitespace-nowrap rounded-xl border px-3 py-2 text-sm font-medium shadow-sm",
-        "transition-colors duration-150 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2",
-        disabled
+      // Important: we DON'T use Button's variants here; this component owns its own look.
+      className={cn(
+        "whitespace-nowrap border px-3 py-2 text-sm font-medium shadow-sm",
+        // keep your focus behavior consistent via Button base styles;
+        // we only add the state coloring here.
+        props.disabled
           ? "border-slate-200 bg-slate-100 text-slate-400 cursor-not-allowed shadow-none"
           : active
-          ? styles.active
-          : styles.inactive,
+            ? styles.active
+            : styles.inactive,
         className,
-      ].join(" ")}
-    >
-      {children}
-    </button>
+      )}
+    />
   );
 }

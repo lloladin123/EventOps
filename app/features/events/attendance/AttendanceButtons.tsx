@@ -1,4 +1,4 @@
-import StateButton from "@/app/components/ui/StateButton";
+import StateButton from "@/components/ui/patterns/StateButton";
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
 type Props = {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib//firestore/users.client";
+import type { UserDoc } from "@/lib/firestore/users.client";
 
 import { UserIdentityCell } from "../cells/UserIdentityCell";
 import { RoleSelectCell } from "../cells/RoleSelectCell";

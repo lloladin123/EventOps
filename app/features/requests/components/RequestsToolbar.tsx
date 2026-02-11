@@ -2,9 +2,9 @@
 
 import type { AttendanceFilter, StatusFilter } from "@/types/requests";
 
-import OpenCloseButton from "../../../components/ui/OpenCloseButton";
-import ViewToggle from "../../../components/ui/ViewModeToggle";
 import RequestsFilters from "./RequestsFilters";
+import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
+import ViewModeToggle from "@/components/ui/patterns/ViewModeToggle";
 
 type ViewMode = "list" | "table";
 
@@ -50,7 +50,7 @@ export function RequestsToolbar({
             setAttendanceFilter={setAttendanceFilter}
           />
 
-          <ViewToggle value={view} onChange={setView} />
+          <ViewModeToggle value={view} onChange={setView} />
         </div>
       </div>
     </div>

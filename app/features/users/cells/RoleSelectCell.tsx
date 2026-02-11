@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { Role } from "@/types/rsvp";
 import { ROLE } from "@/types/rsvp";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { roleSelectClass } from "../config/userSelectStyles";
 import { useRoleSelectHandlers } from "../hooks/useRoleSelectHandlers";
 
@@ -54,14 +54,25 @@ export function RoleSelectCell({
     <select
       ref={(el) => setRoleRef?.(uid, el)}
       data-uid={uid}
-      className={roleSelectClass(pending || disableSelect)}
       value={role ?? ""}
       disabled={disableSelect}
       onKeyDown={onKeyDown}
       onChange={onChange}
+      className={`
+    h-7 min-w-[160px]
+    rounded-xl border border-slate-200
+    bg-white px-3
+    text-sm text-slate-900
+    shadow-sm
+    transition
+    hover:border-slate-300
+    focus:border-slate-900 focus:ring-1 focus:ring-slate-900
+    disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400
+  `}
     >
-      {/* reset / placeholder */}
-      <option value="">{role ? "— Nulstil rolle —" : "Vælg rolle…"}</option>
+      <option value="" disabled>
+        Vælg rolle
+      </option>
 
       {visibleRoles.map((r) => (
         <option key={r} value={r}>

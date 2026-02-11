@@ -2,12 +2,14 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { isAdmin as isAdminRole } from "@/types/rsvp";
-import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 
 import IncidentTable from "./IncidentTable";
 import IncidentListView from "./IncidentListView";
+import ViewModeToggle, {
+  ViewMode,
+} from "@/components/ui/patterns/ViewModeToggle";
 
 type Props = {
   eventId: string;
@@ -74,7 +76,7 @@ export default function IncidentPanel({
 
   // No persistence: refresh/new tab/new device always starts locked.
   const [editableMap, setEditableMap] = React.useState<Record<string, boolean>>(
-    {}
+    {},
   );
 
   const timersRef = React.useRef<Record<string, number>>({});
@@ -142,7 +144,7 @@ export default function IncidentPanel({
 
           timersRef.current[i.id] = window.setTimeout(() => {
             setEditableMap((m) =>
-              m[i.id] === false ? m : { ...m, [i.id]: false }
+              m[i.id] === false ? m : { ...m, [i.id]: false },
             );
             delete timersRef.current[i.id];
           }, delay);
@@ -161,7 +163,7 @@ export default function IncidentPanel({
 
   const canEditIncident = React.useCallback(
     (i: Incident) => admin || (isOwner(i, uid) && editableMap[i.id] === true),
-    [admin, uid, editableMap]
+    [admin, uid, editableMap],
   );
 
   return (

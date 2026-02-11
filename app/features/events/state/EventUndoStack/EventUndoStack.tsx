@@ -79,7 +79,7 @@ export default function EventUndoStack({ visible, config }: Props) {
         prev.filter((e) => {
           if (config.exists && !config.exists(e.id)) return false;
           return config.isStillRelevant(e.id);
-        })
+        }),
       );
     };
 
@@ -120,7 +120,7 @@ export default function EventUndoStack({ visible, config }: Props) {
       } catch (e: any) {
         if (cancelled) return;
         setError(
-          typeof e?.message === "string" ? e.message : "Kunne ikke fortryde."
+          typeof e?.message === "string" ? e.message : "Kunne ikke fortryde.",
         );
       } finally {
         if (!cancelled) setRestoringId(null);

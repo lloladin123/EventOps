@@ -76,12 +76,13 @@ function normalize(r: Row) {
 
 export default function ApprovedUsers({ eventId }: Props) {
   const [rows, setRows] = React.useState<Row[]>([]);
+  const [copied, setCopied] = React.useState(false);
 
   React.useEffect(() => {
     return subscribeEventRsvps(
       eventId,
       (docs) => setRows(docs as Row[]),
-      (err) => console.error("[ApprovedUsers] subscribeEventRsvps", err)
+      (err) => console.error("[ApprovedUsers] subscribeEventRsvps", err),
     );
   }, [eventId]);
 
@@ -95,47 +96,60 @@ export default function ApprovedUsers({ eventId }: Props) {
       .map(normalize)
       .sort(
         (a, b) =>
-          ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance]
+          ATTENDANCE_ORDER[a.attendance] - ATTENDANCE_ORDER[b.attendance],
       );
   }, [rows]);
 
-  // ✅ Split approved into yes/maybe vs no
   const approvedYesMaybe = React.useMemo(
     () => approvedAll.filter((r) => r.attendance !== RSVP_ATTENDANCE.No),
-    [approvedAll]
+    [approvedAll],
   );
 
   const approvedNo = React.useMemo(
     () => approvedAll.filter((r) => r.attendance === RSVP_ATTENDANCE.No),
-    [approvedAll]
+    [approvedAll],
   );
 
-  // Copy only the people you actually expect to show up (yes/maybe)
-  const copy = () => {
+  const copy = async () => {
     const lines = approvedYesMaybe.map((r) => {
       const name = displayNameFromRow(r);
-      const note = r.comment ? ` — ${r.comment}` : "";
+      const note = r.comment ? ` — Kommentar: ${r.comment}` : "";
       const a = RSVP_ATTENDANCE_LABEL[r.attendance];
       return `- ${name} (${a})${note}`;
     });
-    navigator.clipboard.writeText(lines.join("\n") || "(none)");
+
+    await navigator.clipboard.writeText(
+      lines.length ? lines.join("\n") : "(ingen)",
+    );
+
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 900);
   };
 
   return (
-    <div className="border-t pt-3 space-y-4">
-      {/* ✅ Main: approved AND not "No" */}
+    <div className="space-y-4 border-t pt-3">
+      {/* Godkendte (ja/måske) */}
       <div>
         <div className="flex items-center justify-between gap-2">
           <div className="text-sm font-semibold text-slate-900">
-            Godkendt staff ({approvedYesMaybe.length})
+            Godkendte ({approvedYesMaybe.length})
           </div>
 
           <button
             type="button"
             onClick={copy}
-            className="rounded-lg border px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+            className="
+              inline-flex items-center gap-1.5
+              rounded-md border border-slate-300
+              bg-white px-3 py-1.5
+              text-xs font-semibold text-slate-700
+              shadow-sm
+              hover:bg-slate-50
+              active:scale-[0.98]
+              transition
+            "
           >
-            Copy
+            {copied ? "Kopieret" : "Kopiér"}
           </button>
         </div>
 
@@ -154,8 +168,8 @@ export default function ApprovedUsers({ eventId }: Props) {
                   className="rounded-xl border bg-white px-3 py-2"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-slate-900 break-words">
                         {displayNameFromRow(r)}
                       </div>
 
@@ -170,8 +184,8 @@ export default function ApprovedUsers({ eventId }: Props) {
                   </div>
 
                   {r.comment ? (
-                    <div className="mt-1 text-xs text-slate-600">
-                      Note: {r.comment}
+                    <div className="mt-1 text-xs text-slate-600 whitespace-pre-line break-words">
+                      Kommentar: {r.comment}
                     </div>
                   ) : null}
                 </div>
@@ -181,11 +195,11 @@ export default function ApprovedUsers({ eventId }: Props) {
         )}
       </div>
 
-      {/* ✅ Secondary: approved but answered "No" */}
+      {/* Godkendte der svarer nej */}
       {approvedNo.length ? (
         <div>
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-            Godkendt staff — Svarer nej ({approvedNo.length})
+            Godkendte — svarer nej ({approvedNo.length})
           </div>
 
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
@@ -198,8 +212,8 @@ export default function ApprovedUsers({ eventId }: Props) {
                   className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-slate-900 break-words">
                         {displayNameFromRow(r)}
                       </div>
 
@@ -214,8 +228,8 @@ export default function ApprovedUsers({ eventId }: Props) {
                   </div>
 
                   {r.comment ? (
-                    <div className="mt-1 text-xs text-slate-600">
-                      Note: {r.comment}
+                    <div className="mt-1 text-xs text-slate-600 whitespace-pre-line break-words">
+                      Kommentar: {r.comment}
                     </div>
                   ) : null}
                 </div>

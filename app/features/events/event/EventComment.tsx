@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "@/components/ui/classNames";
+import { cn } from "@/components/ui/utils/cn";
 
 type Props = {
   eventId: string;
@@ -19,7 +19,7 @@ export default function EventComment({
       <label
         className={cn(
           "block text-sm font-medium",
-          disabled ? "text-slate-500" : "text-slate-900"
+          disabled ? "text-slate-500" : "text-slate-900",
         )}
       >
         Kommentar
@@ -35,14 +35,14 @@ export default function EventComment({
           "mt-2 w-full resize-none rounded-xl border p-3 text-sm shadow-sm outline-none",
           disabled
             ? "border-slate-200 bg-slate-100 text-slate-500 cursor-not-allowed"
-            : "border-slate-200 bg-white text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+            : "border-slate-200 bg-white text-slate-900 focus:border-slate-900 focus:ring-1 focus:ring-slate-900",
         )}
       />
 
       <p
         className={cn(
           "mt-1 text-xs",
-          disabled ? "text-slate-400" : "text-slate-500"
+          disabled ? "text-slate-400" : "text-slate-500",
         )}
       >
         Fx: “Jeg kommer 10 min senere” / “Jeg kan ikke spise gluten”

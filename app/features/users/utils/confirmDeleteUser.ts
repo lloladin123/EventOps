@@ -1,6 +1,6 @@
 "use client";
 
-import type { UserDoc } from "@/lib//firestore/users.client";
+import type { UserDoc } from "@/lib/firestore/users.client";
 
 export function confirmDeleteUser(uid: string, data: UserDoc): boolean {
   const name =

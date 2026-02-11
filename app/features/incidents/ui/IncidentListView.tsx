@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
-import GroupedList from "@/components/ui/GroupedList";
+import GroupedList from "@/components/ui/patterns/GroupedList";
 
 type Props = {
   eventId: string; // kept for consistency with parent; not used here

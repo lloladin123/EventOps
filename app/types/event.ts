@@ -6,5 +6,6 @@ export type Event = {
   meetingTime: string;
   startTime: string;
   description: string; // organizer description
+  deleted?: boolean;
   open: boolean;
 };

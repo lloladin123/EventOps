@@ -1,7 +1,7 @@
 import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import type { Event } from "@/types/event";
-import { db } from "@/lib//firebase/client";
+import { db } from "@/lib/firebase/client";
 
 export type EventDoc = Event & {
   createdAt: unknown;

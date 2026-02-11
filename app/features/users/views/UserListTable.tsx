@@ -3,10 +3,9 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib//firestore/users.client";
+import type { UserDoc } from "@/lib/firestore/users.client";
 
-import GroupedTable from "@/components/ui/GroupedTable";
-import type { SortState } from "@/components/ui/GroupedTable";
+import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
 import { useUserHotkeys } from "../hooks/useUserHotkeys";
 import { useFlashUid } from "../hooks/useFlashUid";
 import { useUserRowFocus } from "../hooks/useUserRowFocus";
@@ -18,6 +17,7 @@ import { buildUserTableColumns } from "../builders/buildUserTableColumns";
 import { visibleNonAdminUsers } from "../utils/usersVisible";
 import { useFlashFocus } from "../hooks/useFlashFocus";
 import { UserHotkeysHint } from "./UserHotkeysHint";
+import { SortState } from "@/components/ui/patterns/table/types";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;

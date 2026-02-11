@@ -8,14 +8,14 @@ import { isAdmin } from "@/types/rsvp";
 import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
 import AttendanceButtons from "../attendance/AttendanceButtons";
-import { cn } from "@/components/ui/classNames";
+import { cn } from "@/components/ui/utils/cn";
 import { setEventOpen } from "@/app/lib/firestore/events";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 
-import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
-import { canAccessEventDetails } from "@/features//events/lib/eventAccess";
+import { canAccessEventDetails } from "@/features/events/lib/eventAccess";
 import EventCardMembers from "./EventCardMembers";
+import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
 
 type Props = {
   event: Event;
@@ -84,14 +84,14 @@ export default function EventCard({
   const closeNow = async () => {
     await setEventOpen(event.id, false);
     window.dispatchEvent(
-      new CustomEvent<Event>("event-closed", { detail: event })
+      new CustomEvent<Event>("event-closed", { detail: event }),
     );
   };
 
   const openNow = async () => {
     await setEventOpen(event.id, true);
     window.dispatchEvent(
-      new CustomEvent<Event>("event-opened", { detail: event })
+      new CustomEvent<Event>("event-opened", { detail: event }),
     );
   };
 
@@ -136,7 +136,7 @@ export default function EventCard({
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1",
-                badge.cls
+                badge.cls,
               )}
               title="Status for din anmodning"
             >
