@@ -14,7 +14,6 @@ import {
   findNextActionableRow,
   useRequestHotkeys,
 } from "../hooks/useRequestsHotkeys";
-import { RequestsHotkeysHint } from "./RequestsHotkeysHint";
 
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
