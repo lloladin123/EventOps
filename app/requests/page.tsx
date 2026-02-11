@@ -1,4 +1,4 @@
-import LoginRedirect from "@/components/layout/LoginRedirect";
+import LoginRedirect from "@/components/layout/LoginRedirect/LoginRedirect";
 import RequestsClient from "@/features//requests/views/RequestsClient";
 import { ROLE } from "@/types/rsvp";
 

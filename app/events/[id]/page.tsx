@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { Incident } from "@/types/incident";
 
 import EventHeader from "@/features//events/event/EventHeader";
-import LoginRedirect from "@/components/layout/LoginRedirect";
+import LoginRedirect from "@/components/layout/LoginRedirect/LoginRedirect";
 import ApprovedUsers from "@/features//events/attendance/ApprovedUsers";
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
@@ -45,7 +45,7 @@ export default function EventDetailPage() {
   const [incidents, setIncidents] = React.useState<Incident[]>([]);
   const [incidentsLoading, setIncidentsLoading] = React.useState(true);
   const [incidentsError, setIncidentsError] = React.useState<string | null>(
-    null
+    null,
   );
   const [editing, setEditing] = React.useState<Incident | null>(null);
 
@@ -89,9 +89,9 @@ export default function EventDetailPage() {
       (err) => {
         setEventLoading(false);
         setEventError(
-          err instanceof Error ? err.message : "Kunne ikke hente event"
+          err instanceof Error ? err.message : "Kunne ikke hente event",
         );
-      }
+      },
     );
 
     return () => unsub();
@@ -115,9 +115,9 @@ export default function EventDetailPage() {
       (err) => {
         setIncidentsLoading(false);
         setIncidentsError(
-          err instanceof Error ? err.message : "Kunne ikke hente hændelser"
+          err instanceof Error ? err.message : "Kunne ikke hente hændelser",
         );
-      }
+      },
     );
 
     return () => unsub();
@@ -138,11 +138,11 @@ export default function EventDetailPage() {
 
       void deleteIncidentFirestore(event.id, incidentId).catch((err) => {
         alert(
-          err instanceof Error ? err.message : "Kunne ikke slette hændelse"
+          err instanceof Error ? err.message : "Kunne ikke slette hændelse",
         );
       });
     },
-    [event]
+    [event],
   );
 
   return (

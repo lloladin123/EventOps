@@ -1,6 +1,6 @@
 "use client";
 
-import LoginRedirect from "@/components/layout/LoginRedirect";
+import LoginRedirect from "@/components/layout/LoginRedirect/LoginRedirect";
 import EventList from "@/features//events/event/EventList";
 import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
