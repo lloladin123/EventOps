@@ -11,11 +11,11 @@ import { useEventsFirestore } from "@/features//events/hooks/useEventsFirestore"
 import { subscribeEventRsvps } from "@/app/lib/firestore/rsvps";
 import { countNewRequests } from "@/features//users/lib/requestCounts";
 
-import { subscribeUsers } from "@/app/lib/firestore/users";
 import {
   countUsersWithoutRole,
   type UserRow,
 } from "@/features//users/lib/userCounts";
+import { subscribeUsers } from "@/lib//firestore/users.firestore";
 
 type AdminNavProps = {
   className?: string;

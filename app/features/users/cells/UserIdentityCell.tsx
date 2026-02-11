@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { UserDoc } from "@/data/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.firestore";
 import type { Role } from "@/types/rsvp";
 
 type Props = {

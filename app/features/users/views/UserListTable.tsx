@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/data/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.firestore";
 
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
@@ -13,7 +13,7 @@ import { useUserRowFocus } from "../hooks/useUserRowFocus";
 import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 import { UsersViewState } from "./UsersViewState";
-import { usersGroupMeta } from "../config/UsersGroupMetaa";
+import { usersGroupMeta } from "../config/UsersGroupMeta";
 import { buildUserTableColumns } from "../builders/buildUserTableColumns";
 import { visibleNonAdminUsers } from "../utils/usersVisible";
 import { useFlashFocus } from "../hooks/useFlashFocus";

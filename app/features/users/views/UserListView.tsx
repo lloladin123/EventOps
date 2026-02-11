@@ -3,11 +3,11 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/data/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.firestore";
 
 import GroupedList from "@/components/ui/GroupedList";
 import { UsersViewState } from "./UsersViewState";
-import { usersGroupMeta } from "../config/UsersGroupMetaa";
+import { usersGroupMeta } from "../config/UsersGroupMeta";
 
 import { useFlashUid } from "../hooks/useFlashUid";
 import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";

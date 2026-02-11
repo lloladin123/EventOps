@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/data/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.firestore";
 
 import { buildUserListRenderRow } from "../builders/buildUserListRenderRow";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
