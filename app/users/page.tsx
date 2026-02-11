@@ -35,7 +35,6 @@ export default function UsersPage() {
     setUserSubRole: setUserSubRoleStrict,
   } = useUsersAdmin(isAllowed);
 
-  // ✅ UNDO/REDO stack (Ctrl+Z / Ctrl+Shift+Z)
   const { push: pushUndo } = useUndoStack();
 
   // Helper to read current snapshot for a user from already-loaded list
