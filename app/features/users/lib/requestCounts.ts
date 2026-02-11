@@ -11,7 +11,7 @@ export function isNewRequest(row: RSVPRow): boolean {
 
   // If legacy approved exists, it's already handled
   const approved = (row as any).approved;
-  if (typeof approved === "boolean") return false;
+  if (approved === true) return false;
 
   const decision = row.decision ?? DECISION.Pending;
   return decision === DECISION.Pending;

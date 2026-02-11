@@ -37,7 +37,7 @@ type Props = {
   onSetDecision: (
     eventId: string,
     uid: string,
-    decision: Decision
+    decision: Decision,
   ) => void | Promise<void>;
 };
 
