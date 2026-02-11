@@ -30,8 +30,16 @@ export default function EventList() {
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
 
-  const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps();
-  const { events, loading: eventsLoading, error } = useEventsFirestore();
+  const enabled = !authLoading; // OR: !authLoading && role !== null
+
+  const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps({
+    enabled,
+  });
+  const {
+    events,
+    loading: eventsLoading,
+    error,
+  } = useEventsFirestore({ enabled: !authLoading });
 
   const onDeleteEvent = React.useCallback((event: Event) => {
     void softDeleteEvent(event.id, true).then(() => {

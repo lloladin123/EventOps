@@ -9,10 +9,11 @@ type Result = {
   error: string | null;
 };
 
-// Build a stable signature so we don't spam setState if Firestore emits same data
+type Options = {
+  enabled?: boolean;
+};
+
 function signature(list: EventDoc[]) {
-  // adjust these keys if your EventDoc shape differs
-  // idea: stable, cheap, and changes when rows change
   return list
     .map(
       (e: any) =>
@@ -23,15 +24,27 @@ function signature(list: EventDoc[]) {
     .join("|");
 }
 
-export function useEventsFirestore(): Result {
+export function useEventsFirestore(opts?: Options): Result {
+  const enabled = opts?.enabled ?? true;
+
   const [events, setEvents] = React.useState<EventDoc[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [loading, setLoading] = React.useState<boolean>(enabled);
   const [error, setError] = React.useState<string | null>(null);
 
   const lastSigRef = React.useRef<string>("");
 
   React.useEffect(() => {
+    // When disabled, don't subscribe and keep things quiet.
+    if (!enabled) {
+      lastSigRef.current = "";
+      setEvents([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
+    setLoading(true);
 
     const unsub = subscribeEvents(
       (next) => {
@@ -39,18 +52,15 @@ export function useEventsFirestore(): Result {
 
         const nextSig = signature(next);
         if (nextSig === lastSigRef.current) {
-          // still mark loading complete on first delivery
-          if (loading) setLoading(false);
+          setLoading(false);
           return;
         }
 
         lastSigRef.current = nextSig;
-
         setEvents(next);
         setLoading(false);
         setError(null);
 
-        // IMPORTANT: break sync re-entrancy chain
         queueMicrotask(() => {
           if (!cancelled) window.dispatchEvent(new Event("events-changed"));
         });
@@ -66,8 +76,7 @@ export function useEventsFirestore(): Result {
       cancelled = true;
       unsub();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // subscribe once
+  }, [enabled]);
 
   return { events, loading, error };
 }

@@ -14,6 +14,8 @@ import {
   type RsvpDoc,
 } from "@/app/lib/firestore/rsvps";
 
+type RsvpOptions = { enabled?: boolean };
+
 function makeId() {
   return `rsvp_${Math.random().toString(16).slice(2)}_${Date.now()}`;
 }
@@ -42,14 +44,16 @@ function toLegacyRsvpShape(args: {
       : null,
     attendance: doc.attendance ?? RSVP_ATTENDANCE.Maybe,
     comment: doc.comment ?? "",
-    approved: doc.approved ?? undefined, // ✅ THIS LINE
+    approved: doc.approved ?? undefined,
     userDisplayName: doc.userDisplayName?.trim() || userDisplayName,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
 }
 
-export function useRsvps() {
+export function useRsvps(opts?: RsvpOptions) {
+  const enabled = opts?.enabled ?? true;
+
   const authAny = useAuth() as any;
   const { user, role, subRole, loading } = authAny;
 
@@ -65,19 +69,18 @@ export function useRsvps() {
     profileDisplayName?.trim() || user?.displayName?.trim() || "Ukendt bruger";
   const hasRealName = userDisplayName !== "Ukendt bruger";
 
-  // ✅ we need events to know which rsvp docs to subscribe to
-  const { events } = useEventsFirestore();
+  // ✅ IMPORTANT: don't create a second events subscription
+  const { events } = useEventsFirestore({ enabled });
+
   const eventIds = React.useMemo(
     () => events.filter((e) => !e.deleted).map((e) => e.id),
     [events]
   );
 
-  // internal storage: map by eventId
   const [myByEvent, setMyByEvent] = React.useState<
     Record<string, RsvpDoc | null>
   >({});
 
-  // public shape: RSVP[]
   const rsvps = React.useMemo(() => {
     if (!uid) return [];
     return eventIds
@@ -102,12 +105,13 @@ export function useRsvps() {
   ]);
 
   React.useEffect(() => {
-    if (loading) return;
-    if (!uid) {
+    if (!enabled) {
       setMyByEvent({});
       return;
     }
-    if (eventIds.length === 0) {
+    if (loading) return;
+
+    if (!uid || eventIds.length === 0) {
       setMyByEvent({});
       return;
     }
@@ -119,18 +123,18 @@ export function useRsvps() {
         (doc) => {
           setMyByEvent((prev) => ({ ...prev, [eventId]: doc }));
         },
+        // If you want zero console noise, don't console.error here either:
         (err) => console.error("[useRsvps] subscribeMyRsvp error", eventId, err)
       )
     );
 
     return () => unsubs.forEach((u) => u());
-  }, [uid, loading, eventIds.join("|")]);
+  }, [enabled, uid, loading, eventIds.join("|")]);
 
   const upsertRsvp = React.useCallback(
     (eventId: string, patch: Partial<Pick<RSVP, "attendance" | "comment">>) => {
       if (!uid) return;
 
-      // ✅ optimistic UI (feels instant)
       setMyByEvent((prev) => ({
         ...prev,
         [eventId]: {
