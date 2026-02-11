@@ -107,6 +107,12 @@ export default function RequestsTable({
       sortHint={<RequestsHotkeysHint />}
       getGroupId={(r) => r.eventId}
       getGroupMeta={requestsGroupMeta({ onCopyApproved })}
+      getRowProps={(r) => ({
+        tabIndex: 0,
+        "data-eventid": r.eventId,
+        "data-uid": r.uid,
+        onClick: () => focusRow(r.eventId, r.uid), // click anywhere on row focuses it
+      })}
       filterGroupRows={(_, list) =>
         list.filter((r) => r.attendance !== RSVP_ATTENDANCE.No)
       }
@@ -127,19 +133,7 @@ export default function RequestsTable({
           sortValue: (r) => r.userDisplayName?.trim() || r.uid,
 
           // ✅ This is the critical bit: a focusable element per row with data attrs
-          cell: (r) => (
-            <div
-              tabIndex={0}
-              data-eventid={r.eventId}
-              data-uid={r.uid}
-              className="
-              group
-              outline-none
-              focus:ring-0"
-            >
-              <RequestNameCell row={r} />
-            </div>
-          ),
+          cell: (r) => <RequestNameCell row={r} />,
         },
         {
           key: "attendance",
