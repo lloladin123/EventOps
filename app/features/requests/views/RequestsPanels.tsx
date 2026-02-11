@@ -9,6 +9,7 @@ import { RequestsPanel } from "../ui/RequestsPanel";
 import type { RSVPRow } from "@/types/requests";
 import type { Event } from "@/types/event";
 import { Decision } from "@/types/rsvpIndex";
+import { RequestsHotkeysHint } from "./RequestsHotkeysHint";
 
 type ViewMode = "list" | "table";
 
@@ -113,12 +114,13 @@ export function RequestsPanels({
           isOpen={openPanelOpen}
           onToggle={() => setOpenPanelOpen((v) => !v)}
           title={
-            <>
+            <div className="flex flex-col space-y-2">
               <h2 className="text-lg font-semibold">Åbne events</h2>
+              <RequestsHotkeysHint />
               <span className="text-sm text-amber-700 opacity-70">
                 {openNewCount} <span>nye</span>
               </span>
-            </>
+            </div>
           }
         >
           <RequestsTable

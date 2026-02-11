@@ -14,7 +14,6 @@ import {
   findNextActionableRow,
   useRequestHotkeys,
 } from "../hooks/useRequestsHotkeys";
-import { RequestsHotkeysHint } from "./RequestsHotkeysHint";
 import { SortState } from "@/components/ui/patterns/table/types";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
@@ -76,6 +75,7 @@ export default function RequestsTable({
       const prevApprovedAt = prev?.approvedAt ?? null;
       const prevApprovedByUid = prev?.approvedByUid ?? null;
 
+      // ✅ do it
       await Promise.resolve(setDecisionStrict(eventId, uid, next));
 
       pushUndo({
@@ -89,6 +89,11 @@ export default function RequestsTable({
             updatedAt: serverTimestamp(),
           });
 
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+        redo: async () => {
+          await Promise.resolve(setDecisionStrict(eventId, uid, next));
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },
@@ -109,6 +114,7 @@ export default function RequestsTable({
       const prevApprovedAt = prev?.approvedAt ?? null;
       const prevApprovedByUid = prev?.approvedByUid ?? null;
 
+      // ✅ do it
       await Promise.resolve(revokeStrict(eventId, uid));
 
       pushUndo({
@@ -122,6 +128,11 @@ export default function RequestsTable({
             updatedAt: serverTimestamp(),
           });
 
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+        redo: async () => {
+          await Promise.resolve(revokeStrict(eventId, uid));
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },
@@ -179,7 +190,6 @@ export default function RequestsTable({
       rows={rows}
       initialSort={initialSort}
       tableMinWidthClassName="min-w-[1000px]"
-      sortHint={<RequestsHotkeysHint />}
       getGroupId={(r) => r.eventId}
       getGroupMeta={requestsGroupMeta({ onCopyApproved })}
       getRowProps={(r) => ({
