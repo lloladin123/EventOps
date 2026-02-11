@@ -6,7 +6,7 @@ import Link from "next/link";
 import UserBadge from "@/components/layout/UserBadge";
 import Breadcrumbs from "@/components/shell/Breadcrumbs";
 import AdminNav from "@/components/shell/AdminNav/AdminNav";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 
 export default function AppHeader() {

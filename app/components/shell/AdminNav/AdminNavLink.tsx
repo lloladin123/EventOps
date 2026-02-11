@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cx } from "./cx";
+import { cn } from "@/components/ui/utils/cn";
 
 export type AdminNavLinkProps = {
   href: string;
@@ -17,7 +17,7 @@ export default function AdminNavLink({ href, label }: AdminNavLinkProps) {
   return (
     <Link
       href={href}
-      className={cx(
+      className={cn(
         "block w-full rounded-lg px-3 py-2 text-sm font-semibold transition sm:inline-block sm:w-auto sm:rounded-md sm:px-2 sm:py-1 sm:text-xs",
         active
           ? "bg-slate-900 text-white"

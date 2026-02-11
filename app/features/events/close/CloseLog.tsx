@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 import { setEventOpen } from "@/app/lib/firestore/events";
 
@@ -214,8 +214,8 @@ export default function CloseLog({
                   {saving
                     ? "Lukker…"
                     : canConfirmClose
-                    ? "Ja, luk log"
-                    : `Vent ${secondsLeft}s`}
+                      ? "Ja, luk log"
+                      : `Vent ${secondsLeft}s`}
                 </button>
               </div>
             </div>

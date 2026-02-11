@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Event } from "@/types/event";
-import { createEventFirestore } from "@/features//events/data/eventsFirestore";
+import { createEventFirestore } from "@/features/events/data/eventsFirestore";
 
 function makeId() {
   return `evt_${Date.now().toString(36)}_${Math.random()
@@ -50,11 +50,11 @@ export default function useAddEventForm({ onAdded }: Args) {
 
   const normalizedMeetingTime = React.useMemo(
     () => normalizeTime(meetingTime),
-    [meetingTime]
+    [meetingTime],
   );
   const normalizedStartTime = React.useMemo(
     () => normalizeTime(startTime),
-    [startTime]
+    [startTime],
   );
 
   const canSubmit =

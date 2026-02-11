@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { ROLE } from "@/types/rsvp";
 import { IconButton } from "@/components/ui/primitives/IconButton";
 

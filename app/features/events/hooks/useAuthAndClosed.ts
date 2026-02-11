@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import {
   isEventClosed,
   setEventClosed,
-} from "@/features//events/lib/eventStatus";
+} from "@/features/events/lib/eventStatus";
 import { ROLE, type Role } from "@/types/rsvp";
 
 const CAN_CLOSE = new Set<Role>([
@@ -23,7 +23,7 @@ export function useAuthAndClosed(eventId: string) {
     typeof authAny?.displayName === "string" ? authAny.displayName : null;
 
   const [closed, setClosedState] = React.useState<boolean>(() =>
-    isEventClosed(eventId)
+    isEventClosed(eventId),
   );
 
   React.useEffect(() => {
@@ -43,7 +43,7 @@ export function useAuthAndClosed(eventId: string) {
       setClosedState(next);
       window.dispatchEvent(new CustomEvent("events-changed"));
     },
-    [eventId]
+    [eventId],
   );
 
   // ✅ Prefer profile displayName, then Firebase Auth displayName.

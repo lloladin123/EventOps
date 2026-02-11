@@ -4,7 +4,7 @@ import * as React from "react";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 import { DECISION } from "@/types/rsvpIndex";
-import { db } from "@/lib//firebase/client";
+import { db } from "@/lib/firebase/client";
 
 export function useRevokeRsvpApproval() {
   return React.useCallback(async (eventId: string, uid: string) => {

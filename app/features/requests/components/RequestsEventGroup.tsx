@@ -4,10 +4,10 @@ import * as React from "react";
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
 import { DECISION, type Decision } from "@/types/rsvpIndex";
-import StateButton from "../../../components/ui/StateButton";
 
 import { setRsvpDecision } from "@/app/lib/firestore/rsvps";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
+import StateButton from "@/components/ui/patterns/StateButton";
 
 export default function RequestsEventGroup({
   eventId,
@@ -35,7 +35,7 @@ export default function RequestsEventGroup({
       });
     } catch (err) {
       alert(
-        err instanceof Error ? err.message : "Kunne ikke opdatere beslutning"
+        err instanceof Error ? err.message : "Kunne ikke opdatere beslutning",
       );
     } finally {
       setSaving((prev) => {
@@ -148,8 +148,8 @@ export default function RequestsEventGroup({
                             opt.value === DECISION.Approved
                               ? "yes"
                               : opt.value === DECISION.Unapproved
-                              ? "no"
-                              : "maybe"
+                                ? "no"
+                                : "maybe"
                           }
                           active={decision === opt.value}
                           disabled={!isOpen || isSaving}
@@ -164,8 +164,8 @@ export default function RequestsEventGroup({
                       {decision === DECISION.Approved
                         ? "Godkendt"
                         : decision === DECISION.Unapproved
-                        ? "Afvist"
-                        : "Afventer"}
+                          ? "Afvist"
+                          : "Afventer"}
                     </span>
                   )}
                 </td>

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { isAdmin as isAdminRole } from "@/types/rsvp";
 
 import IncidentTable from "./IncidentTable";

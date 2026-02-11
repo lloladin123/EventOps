@@ -3,10 +3,10 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { RSVP, Role, CrewSubRole } from "@/types/rsvp";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 
-import { useEventsFirestore } from "@/features//events/hooks/useEventsFirestore";
+import { useEventsFirestore } from "@/features/events/hooks/useEventsFirestore";
 import {
   subscribeMyRsvp,
   setRsvpAttendance,
@@ -40,7 +40,7 @@ function toLegacyRsvpShape(args: {
     eventId,
     userRole: resolvedRole,
     userSubRole: isCrew
-      ? (doc.subRole as CrewSubRole) ?? effectiveSubRole ?? null
+      ? ((doc.subRole as CrewSubRole) ?? effectiveSubRole ?? null)
       : null,
     attendance: doc.attendance ?? RSVP_ATTENDANCE.Maybe,
     comment: doc.comment ?? "",
@@ -74,7 +74,7 @@ export function useRsvps(opts?: RsvpOptions) {
 
   const eventIds = React.useMemo(
     () => events.filter((e) => !e.deleted).map((e) => e.id),
-    [events]
+    [events],
   );
 
   const [myByEvent, setMyByEvent] = React.useState<
@@ -92,7 +92,7 @@ export function useRsvps(opts?: RsvpOptions) {
           effectiveSubRole,
           userDisplayName,
           doc: myByEvent[eventId] ?? null,
-        })
+        }),
       )
       .filter(Boolean) as RSVP[];
   }, [
@@ -124,8 +124,9 @@ export function useRsvps(opts?: RsvpOptions) {
           setMyByEvent((prev) => ({ ...prev, [eventId]: doc }));
         },
         // If you want zero console noise, don't console.error here either:
-        (err) => console.error("[useRsvps] subscribeMyRsvp error", eventId, err)
-      )
+        (err) =>
+          console.error("[useRsvps] subscribeMyRsvp error", eventId, err),
+      ),
     );
 
     return () => unsubs.forEach((u) => u());
@@ -150,7 +151,7 @@ export function useRsvps(opts?: RsvpOptions) {
               : null,
           userDisplayName: hasRealName
             ? userDisplayName
-            : prev[eventId]?.userDisplayName ?? userDisplayName,
+            : (prev[eventId]?.userDisplayName ?? userDisplayName),
         },
       }));
 
@@ -168,33 +169,33 @@ export function useRsvps(opts?: RsvpOptions) {
           eventId,
           uid,
           patch.attendance as RSVPAttendance,
-          meta
+          meta,
         );
       }
       if (patch.comment !== undefined) {
         void setRsvpComment(eventId, uid, patch.comment ?? "", meta);
       }
     },
-    [uid, effectiveRole, effectiveSubRole, userDisplayName, hasRealName]
+    [uid, effectiveRole, effectiveSubRole, userDisplayName, hasRealName],
   );
 
   const onChangeAttendance = React.useCallback(
     (eventId: string, attendance: RSVPAttendance) => {
       upsertRsvp(eventId, { attendance });
     },
-    [upsertRsvp]
+    [upsertRsvp],
   );
 
   const onChangeComment = React.useCallback(
     (eventId: string, comment: string) => {
       upsertRsvp(eventId, { comment });
     },
-    [upsertRsvp]
+    [upsertRsvp],
   );
 
   const myRsvpFor = React.useCallback(
     (eventId: string) => rsvps.find((r) => r.eventId === eventId),
-    [rsvps]
+    [rsvps],
   );
 
   return { rsvps, onChangeAttendance, onChangeComment, myRsvpFor };

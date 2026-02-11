@@ -8,7 +8,7 @@ import {
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { auth } from "@/app/lib/firebase/client";
-import { ensureUserDoc } from "@/lib//firebase/ensureUserDoc";
+import { ensureUserDoc } from "@/lib/firebase/ensureUserDoc";
 
 export function useEmailLogin() {
   const router = useRouter();

@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { UserDoc } from "@/lib//firestore/users.client";
+import type { UserDoc } from "@/lib/firestore/users.client";
 
 type Props = {
   uid: string;

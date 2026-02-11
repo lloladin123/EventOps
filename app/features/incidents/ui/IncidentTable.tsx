@@ -4,7 +4,7 @@ import * as React from "react";
 import type { Incident } from "@/types/incident";
 
 import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
-import type { SortState } from "@/components/ui/patterns/table/GroupedTable";
+import { SortState } from "@/components/ui/patterns/table/types";
 
 type Props = {
   eventId: string;

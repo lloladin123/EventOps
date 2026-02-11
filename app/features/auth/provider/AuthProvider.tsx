@@ -6,7 +6,7 @@ import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 
 import { auth, db } from "@/app/lib/firebase/client";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import { devRoleFromEmail } from "@/features//auth/utils/devRoleFromEmail";
+import { devRoleFromEmail } from "@/features/auth/utils/devRoleFromEmail";
 
 type UserDoc = {
   role?: Role | null;
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = React.useMemo<AuthState>(
     () => ({ user, role, subRole, displayName, loading, logout }),
-    [user, role, subRole, displayName, loading, logout]
+    [user, role, subRole, displayName, loading, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

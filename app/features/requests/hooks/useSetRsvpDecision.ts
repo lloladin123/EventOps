@@ -3,9 +3,9 @@
 import * as React from "react";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { DECISION, type Decision } from "@/types/rsvpIndex";
-import { db } from "@/lib//firebase/client";
+import { db } from "@/lib/firebase/client";
 
 export function useSetRsvpDecision() {
   const { user } = useAuth();
@@ -27,6 +27,6 @@ export function useSetRsvpDecision() {
       window.dispatchEvent(new Event("requests-changed"));
       window.dispatchEvent(new Event("events-changed"));
     },
-    [adminUid]
+    [adminUid],
   );
 }

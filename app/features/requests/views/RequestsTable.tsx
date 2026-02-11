@@ -5,10 +5,9 @@ import type { RSVPRow } from "@/types/requests";
 import { Decision, DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import RequestApprovalActions from "../components/RequestApprovalActions";
 import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
-import type { SortState } from "@/components/ui/patterns/table/GroupedTable";
 import { requestsGroupMeta } from "../ui/RequestsGroupMeta";
 import { RequestsNoResponsesTable } from "../components/RequestsNoResponsesTable";
-import { attendanceLabel, statusLabel } from "@/features//rsvp/lib/rsvpLabels";
+import { attendanceLabel, statusLabel } from "@/features/rsvp/lib/rsvpLabels";
 import { RequestNameCell } from "../components/RequestNameCell";
 import { statusPillClass, fmtUpdatedAt, updatedAtMs } from "../ui/requestUi";
 import {
@@ -16,6 +15,7 @@ import {
   useRequestHotkeys,
 } from "../hooks/useRequestsHotkeys";
 import { RequestsHotkeysHint } from "./RequestsHotkeysHint";
+import { SortState } from "@/components/ui/patterns/table/types";
 
 // ✅ import the hook + helper from wherever you placed it
 

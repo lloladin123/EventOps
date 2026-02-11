@@ -1,4 +1,4 @@
-import { isApproved } from "@/features//rsvp";
+import { isApproved } from "@/features/rsvp";
 import { ROLE, type Role } from "@/types/rsvp";
 
 type Args = {

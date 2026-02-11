@@ -1,7 +1,7 @@
 import type { Event } from "@/types/event";
-import { mockEvents } from "@/features//events/data/event";
-import { isEventDeleted } from "@/features//events/lib/eventDeleted";
-import { isEventClosed } from "@/features//events/lib/eventStatus";
+import { mockEvents } from "@/features/events/data/event";
+import { isEventDeleted } from "@/features/events/lib/eventDeleted";
+import { isEventClosed } from "@/features/events/lib/eventStatus";
 
 const KEY = "events:custom";
 

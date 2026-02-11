@@ -3,7 +3,7 @@ import type { User } from "firebase/auth";
 
 import { db } from "@/app/lib/firebase/client";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import { devRoleFromEmail } from "@/features//auth/utils/devRoleFromEmail";
+import { devRoleFromEmail } from "@/features/auth/utils/devRoleFromEmail";
 
 type UserDoc = {
   role?: Role | null;
@@ -42,7 +42,7 @@ export async function ensureUserDoc(u: User) {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       } satisfies UserDoc,
-      { merge: true }
+      { merge: true },
     );
     return;
   }
@@ -55,6 +55,6 @@ export async function ensureUserDoc(u: User) {
       displayName: nameFromAuth,
       updatedAt: serverTimestamp(),
     } satisfies UserDoc,
-    { merge: true }
+    { merge: true },
   );
 }

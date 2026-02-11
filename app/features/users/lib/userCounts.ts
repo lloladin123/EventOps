@@ -1,4 +1,4 @@
-import type { UserDoc } from "@/lib//firestore/users.client";
+import type { UserDoc } from "@/lib/firestore/users.client";
 import type { Role } from "@/types/rsvp";
 import { ROLE } from "@/types/rsvp";
 

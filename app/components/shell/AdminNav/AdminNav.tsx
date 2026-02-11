@@ -3,10 +3,9 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 
-import { cx } from "./cx";
 import AdminNavLink from "./AdminNavLink";
 import Badge from "../Badge";
 import KbdHint from "./KbdHint";
@@ -14,6 +13,7 @@ import KbdHint from "./KbdHint";
 import { useAdminRsvpRequestsCount } from "./hooks/useAdminRsvpRequestsCount";
 import { useUsersWithoutRoleCount } from "./hooks/useUsersWithoutRoleCount";
 import { useAdminNavKeybindings } from "./hooks/useAdminNavKeybindings";
+import { cn } from "@/components/ui/utils/cn";
 
 type AdminNavProps = {
   className?: string;
@@ -31,7 +31,7 @@ export default function AdminNav({ className }: AdminNavProps) {
 
   return (
     <nav
-      className={cx(
+      className={cn(
         "flex flex-col items-stretch gap-1 sm:flex-row sm:items-center sm:gap-2",
         className,
       )}

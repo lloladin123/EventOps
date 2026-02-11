@@ -1,5 +1,5 @@
 import type { Event } from "@/types/event";
-import { formatDateDDMMYYYY } from "@/features//events/lib/eventFormat";
+import { formatDateDDMMYYYY } from "@/features/events/lib/eventFormat";
 
 export default function EventMeta({ event }: { event: Event }) {
   return (

@@ -5,7 +5,7 @@ import { useState } from "react";
 import RequestsFilters from "../components/RequestsFilters";
 import { useRequestsFilters } from "../hooks/useRequestsFilters";
 
-import { useEventsFirestore } from "@/features//events/hooks/useEventsFirestore";
+import { useEventsFirestore } from "@/features/events/hooks/useEventsFirestore";
 
 import { useRequestsRows } from "../hooks/useRequestsRows";
 import { useRequestsBuckets } from "../hooks/useRequestsBuckets";
@@ -15,7 +15,7 @@ import { RequestsPanels } from "./RequestsPanels";
 
 import { usePersistedViewMode } from "../hooks/usePersistedViewMode";
 import { useRequestsPanelState } from "../hooks/useRequestsPanelState";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 
 import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";

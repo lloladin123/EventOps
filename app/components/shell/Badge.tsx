@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cx } from "./AdminNav/cx";
+import { cn } from "../ui/utils/cn";
 
 export default function Badge({
   count,
@@ -17,7 +17,7 @@ export default function Badge({
 
   return (
     <span
-      className={cx(
+      className={cn(
         "ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
         toneCls,
       )}

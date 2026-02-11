@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@/features//auth/provider/AuthProvider";
-import { useUsersAdmin } from "@/features//users/hooks/useUsersAdmin";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { useUsersAdmin } from "@/features/users/hooks/useUsersAdmin";
 
-import UserListTable from "@/features//users/views/UserListTable";
-import UserListView from "@/features//users/views/UserListView";
+import UserListTable from "@/features/users/views/UserListTable";
+import UserListView from "@/features/users/views/UserListView";
 
 import { ROLE, ROLES, CREW_SUBROLES, isAdmin, Role } from "@/types/rsvp";
 import { deleteDoc, deleteField, doc, updateDoc } from "firebase/firestore";
