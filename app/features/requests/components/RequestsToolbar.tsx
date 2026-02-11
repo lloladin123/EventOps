@@ -2,9 +2,9 @@
 
 import type { AttendanceFilter, StatusFilter } from "@/types/requests";
 
-import RequestsFilters from "./RequestsFilters";
 import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
 import ViewModeToggle from "@/components/ui/patterns/ViewModeToggle";
+import RequestsFilters from "./RequestsFilters";
 
 type ViewMode = "list" | "table";
 

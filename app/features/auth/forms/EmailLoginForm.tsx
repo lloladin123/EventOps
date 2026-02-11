@@ -37,9 +37,6 @@ export default function EmailLoginForm() {
       : "cursor-not-allowed bg-slate-200 text-slate-500",
   ].join(" ");
 
-  const providerBtn =
-    "mt-3 w-full rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60";
-
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <p className="mt-1 text-sm text-slate-600">

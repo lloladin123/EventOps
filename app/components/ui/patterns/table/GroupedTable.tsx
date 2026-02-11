@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Column, GroupMeta, SortState, SortDir } from "./types";
+import type { Column, GroupMeta, SortState } from "./types";
 import { sortRows, hasSortable } from "./sort";
 import { nodeToTitle, tdClassName, wrapClassName } from "./cells";
 import { groupBy } from "../../utils/groupBy";

@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/lib/firestore/users.client";

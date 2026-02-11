@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import type { Incident, IncidentType } from "@/types/incident";
+import type { Incident } from "@/types/incident";
 
 import CloseLog from "@/features/events/close/CloseLog";
 

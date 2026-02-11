@@ -15,7 +15,6 @@ import { RequestsPanels } from "./RequestsPanels";
 
 import { usePersistedViewMode } from "../hooks/usePersistedViewMode";
 import { useRequestsPanelState } from "../hooks/useRequestsPanelState";
-import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 
 import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
@@ -66,13 +65,9 @@ export default function RequestsClient() {
     groupedOpen,
     groupedClosed,
     openNewCount,
-    closedNewCount,
   } = useRequestsBuckets({ rows, filtered });
 
   const copyApproved = useCopyApproved({ rows, eventsById });
-
-  const { user } = useAuth();
-  const adminUid = user?.uid ?? null;
 
   if (eventsError) {
     return (

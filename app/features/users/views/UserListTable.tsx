@@ -42,10 +42,6 @@ type GroupId = "all";
 type ColumnKey = "user" | "uid" | "role" | "subRole" | "actions";
 type SortKey = Exclude<ColumnKey, "actions">;
 
-function asText(v: unknown) {
-  return (v ?? "").toString().trim().toLowerCase();
-}
-
 export default function UserListTable({
   users,
   busy,

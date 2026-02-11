@@ -1,10 +1,8 @@
 "use client";
 
-import * as React from "react";
 import type { Role } from "@/types/rsvp";
 import { ROLE } from "@/types/rsvp";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { roleSelectClass } from "../config/userSelectStyles";
 import { useRoleSelectHandlers } from "../hooks/useRoleSelectHandlers";
 
 type Props = {
@@ -26,8 +24,6 @@ export function RoleSelectCell({
   focusSubRoleSelect,
   focusMissingRelative,
 }: Props) {
-  const pending = !role;
-
   const { user, role: myRole } = useAuth();
 
   const isSelf = user?.uid === uid;

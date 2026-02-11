@@ -1,5 +1,3 @@
-import { ROLE } from "@/types/rsvp";
-
 export const KEY_PATTERNS = {
   perUidList: /^rsvps:uid:(.+)$/i, // rsvps:uid:<uid>
   perUser: /^rsvp:([^:]+):([^:]+)$/i, // rsvp:<eventId>:<uid>

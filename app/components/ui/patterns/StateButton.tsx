@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import {
   Button,

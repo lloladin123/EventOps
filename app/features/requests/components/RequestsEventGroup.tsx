@@ -53,7 +53,7 @@ export default function RequestsEventGroup({
   ] as const;
 
   // ✅ split list into yes/maybe/no
-  const { actionable, maybes, saidNo } = React.useMemo(() => {
+  const { actionable, saidNo } = React.useMemo(() => {
     const actionable: RSVPRow[] = []; // yes + maybe
     const maybes: RSVPRow[] = [];
     const saidNo: RSVPRow[] = [];

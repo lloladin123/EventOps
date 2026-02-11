@@ -1,6 +1,5 @@
 // RoleOptions.tsx
 "use client";
-import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role } from "@/types/rsvp";
 
