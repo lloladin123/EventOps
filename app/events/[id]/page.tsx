@@ -200,7 +200,11 @@ export default function EventDetailPage() {
                 Kunne ikke hente hændelser: {incidentsError}
               </div>
             ) : null}
-            <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
+            <ExportIncidentPdfButton
+              eventId={event.id}
+              eventTitle={event.title}
+              incidents={incidents}
+            />
 
             {incidentsLoading ? (
               <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
@@ -222,7 +226,11 @@ export default function EventDetailPage() {
               />
             )}
 
-            <ExportIncidentPdfButton eventId={event.id} incidents={incidents} />
+            <ExportIncidentPdfButton
+              eventId={event.id}
+              eventTitle={event.title}
+              incidents={incidents}
+            />
           </div>
         </main>
       )}

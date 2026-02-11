@@ -206,7 +206,7 @@ export default function GroupedTable<
                         {...rp}
                         className={[
                           "border-t transition-colors",
-                          "hover:bg-slate-50", // optional but feels right
+                          "hover:bg-amber-50", // optional but feels right
                           "focus:bg-amber-50 focus:outline-none", // ✅ row itself can be focused
                           "focus-within:bg-amber-50", // keep old behavior too
                           rp?.className ?? "",

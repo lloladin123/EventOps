@@ -5,10 +5,12 @@ import type { Incident } from "@/types/incident";
 
 export default function ExportIncidentPdfButton({
   eventId,
+  eventTitle,
   incidents,
   className,
 }: {
   eventId: string;
+  eventTitle: string;
   incidents: Incident[];
   className?: string;
 }) {
@@ -21,7 +23,7 @@ export default function ExportIncidentPdfButton({
       const res = await fetch("/api/incidents/pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ eventId, incidents }),
+        body: JSON.stringify({ eventId, eventTitle, incidents }),
       });
 
       if (!res.ok) {
