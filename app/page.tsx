@@ -3,7 +3,7 @@
 import LoginCard from "@/features/auth/forms/LoginCard";
 import EmailLoginForm from "./features/auth/forms/EmailLoginForm";
 
-const ENABLE_TEST_LOGIN = process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN === "true";
+const ENABLE_TEST_LOGIN = process.env.NEXT_ENABLE_TEST_LOGIN === "true";
 
 export default function Page() {
   return (

@@ -8,27 +8,27 @@ function normEmail(v: string | undefined | null) {
 
 const DEV_ROLE_RULES = [
   {
-    email: process.env.NEXT_PUBLIC_TEST_ADMIN_EMAIL,
+    email: process.env.NEXT_TEST_ADMIN_EMAIL,
     value: { role: ROLE.Admin, subRole: null },
   },
   {
-    email: process.env.NEXT_PUBLIC_TEST_LOG_EMAIL,
+    email: process.env.NEXT_TEST_LOG_EMAIL,
     value: { role: ROLE.Logfører, subRole: null },
   },
   {
-    email: process.env.NEXT_PUBLIC_TEST_KONTROL_EMAIL,
+    email: process.env.NEXT_TEST_KONTROL_EMAIL,
     value: { role: ROLE.Kontrollør, subRole: null },
   },
   {
-    email: process.env.NEXT_PUBLIC_TEST_CREW_SCAN_EMAIL,
+    email: process.env.NEXT_TEST_CREW_SCAN_EMAIL,
     value: { role: ROLE.Crew, subRole: CREW_SUBROLE.Scanning },
   },
   {
-    email: process.env.NEXT_PUBLIC_TEST_CREW_BILLET_EMAIL,
+    email: process.env.NEXT_TEST_CREW_BILLET_EMAIL,
     value: { role: ROLE.Crew, subRole: CREW_SUBROLE.BilletSalg },
   },
   {
-    email: process.env.NEXT_PUBLIC_TEST_CREW_BOLD_EMAIL,
+    email: process.env.NEXT_TEST_CREW_BOLD_EMAIL,
     value: { role: ROLE.Crew, subRole: CREW_SUBROLE.Boldbørn },
   },
 ] satisfies ReadonlyArray<{ email: string | undefined; value: RoleAssignment }>;
