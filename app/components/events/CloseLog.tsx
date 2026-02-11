@@ -138,50 +138,86 @@ export default function CloseLog({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" />
 
-          <div className="relative w-full max-w-md rounded-2xl border border-red-200 bg-white p-6 shadow-xl">
-            <h4 className="text-lg font-semibold text-red-700">
-              ⚠️ Er du HELT sikker?
-            </h4>
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
+            {/* top accent */}
 
-            <p className="mt-2 text-sm text-slate-700">
-              Dette lukker kampen og loggen.
-              <br />
-              <strong>Nye hændelser kan ikke tilføjes.</strong>
-            </p>
+            <div className="p-6">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100">
+                  <span className="text-lg">⚠️</span>
+                </div>
 
-            <p className="mt-3 text-sm text-slate-600">
-              Bekræftelse aktiveres om{" "}
-              <span className="font-semibold text-red-700">{secondsLeft}</span>{" "}
-              sekunder…
-            </p>
+                <div className="min-w-0">
+                  <h4 className="text-lg font-semibold text-slate-900">
+                    Luk log permanent?
+                  </h4>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Dette lukker kampen og loggen. Når den er lukket, kan der{" "}
+                    <span className="font-semibold text-slate-900">
+                      ikke tilføjes nye hændelser.
+                    </span>
+                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                      <p className="text-xs font-medium text-amber-900">
+                        Kun Admin eller Sikkerhedsledelse kan genåbne loggen.
+                      </p>
+                    </div>
+                  </p>
+                </div>
+              </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => setOpenCloseModal(false)}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-              >
-                Annuller
-              </button>
+              {/* warning panel */}
+              <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-red-900">
+                    Bekræftelse låses op om{" "}
+                    <span className="font-semibold">{secondsLeft}</span> sek.
+                  </p>
 
-              <button
-                type="button"
-                disabled={!canConfirmClose || saving}
-                onClick={closeLog}
-                className={[
-                  "rounded-xl px-4 py-2 text-sm font-semibold transition",
-                  canConfirmClose && !saving
-                    ? "bg-red-600 text-white hover:bg-red-700"
-                    : "cursor-not-allowed bg-red-200 text-red-400",
-                ].join(" ")}
-              >
-                {saving
-                  ? "Lukker…"
-                  : canConfirmClose
-                  ? "Ja, luk log"
-                  : `Vent ${secondsLeft}s`}
-              </button>
+                  <span className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-red-700 ring-1 ring-red-100">
+                    Sikkerheds-timer
+                  </span>
+                </div>
+
+                <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-red-100">
+                  <div
+                    className="h-full bg-red-600 transition-[width] duration-300"
+                    style={{
+                      width: `${
+                        ((WAIT_SECONDS - secondsLeft) / WAIT_SECONDS) * 100
+                      }%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setOpenCloseModal(false)}
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Annuller
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!canConfirmClose || saving}
+                  onClick={closeLog}
+                  className={[
+                    "rounded-xl px-4 py-2 text-sm font-semibold transition active:scale-[0.99]",
+                    canConfirmClose && !saving
+                      ? "bg-red-600 text-white hover:bg-red-700 shadow-sm"
+                      : "cursor-not-allowed bg-red-100 text-red-400",
+                  ].join(" ")}
+                >
+                  {saving
+                    ? "Lukker…"
+                    : canConfirmClose
+                    ? "Ja, luk log"
+                    : `Vent ${secondsLeft}s`}
+                </button>
+              </div>
             </div>
           </div>
         </div>
