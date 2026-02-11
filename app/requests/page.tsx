@@ -1,5 +1,5 @@
 import LoginRedirect from "@/components/layout/LoginRedirect";
-import RequestsClient from "@/components/requests/views/RequestsClient";
+import RequestsClient from "@/features//requests/views/RequestsClient";
 import { ROLE } from "@/types/rsvp";
 
 export default function RequestsPage() {

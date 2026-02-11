@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import AppHeader from "@/components/appShell/AppHeader";
-import { mockEvents } from "@/data/event";
+import { mockEvents } from "@/components/events/data/event";
 import { hydrateClosedDefaults } from "@/components/events/lib/eventStatus";
 import React from "react";
 

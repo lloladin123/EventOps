@@ -7,7 +7,7 @@ import { DECISION, type Decision, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 
 import GroupedList from "@/components/ui/GroupedList";
 
-import { requestsGroupMeta } from "../ui/requestsGroupMeta";
+import { requestsGroupMeta } from "../ui/RequestsGroupMetaa";
 import { RequestRowCard } from "../utils/RequestRowCard";
 import { RequestsNoResponsesList } from "../utils/RequestsNoResponsesList";
 import {

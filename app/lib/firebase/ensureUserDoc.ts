@@ -3,7 +3,7 @@ import type { User } from "firebase/auth";
 
 import { db } from "@/app/lib/firebase/client";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import { devRoleFromEmail } from "@/components/auth/utils/devRoleFromEmail";
+import { devRoleFromEmail } from "@/app/auth/utils/devRoleFromEmail";
 
 type UserDoc = {
   role?: Role | null;

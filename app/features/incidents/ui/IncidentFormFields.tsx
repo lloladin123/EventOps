@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { IncidentType } from "@/types/incident";
-import { parseTimeToHHmm } from "@/utils/time";
+import { parseTimeToHHmm } from "@/app/utils/time";
 
 type Props = {
   time: string;

@@ -10,7 +10,7 @@ import {
 
 import { ROLE, type Role, type CrewSubRole } from "@/types/rsvp";
 import { auth } from "@/app/lib/firebase/client";
-import { getTestCreds } from "@/app/auth/__dev__/testAccounts";
+import { getTestCreds } from "../__dev__/testAccounts";
 
 export function useLogin() {
   const router = useRouter();

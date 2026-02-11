@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
-import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useAuth } from "@/app/auth/provider/AuthProvider";
 import { isAdmin as isAdminRole } from "@/types/rsvp";
 import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 

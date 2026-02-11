@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
-import { countNewRequests } from "../../users/lib/requestCounts";
+import { countNewRequests } from "../../../components/users/lib/requestCounts";
 
 function isEventOpen(e?: Event | null) {
   // Keep existing behavior: missing "open" counts as open

@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
-import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useAuth } from "@/app/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 
 import { useEventsFirestore } from "@/components/events/hooks/useEventsFirestore";

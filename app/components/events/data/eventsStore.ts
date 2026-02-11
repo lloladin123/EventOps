@@ -1,5 +1,5 @@
 import type { Event } from "@/types/event";
-import { mockEvents } from "@/data/event";
+import { mockEvents } from "@/components/events/data/event";
 import { isEventDeleted } from "@/components/events/lib/eventDeleted";
 import { isEventClosed } from "@/components/events/lib/eventStatus";
 

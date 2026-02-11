@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { Role } from "@/types/rsvp";
 import { ROLE } from "@/types/rsvp";
-import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useAuth } from "@/app/auth/provider/AuthProvider";
 import { roleSelectClass } from "../config/userSelectStyles";
 import { useRoleSelectHandlers } from "../hooks/useRoleSelectHandlers";
 

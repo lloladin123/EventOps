@@ -6,21 +6,21 @@ import { useParams, useRouter } from "next/navigation";
 import type { Incident } from "@/types/incident";
 
 import EventHeader from "@/components/events/event/EventHeader";
-import IncidentForm from "@/components/Incident/IncidentForm";
 import LoginRedirect from "@/components/layout/LoginRedirect";
 import ApprovedUsers from "@/components/events/attendance/ApprovedUsers";
-import ExportIncidentPdfButton from "@/components/Incident/ExportIncidentPdfButton";
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
-import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useAuth } from "@/app/auth/provider/AuthProvider";
 import { isAdmin, ROLE, type Role } from "@/types/rsvp";
 import { canAccessEventDetails } from "@/components/events/lib/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
 import CloseLog from "@/components/events/close/CloseLog";
-import EditIncidentModal from "@/components/Incident/modals/EditIncidentModal";
-import IncidentPanel from "@/components/Incident/IncidentPanel";
+import IncidentForm from "@/features//incidents/ui/IncidentForm";
+import IncidentPanel from "@/features//incidents/ui/IncidentPanel";
+import EditIncidentModal from "@/features//incidents/modals/EditIncidentModal";
+import ExportIncidentPdfButton from "@/features//incidents/ui/ExportIncidentPdfButton";
 
 const ALLOWED_ROLES: Role[] = [
   ROLE.Admin,

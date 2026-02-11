@@ -1,5 +1,5 @@
+import { isApproved } from "@/components/rsvp";
 import { ROLE, type Role } from "@/types/rsvp";
-import { isApproved } from "@/components/events/rsvp/rsvpIndex/index";
 
 type Args = {
   eventId: string;

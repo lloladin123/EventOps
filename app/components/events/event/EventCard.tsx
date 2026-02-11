@@ -10,7 +10,7 @@ import EventComment from "./EventComment";
 import AttendanceButtons from "../attendance/AttendanceButtons";
 import { cn } from "@/components/ui/classNames";
 import { setEventOpen } from "@/app/lib/firestore/events";
-import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useAuth } from "@/app/auth/provider/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";

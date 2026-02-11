@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import OpenCloseButton from "../../ui/OpenCloseButton";
+import OpenCloseButton from "../../../components/ui/OpenCloseButton";
 import { usePanelArrowNav } from "../hooks/usePanelArrowNav";
 
 type Props = {

@@ -2,8 +2,8 @@
 
 import type { AttendanceFilter, StatusFilter } from "@/types/requests";
 
-import OpenCloseButton from "../../ui/OpenCloseButton";
-import ViewToggle from "../../ui/ViewModeToggle";
+import OpenCloseButton from "../../../components/ui/OpenCloseButton";
+import ViewToggle from "../../../components/ui/ViewModeToggle";
 import RequestsFilters from "./RequestsFilters";
 
 type ViewMode = "list" | "table";

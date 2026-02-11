@@ -6,7 +6,7 @@ import { Decision, DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import RequestApprovalActions from "../utils/RequestApprovalActions";
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
-import { requestsGroupMeta } from "../ui/requestsGroupMeta";
+import { requestsGroupMeta } from "../ui/RequestsGroupMetaa";
 import { RequestsNoResponsesTable } from "../utils/RequestsNoResponsesTable";
 import {
   attendanceLabel,

@@ -6,7 +6,7 @@ import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 
 import { auth, db } from "@/app/lib/firebase/client";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import { devRoleFromEmail } from "@/components/auth/utils/devRoleFromEmail";
+import { devRoleFromEmail } from "@/app/auth/utils/devRoleFromEmail";
 
 type UserDoc = {
   role?: Role | null;

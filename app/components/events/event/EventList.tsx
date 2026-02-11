@@ -14,9 +14,9 @@ import {
 import { setEventOpen, softDeleteEvent } from "@/app/lib/firestore/events";
 
 import { useRsvps } from "@/components/events/hooks/useRsvps";
-import { useUiToggle } from "@/utils/useUiToggle";
+import { useUiToggle } from "@/app/utils/useUiToggle";
 
-import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useAuth } from "@/app/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 import type { RSVPAttendance } from "@/types/rsvpIndex";
 import { useEventsFirestore } from "@/components/events/hooks/useEventsFirestore";

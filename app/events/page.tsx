@@ -2,7 +2,7 @@
 
 import LoginRedirect from "@/components/layout/LoginRedirect";
 import EventList from "@/components/events/event/EventList";
-import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useAuth } from "@/app/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 import AddEventForm from "@/components/events/event/AddEventForm";
 
