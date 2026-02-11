@@ -21,8 +21,6 @@ import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 import { useRevokeRsvpApproval } from "../hooks/useRevokeRsvpApproval";
 
-// ✅ import the hook + helper from wherever you placed it
-
 type Props = {
   rows: RSVPRow[];
   onCopyApproved: (eventId: string) => void;
