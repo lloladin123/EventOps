@@ -1,11 +1,22 @@
 "use client";
 
-import * as React from "react";
 import type { Event } from "@/types/event";
 import useAddEventForm from "./useAddEventForm";
 import TimeInput from "@/components/ui/primitives/TimeInput";
 
 type Props = { onAdded?: (event: Event) => void };
+
+const LIMITS = {
+  title: 60,
+  location: 60,
+  description: 800,
+} as const;
+
+function clampText(value: string, max: number) {
+  // remove leading whitespace + collapse multiple spaces (optional, but nice)
+  const cleaned = value.replace(/\s+/g, " ").trimStart();
+  return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
+}
 
 export default function AddEventForm({ onAdded }: Props) {
   const f = useAddEventForm({ onAdded });
@@ -26,10 +37,16 @@ export default function AddEventForm({ onAdded }: Props) {
           </label>
           <input
             value={f.title}
-            onChange={(e) => f.setTitle(e.target.value)}
+            maxLength={LIMITS.title}
+            onChange={(e) =>
+              f.setTitle(clampText(e.target.value, LIMITS.title))
+            }
             placeholder="Fx: U13 vs Tigers"
             className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           />
+          <p className="mt-1 text-xs text-slate-500">
+            {f.title.length}/{LIMITS.title}
+          </p>
         </div>
 
         <div>
@@ -71,6 +88,8 @@ export default function AddEventForm({ onAdded }: Props) {
           <input
             type="date"
             value={f.date}
+            // Optional: block past dates (if that matches your product rules)
+            min={new Date().toISOString().slice(0, 10)}
             onChange={(e) => f.setDate(e.target.value)}
             className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           />
@@ -82,10 +101,16 @@ export default function AddEventForm({ onAdded }: Props) {
           </label>
           <input
             value={f.location}
-            onChange={(e) => f.setLocation(e.target.value)}
+            maxLength={LIMITS.location}
+            onChange={(e) =>
+              f.setLocation(clampText(e.target.value, LIMITS.location))
+            }
             placeholder="Fx: Hal 2"
             className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           />
+          <p className="mt-1 text-xs text-slate-500">
+            {f.location.length}/{LIMITS.location}
+          </p>
         </div>
 
         <div className="md:col-span-2">
@@ -94,10 +119,16 @@ export default function AddEventForm({ onAdded }: Props) {
           </label>
           <textarea
             value={f.description}
-            onChange={(e) => f.setDescription(e.target.value)}
+            maxLength={LIMITS.description}
+            onChange={(e) =>
+              f.setDescription(clampText(e.target.value, LIMITS.description))
+            }
             rows={3}
             className="mt-2 w-full resize-none rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
           />
+          <p className="mt-1 text-xs text-slate-500">
+            {f.description.length}/{LIMITS.description}
+          </p>
         </div>
 
         <div className="md:col-span-2 flex items-center justify-between gap-3">

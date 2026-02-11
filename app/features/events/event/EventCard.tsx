@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import Link from "next/link";
 import type { Event } from "@/types/event";
 import { isAdmin } from "@/types/rsvp";

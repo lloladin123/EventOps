@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ROLE } from "@/types/rsvp";
+import { isTrueAdmin, ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/lib/firestore/users.client";
 
@@ -18,6 +18,7 @@ import { visibleNonAdminUsers } from "../utils/usersVisible";
 import { useFlashFocus } from "../hooks/useFlashFocus";
 import { UserHotkeysHint } from "./UserHotkeysHint";
 import { SortState } from "@/components/ui/patterns/table/types";
+import { getAuth } from "firebase/auth";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
@@ -42,10 +43,6 @@ type GroupId = "all";
 type ColumnKey = "user" | "uid" | "role" | "subRole" | "actions";
 type SortKey = Exclude<ColumnKey, "actions">;
 
-function asText(v: unknown) {
-  return (v ?? "").toString().trim().toLowerCase();
-}
-
 export default function UserListTable({
   users,
   busy,
@@ -55,13 +52,21 @@ export default function UserListTable({
   setUserSubRole,
   deleteUser,
 }: Props) {
-  const visibleUsers = React.useMemo(
-    () =>
-      visibleNonAdminUsers(users).filter(
-        (u) => u.data.role !== ROLE.Sikkerhedsledelse,
-      ),
-    [users],
-  );
+  const uid = getAuth().currentUser?.uid ?? null;
+
+  const currentUserRole = React.useMemo(() => {
+    if (!uid) return null;
+    return (users.find((u) => u.uid === uid)?.data.role ?? null) as Role | null;
+  }, [users, uid]);
+
+  const visibleUsers = React.useMemo(() => {
+    const base = visibleNonAdminUsers(users); // already removes Admin
+
+    // Only true admin can see Sikkerhedsledelse
+    return isTrueAdmin(currentUserRole)
+      ? base
+      : base.filter((u) => u.data.role !== ROLE.Sikkerhedsledelse);
+  }, [users, currentUserRole]);
 
   const { flashUid, flash } = useFlashUid(2200);
 

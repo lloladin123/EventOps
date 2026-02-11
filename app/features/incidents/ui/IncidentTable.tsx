@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import type { Incident } from "@/types/incident";
 
 import GroupedTable from "@/components/ui/patterns/table/GroupedTable";

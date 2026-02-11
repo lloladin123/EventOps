@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { countNonAdminUsers, countUsersWithoutRole } from "../lib/userCounts";
 
 type Row = { uid: string; data: any };

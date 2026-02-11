@@ -16,7 +16,6 @@ import { canAccessEventDetails } from "@/features/events/lib/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
-import CloseLog from "@/features/events/close/CloseLog";
 import IncidentForm from "@/features/incidents/ui/IncidentForm";
 import IncidentPanel from "@/features/incidents/ui/IncidentPanel";
 import EditIncidentModal from "@/features/incidents/EditIncidentModal/EditIncidentModal";

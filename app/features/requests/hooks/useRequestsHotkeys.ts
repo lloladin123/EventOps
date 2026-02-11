@@ -51,7 +51,7 @@ type Params = {
   onSetDecision: (
     eventId: string,
     uid: string,
-    decision: Decision
+    decision: Decision,
   ) => void | Promise<void>;
 
   /** Optional: copy approved list for the focused row’s event */
@@ -78,7 +78,6 @@ export function useRequestHotkeys({
   onArrowEvent,
   onArrowRow,
 
-  needsAction = defaultNeedsAction,
   getRowLabel = defaultRowLabel,
   confirmDecision = (next, label) => {
     // Danish-ish defaults to match your other confirm text 😄
@@ -86,8 +85,8 @@ export function useRequestHotkeys({
       next === DECISION.Approved
         ? "Godkend"
         : next === DECISION.Unapproved
-        ? "Afvis"
-        : "Sæt til afventer";
+          ? "Afvis"
+          : "Sæt til afventer";
     return window.confirm(`${verb} "${label}"?`);
   },
 }: Params) {
@@ -96,7 +95,6 @@ export function useRequestHotkeys({
   const onJumpRef = useLatestRef(onJump);
   const onSetDecisionRef = useLatestRef(onSetDecision);
   const onCopyApprovedRef = useLatestRef(onCopyApproved);
-  const needsActionRef = useLatestRef(needsAction);
   const getRowLabelRef = useLatestRef(getRowLabel);
   const confirmDecisionRef = useLatestRef(confirmDecision);
   const onArrowRowRef = useLatestRef(onArrowRow);
@@ -108,7 +106,7 @@ export function useRequestHotkeys({
       if (!key) return;
 
       const row = rowsRef.current.find(
-        (r) => r.eventId === key.eventId && r.uid === key.uid
+        (r) => r.eventId === key.eventId && r.uid === key.uid,
       );
       if (!row) return;
 
@@ -195,7 +193,7 @@ export function findNextActionableRow(
   rows: readonly RSVPRow[],
   from: FocusKey | null,
   dir: 1 | -1,
-  needsAction: (r: RSVPRow) => boolean = defaultNeedsAction
+  needsAction: (r: RSVPRow) => boolean = defaultNeedsAction,
 ): RSVPRow | null {
   const list = rows.filter(needsAction);
   if (list.length === 0) return null;

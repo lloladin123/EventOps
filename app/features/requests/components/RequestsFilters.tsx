@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import type { AttendanceFilter, StatusFilter } from "@/types/requests";
 import { attendanceLabel, statusLabel } from "../../rsvp/lib/rsvpLabels";

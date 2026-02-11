@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ROLE } from "@/types/rsvp";
+import {} from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/lib/firestore/users.client";
 
@@ -13,7 +13,6 @@ import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 
 type Row = { uid: string; data: UserDoc };
 type ColumnKey = "user" | "uid" | "role" | "subRole" | "actions";
-type SortKey = Exclude<ColumnKey, "actions">;
 
 function asText(v: unknown) {
   return (v ?? "").toString().trim().toLowerCase();
@@ -53,7 +52,6 @@ export function buildUserTableColumns({
   setSubRoleRef,
   focusSubRoleSelect,
   focusMissingRelative,
-  flashUid,
   flash,
 }: Params) {
   const columns: Array<{

@@ -2,12 +2,9 @@
 
 import * as React from "react";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib/firestore/users.client";
 
 import { buildUserListRenderRow } from "../builders/buildUserListRenderRow";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
-
-type Row = { uid: string; data: UserDoc };
 
 type Params = {
   roles: readonly Role[];
