@@ -17,7 +17,14 @@ export function RequestsHotkeysHint() {
         <kbd className={kbd}>A</kbd> afvis,
         <kbd className={kbd}>F</kbd> afventer,
         <kbd className={kbd}>K / C</kbd> kopiér,
-        <kbd className={kbd}>Ctrl + Z</kbd> Fortryd,
+        <span>
+          <kbd className={kbd}>Ctrl</kbd> + <kbd className={kbd}>Z</kbd> Fortryd
+        </span>
+        <span className="text-slate-400">/</span>
+        <span>
+          <kbd className={kbd}>Ctrl</kbd> + <kbd className={kbd}>Shift</kbd> +{" "}
+          <kbd className={kbd}>Z</kbd> Annuller fortryd
+        </span>
       </span>
     </span>
   );

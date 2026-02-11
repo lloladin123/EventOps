@@ -76,6 +76,7 @@ export default function RequestsTable({
       const prevApprovedAt = prev?.approvedAt ?? null;
       const prevApprovedByUid = prev?.approvedByUid ?? null;
 
+      // ✅ do it
       await Promise.resolve(setDecisionStrict(eventId, uid, next));
 
       pushUndo({
@@ -89,6 +90,11 @@ export default function RequestsTable({
             updatedAt: serverTimestamp(),
           });
 
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+        redo: async () => {
+          await Promise.resolve(setDecisionStrict(eventId, uid, next));
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },
@@ -109,6 +115,7 @@ export default function RequestsTable({
       const prevApprovedAt = prev?.approvedAt ?? null;
       const prevApprovedByUid = prev?.approvedByUid ?? null;
 
+      // ✅ do it
       await Promise.resolve(revokeStrict(eventId, uid));
 
       pushUndo({
@@ -122,6 +129,11 @@ export default function RequestsTable({
             updatedAt: serverTimestamp(),
           });
 
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+        redo: async () => {
+          await Promise.resolve(revokeStrict(eventId, uid));
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },

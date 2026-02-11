@@ -35,8 +35,8 @@ export default function UsersPage() {
     setUserSubRole: setUserSubRoleStrict,
   } = useUsersAdmin(isAllowed);
 
-  // ✅ UNDO stack (Ctrl+Z)
-  const { stack: undoStack, push: pushUndo, popUndo } = useUndoStack();
+  // ✅ UNDO/REDO stack (Ctrl+Z / Ctrl+Shift+Z)
+  const { push: pushUndo } = useUndoStack();
 
   // Helper to read current snapshot for a user from already-loaded list
   const getUserSnapshot = React.useCallback(
@@ -44,64 +44,88 @@ export default function UsersPage() {
     [users],
   );
 
-  // ✅ ROLE change with undo (restore previous role + subRole)
+  // Helpers to apply role/subRole in both directions (so undo/redo share code)
+  const applyRole = React.useCallback(
+    async (
+      uid: string,
+      roleValue: Role | null,
+      subRoleValue: CrewSubRole | null,
+    ) => {
+      if (roleValue === null) {
+        await updateDoc(doc(db, "users", uid), {
+          role: deleteField(),
+          subRole: deleteField(),
+        });
+        return;
+      }
+
+      // use existing strict helper for role (keeps your existing logic)
+      await Promise.resolve(setUserRoleStrict(uid, roleValue));
+
+      // ensure subRole matches intended state (remove if null)
+      await updateDoc(doc(db, "users", uid), {
+        subRole: subRoleValue == null ? deleteField() : subRoleValue,
+      });
+    },
+    [setUserRoleStrict],
+  );
+
+  const applySubRole = React.useCallback(
+    async (uid: string, subRoleValue: CrewSubRole | null) => {
+      await Promise.resolve(setUserSubRoleStrict(uid, subRoleValue));
+    },
+    [setUserSubRoleStrict],
+  );
+
+  // ✅ ROLE change with undo/redo (restore previous role + subRole)
   const setUserRole = React.useCallback(
     async (uid: string, nextRole: Role | null) => {
       const prev = getUserSnapshot(uid);
       const prevRole = (prev?.role ?? null) as Role | null;
       const prevSubRole = (prev?.subRole ?? null) as CrewSubRole | null;
 
-      // Apply change
-      if (nextRole === null) {
-        await updateDoc(doc(db, "users", uid), {
-          role: deleteField(),
-          subRole: deleteField(),
-        });
-      } else {
-        await Promise.resolve(setUserRoleStrict(uid, nextRole));
-      }
+      // If role changes, we typically also clear subRole unless you do something else in setUserRoleStrict.
+      // We'll treat "nextSubRole" as null for role changes (matches your original behavior).
+      const nextSubRole: CrewSubRole | null = null;
 
-      // Push undo action
+      // Apply change (forward)
+      await applyRole(uid, nextRole, nextSubRole);
+
       pushUndo({
-        label: `Rolle ændret`,
+        label: "Rolle ændret",
         undo: async () => {
-          if (prevRole === null) {
-            await updateDoc(doc(db, "users", uid), {
-              role: deleteField(),
-              subRole: deleteField(),
-            });
-          } else {
-            await updateDoc(doc(db, "users", uid), {
-              role: prevRole,
-              // if previous subRole was null/undefined, remove it
-              subRole: prevSubRole == null ? deleteField() : prevSubRole,
-            });
-          }
+          await applyRole(uid, prevRole, prevSubRole);
+        },
+        redo: async () => {
+          await applyRole(uid, nextRole, nextSubRole);
         },
       });
     },
-    [getUserSnapshot, pushUndo, setUserRoleStrict],
+    [applyRole, getUserSnapshot, pushUndo],
   );
 
-  // ✅ SUBROLE change with undo
+  // ✅ SUBROLE change with undo/redo
   const setUserSubRole = React.useCallback(
     async (uid: string, nextSubRole: CrewSubRole | null) => {
       const prev = getUserSnapshot(uid);
       const prevSubRole = (prev?.subRole ?? null) as CrewSubRole | null;
 
-      await Promise.resolve(setUserSubRoleStrict(uid, nextSubRole));
+      await applySubRole(uid, nextSubRole);
 
       pushUndo({
-        label: `Underrolle ændret`,
+        label: "Underrolle ændret",
         undo: async () => {
-          await Promise.resolve(setUserSubRoleStrict(uid, prevSubRole));
+          await applySubRole(uid, prevSubRole);
+        },
+        redo: async () => {
+          await applySubRole(uid, nextSubRole);
         },
       });
     },
-    [getUserSnapshot, pushUndo, setUserSubRoleStrict],
+    [applySubRole, getUserSnapshot, pushUndo],
   );
 
-  // ✅ DELETE with grace period + undo (Ctrl+Z cancels)
+  // ✅ DELETE with grace period + undo/redo
   const pendingDeletesRef = React.useRef(new Map<string, number>());
 
   const deleteUser = React.useCallback(
@@ -117,13 +141,25 @@ export default function UsersPage() {
       pendingDeletesRef.current.set(uid, timeoutId);
 
       pushUndo({
-        label: `Bruger slettet`,
+        label: "Bruger slettet",
         undo: async () => {
+          // "Undo" cancels the scheduled deletion
           const t = pendingDeletesRef.current.get(uid);
           if (t != null) {
             window.clearTimeout(t);
             pendingDeletesRef.current.delete(uid);
           }
+        },
+        redo: async () => {
+          // "Redo" re-schedules the deletion (fresh 7s window)
+          if (pendingDeletesRef.current.has(uid)) return;
+
+          const t2 = window.setTimeout(async () => {
+            pendingDeletesRef.current.delete(uid);
+            await deleteDoc(doc(db, "users", uid));
+          }, 7000);
+
+          pendingDeletesRef.current.set(uid, t2);
         },
       });
     },
@@ -167,13 +203,11 @@ export default function UsersPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-6 py-6">
-      {/* Header */}
       <div className="flex gap-4">
         <h1 className="text-lg font-semibold text-slate-900">Users</h1>
         <ViewModeToggle value={view} onChange={setView} />
       </div>
 
-      {/* Content */}
       {view === "table" ? (
         <UserListTable
           users={users}

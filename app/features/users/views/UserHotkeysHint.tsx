@@ -26,8 +26,17 @@ export function UserHotkeysHint() {
       <span>
         <kbd className={kbd}>Space</kbd> menu
       </span>
-      <span>
-        <kbd className={kbd}>Ctrl + z</kbd> Fortryd
+      <span className="flex items-center gap-2">
+        <span>
+          <kbd className={kbd}>Ctrl</kbd> + <kbd className={kbd}>Z</kbd> Fortryd
+        </span>
+
+        <span className="text-slate-400">/</span>
+
+        <span>
+          <kbd className={kbd}>Ctrl</kbd> + <kbd className={kbd}>Shift</kbd> +{" "}
+          <kbd className={kbd}>Z</kbd> Annuller fortryd
+        </span>
       </span>
     </span>
   );
