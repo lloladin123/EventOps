@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { Event } from "@/types/event";
 import useAddEventForm from "./useAddEventForm";
-import TimeInput from "@/components/ui/TimeInput";
+import TimeInput from "@/components/ui/primitives/TimeInput";
 
 type Props = { onAdded?: (event: Event) => void };
 

@@ -6,7 +6,6 @@ import RequestsFilters from "../components/RequestsFilters";
 import { useRequestsFilters } from "../hooks/useRequestsFilters";
 
 import { useEventsFirestore } from "@/features//events/hooks/useEventsFirestore";
-import OpenCloseButton from "../../../components/ui/OpenCloseButton";
 
 import { useRequestsRows } from "../hooks/useRequestsRows";
 import { useRequestsBuckets } from "../hooks/useRequestsBuckets";
@@ -19,10 +18,10 @@ import { useRequestsPanelState } from "../hooks/useRequestsPanelState";
 import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 
-// ✅ only this one (it owns L/T/V hotkeys)
+import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
 import ViewModeToggle, {
-  type ViewMode,
-} from "../../../components/ui/ViewModeToggle";
+  ViewMode,
+} from "@/components/ui/patterns/ViewModeToggle";
 
 export default function RequestsClient() {
   const [showClosedEvents, setShowClosedEvents] = useState(false);
@@ -38,7 +37,7 @@ export default function RequestsClient() {
   const [view, setView] = usePersistedViewMode<ViewMode>(
     "requestsViewMode",
     "list",
-    (v): v is ViewMode => v === "list" || v === "table"
+    (v): v is ViewMode => v === "list" || v === "table",
   );
 
   const {

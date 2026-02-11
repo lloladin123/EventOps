@@ -6,7 +6,7 @@ import type { Role } from "@/types/rsvp";
 import { useAuth } from "@/features//auth/provider/AuthProvider";
 
 import GuardCard from "./GuardCard";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/primitives/button";
 
 type Props = {
   children: React.ReactNode;

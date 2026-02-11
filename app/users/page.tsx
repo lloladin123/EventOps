@@ -6,11 +6,13 @@ import { useUsersAdmin } from "@/features//users/hooks/useUsersAdmin";
 
 import UserListTable from "@/features//users/views/UserListTable";
 import UserListView from "@/features//users/views/UserListView";
-import ViewModeToggle, { type ViewMode } from "@/components/ui/ViewModeToggle";
 
 import { ROLE, ROLES, CREW_SUBROLES, isAdmin, Role } from "@/types/rsvp";
 import { deleteDoc, deleteField, doc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase/client";
+import ViewModeToggle, {
+  ViewMode,
+} from "@/components/ui/patterns/ViewModeToggle";
 
 export default function UsersPage() {
   const { role: myRole, loading } = useAuth();
@@ -36,7 +38,7 @@ export default function UsersPage() {
 
       await Promise.resolve(setUserRoleStrict(uid, nextRole));
     },
-    [setUserRoleStrict]
+    [setUserRoleStrict],
   );
 
   const deleteUser = React.useCallback(async (uid: string) => {
@@ -54,7 +56,7 @@ export default function UsersPage() {
       myRole === ROLE.Admin
         ? ROLES
         : ROLES.filter((r) => r !== ROLE.Sikkerhedsledelse),
-    [myRole]
+    [myRole],
   );
 
   React.useEffect(() => {

@@ -6,7 +6,7 @@ import { LogOut } from "lucide-react";
 
 import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { ROLE } from "@/types/rsvp";
-import { IconButton } from "@/components/ui/icon-button";
+import { IconButton } from "@/components/ui/primitives/IconButton";
 
 export default function UserBadge() {
   const router = useRouter();

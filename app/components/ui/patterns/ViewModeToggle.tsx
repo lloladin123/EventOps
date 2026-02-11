@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { cn } from "@/app/components/ui/utils/cn";
+import { Kbd } from "../primitives/kbd";
+import { isTypingTarget } from "../utils/isTypingTarget";
 
 export type ViewMode = "list" | "table";
 
@@ -12,28 +15,17 @@ type Props = {
 export default function ViewModeToggle({ value, onChange }: Props) {
   React.useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      // Don’t hijack typing
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
+      if (isTypingTarget(e.target)) return;
 
-      if (e.key === "l" || e.key === "L") {
+      const key = e.key.toLowerCase();
+
+      if (key === "l") {
         e.preventDefault();
         onChange("list");
-      }
-
-      if (e.key === "t" || e.key === "T") {
+      } else if (key === "t") {
         e.preventDefault();
         onChange("table");
-      }
-
-      if (e.key === "v" || e.key === "V") {
+      } else if (key === "v") {
         e.preventDefault();
         onChange(value === "list" ? "table" : "list");
       }
@@ -57,7 +49,7 @@ export default function ViewModeToggle({ value, onChange }: Props) {
         >
           <span className="inline-flex items-center gap-1">
             Liste
-            <KbdHint>L</KbdHint>
+            <Kbd>L</Kbd>
           </span>
         </button>
 
@@ -69,32 +61,21 @@ export default function ViewModeToggle({ value, onChange }: Props) {
         >
           <span className="inline-flex items-center gap-1">
             Tabel
-            <KbdHint>T</KbdHint>
+            <Kbd>T</Kbd>
           </span>
         </button>
       </div>
 
-      {/* toggle hint */}
-      <kbd className="hidden rounded border border-slate-300 bg-slate-100 px-1.5 text-[10px] font-mono text-slate-500 group-hover:inline">
-        V
-      </kbd>
+      <Kbd className="px-1.5">V</Kbd>
     </div>
   );
 }
 
-function KbdHint({ children }: { children: React.ReactNode }) {
-  return (
-    <kbd className="hidden rounded border border-slate-300 bg-slate-100 px-1 text-[10px] font-mono text-slate-500 group-hover:inline">
-      {children}
-    </kbd>
-  );
-}
-
 function btnCls(active: boolean) {
-  return [
+  return cn(
     "rounded-md px-3 py-1 text-sm font-medium transition",
     active
       ? "bg-white text-slate-900 shadow-sm"
       : "text-slate-600 hover:text-slate-900",
-  ].join(" ");
+  );
 }

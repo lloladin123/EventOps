@@ -5,7 +5,7 @@ import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
 import { DECISION, type Decision, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 
-import GroupedList from "@/components/ui/GroupedList";
+import GroupedList from "@/components/ui/patterns/GroupedList";
 
 import { requestsGroupMeta } from "../ui/RequestsGroupMeta";
 import { RequestRowCard } from "../components/RequestRowCard";
@@ -24,13 +24,13 @@ type Props = {
   onSetDecision: (
     eventId: string,
     uid: string,
-    decision: Decision
+    decision: Decision,
   ) => void | Promise<void>;
 };
 
 function focusRow(eventId: string, uid: string) {
   const el = document.querySelector<HTMLElement>(
-    `[data-eventid="${CSS.escape(eventId)}"][data-uid="${CSS.escape(uid)}"]`
+    `[data-eventid="${CSS.escape(eventId)}"][data-uid="${CSS.escape(uid)}"]`,
   );
   el?.focus();
 }
@@ -52,7 +52,7 @@ export default function RequestsListView({
   // match the main list (it hides "No")
   const visibleRows = React.useMemo(
     () => rows.filter((r) => r.attendance !== RSVP_ATTENDANCE.No),
-    [rows]
+    [rows],
   );
 
   // ✅ HOTKEYS MUST LIVE HERE (top-level), not inside renderGroupAfter
@@ -78,8 +78,8 @@ export default function RequestsListView({
         next === DECISION.Approved
           ? "Godkend"
           : next === DECISION.Unapproved
-          ? "Afvis"
-          : "Sæt til afventer";
+            ? "Afvis"
+            : "Sæt til afventer";
       return window.confirm(`${verb} "${label}"?`);
     },
   });

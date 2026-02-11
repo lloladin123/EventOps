@@ -3,8 +3,8 @@
 import * as React from "react";
 import type { Incident } from "@/types/incident";
 
-import GroupedTable from "@/components/ui/GroupedTable";
-import type { SortState } from "@/components/ui/GroupedTable";
+import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
+import type { SortState } from "@/components/ui/patterns/table/GroupedTable";
 
 type Props = {
   eventId: string;
@@ -150,7 +150,9 @@ export default function IncidentTable({
             headerTitle: "Sortér efter løsning",
             sortValue: (i) =>
               asText(
-                (i as any).loesning ?? (i as any).løsning ?? (i as any).solution
+                (i as any).loesning ??
+                  (i as any).løsning ??
+                  (i as any).solution,
               ),
             className: "w-[200px]",
             cell: (i) => {

@@ -65,7 +65,7 @@ export default function SignupCard() {
       const cred = await createUserWithEmailAndPassword(
         auth,
         trimmedEmail,
-        password
+        password,
       );
 
       // ✅ Force displayName in Firebase Auth
@@ -79,7 +79,7 @@ export default function SignupCard() {
           updatedAt: serverTimestamp(),
           // only set createdAt if it's missing (see below)
         },
-        { merge: true }
+        { merge: true },
       );
 
       // ✅ Do NOT write Firestore here.
