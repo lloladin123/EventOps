@@ -115,7 +115,7 @@ export function RequestsPanels({
           isOpen={openPanelOpen}
           onToggle={() => setOpenPanelOpen((v) => !v)}
           title={
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-1">
               <h2 className="text-lg font-semibold">Åbne events</h2>
               <RequestsHotkeysHint />
               <span className="text-sm text-amber-700 opacity-70">
