@@ -14,7 +14,6 @@ import {
   findNextActionableRow,
   useRequestHotkeys,
 } from "../hooks/useRequestsHotkeys";
-import { RequestsHotkeysHint } from "./RequestsHotkeysHint";
 import { SortState } from "@/components/ui/patterns/table/types";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
