@@ -7,12 +7,22 @@ import { useUsersAdmin } from "@/features/users/hooks/useUsersAdmin";
 import UserListTable from "@/features/users/views/UserListTable";
 import UserListView from "@/features/users/views/UserListView";
 
-import { ROLE, ROLES, CREW_SUBROLES, isAdmin, Role } from "@/types/rsvp";
+import {
+  ROLE,
+  ROLES,
+  CREW_SUBROLES,
+  isAdmin,
+  type Role,
+  type CrewSubRole,
+} from "@/types/rsvp";
+
 import { deleteDoc, deleteField, doc, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase/client";
 import ViewModeToggle, {
   ViewMode,
 } from "@/components/ui/patterns/ViewModeToggle";
+
+import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 
 export default function UsersPage() {
   const { role: myRole, loading } = useAuth();
@@ -22,28 +32,103 @@ export default function UsersPage() {
     users,
     busy,
     setUserRole: setUserRoleStrict,
-    setUserSubRole,
+    setUserSubRole: setUserSubRoleStrict,
   } = useUsersAdmin(isAllowed);
 
+  // ✅ UNDO stack (Ctrl+Z)
+  const { stack: undoStack, push: pushUndo, popUndo } = useUndoStack();
+
+  // Helper to read current snapshot for a user from already-loaded list
+  const getUserSnapshot = React.useCallback(
+    (uid: string) => users.find((u) => u.uid === uid)?.data ?? null,
+    [users],
+  );
+
+  // ✅ ROLE change with undo (restore previous role + subRole)
   const setUserRole = React.useCallback(
     async (uid: string, nextRole: Role | null) => {
+      const prev = getUserSnapshot(uid);
+      const prevRole = (prev?.role ?? null) as Role | null;
+      const prevSubRole = (prev?.subRole ?? null) as CrewSubRole | null;
+
+      // Apply change
       if (nextRole === null) {
-        // reset role + subRole in Firestore
         await updateDoc(doc(db, "users", uid), {
           role: deleteField(),
           subRole: deleteField(),
         });
-        return;
+      } else {
+        await Promise.resolve(setUserRoleStrict(uid, nextRole));
       }
 
-      await Promise.resolve(setUserRoleStrict(uid, nextRole));
+      // Push undo action
+      pushUndo({
+        label: `Rolle ændret`,
+        undo: async () => {
+          if (prevRole === null) {
+            await updateDoc(doc(db, "users", uid), {
+              role: deleteField(),
+              subRole: deleteField(),
+            });
+          } else {
+            await updateDoc(doc(db, "users", uid), {
+              role: prevRole,
+              // if previous subRole was null/undefined, remove it
+              subRole: prevSubRole == null ? deleteField() : prevSubRole,
+            });
+          }
+        },
+      });
     },
-    [setUserRoleStrict],
+    [getUserSnapshot, pushUndo, setUserRoleStrict],
   );
 
-  const deleteUser = React.useCallback(async (uid: string) => {
-    await deleteDoc(doc(db, "users", uid));
-  }, []);
+  // ✅ SUBROLE change with undo
+  const setUserSubRole = React.useCallback(
+    async (uid: string, nextSubRole: CrewSubRole | null) => {
+      const prev = getUserSnapshot(uid);
+      const prevSubRole = (prev?.subRole ?? null) as CrewSubRole | null;
+
+      await Promise.resolve(setUserSubRoleStrict(uid, nextSubRole));
+
+      pushUndo({
+        label: `Underrolle ændret`,
+        undo: async () => {
+          await Promise.resolve(setUserSubRoleStrict(uid, prevSubRole));
+        },
+      });
+    },
+    [getUserSnapshot, pushUndo, setUserSubRoleStrict],
+  );
+
+  // ✅ DELETE with grace period + undo (Ctrl+Z cancels)
+  const pendingDeletesRef = React.useRef(new Map<string, number>());
+
+  const deleteUser = React.useCallback(
+    async (uid: string) => {
+      // If already pending, don't schedule twice
+      if (pendingDeletesRef.current.has(uid)) return;
+
+      const timeoutId = window.setTimeout(async () => {
+        pendingDeletesRef.current.delete(uid);
+        await deleteDoc(doc(db, "users", uid));
+      }, 7000);
+
+      pendingDeletesRef.current.set(uid, timeoutId);
+
+      pushUndo({
+        label: `Bruger slettet`,
+        undo: async () => {
+          const t = pendingDeletesRef.current.get(uid);
+          if (t != null) {
+            window.clearTimeout(t);
+            pendingDeletesRef.current.delete(uid);
+          }
+        },
+      });
+    },
+    [pushUndo],
+  );
 
   // 🔁 view mode (persisted)
   const [view, setView] = React.useState<ViewMode>(() => {
@@ -81,12 +166,25 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-6 py-6 space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4 px-6 py-6">
       {/* Header */}
       <div className="flex gap-4">
         <h1 className="text-lg font-semibold text-slate-900">Users</h1>
         <ViewModeToggle value={view} onChange={setView} />
       </div>
+
+      {/* Optional: tiny undo banner */}
+      {undoStack.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+          Seneste: <span className="font-semibold">{undoStack[0].label}</span>
+          <button
+            className="ml-3 rounded-lg bg-slate-900 px-2 py-1 text-white"
+            onClick={() => popUndo()}
+          >
+            Fortryd (Ctrl+Z)
+          </button>
+        </div>
+      )}
 
       {/* Content */}
       {view === "table" ? (

@@ -1,3 +1,4 @@
+// RequestsListView.tsx
 "use client";
 
 import * as React from "react";
@@ -6,7 +7,6 @@ import type { RSVPRow } from "@/types/requests";
 import { DECISION, type Decision, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 
 import GroupedList from "@/components/ui/patterns/GroupedList";
-
 import { requestsGroupMeta } from "../ui/RequestsGroupMeta";
 import { RequestRowCard } from "../components/RequestRowCard";
 import { RequestsNoResponsesList } from "../components/RequestsNoResponsesList";
@@ -15,6 +15,12 @@ import {
   useRequestHotkeys,
 } from "../hooks/useRequestsHotkeys";
 import { RequestsHotkeysHint } from "./RequestsHotkeysHint";
+
+import { useUndoStack } from "@/features/users/hooks/useUndoStack";
+import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
+import { useRevokeRsvpApproval } from "../hooks/useRevokeRsvpApproval";
+import { db } from "@/lib/firebase/client";
+import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 
 type Props = {
   grouped: Map<string, RSVPRow[]>;
@@ -40,8 +46,77 @@ export default function RequestsListView({
   eventsById,
   approvalsDisabled,
   onCopyApproved,
-  onSetDecision,
 }: Props) {
+  const { push: pushUndo } = useUndoStack();
+  const setDecisionStrict = useSetRsvpDecision();
+  const revokeStrict = useRevokeRsvpApproval();
+
+  const withUndoSetDecision = React.useCallback(
+    async (eventId: string, uid: string, next: Decision) => {
+      const ref = doc(db, "events", eventId, "rsvps", uid);
+
+      const snap = await getDoc(ref);
+      const prev = snap.exists() ? snap.data() : null;
+
+      const prevDecision = (prev?.decision ?? null) as Decision | null;
+      const prevApproved = (prev?.approved ?? null) as boolean | null;
+      const prevApprovedAt = prev?.approvedAt ?? null;
+      const prevApprovedByUid = prev?.approvedByUid ?? null;
+
+      await Promise.resolve(setDecisionStrict(eventId, uid, next));
+
+      pushUndo({
+        label: "Svar ændret",
+        undo: async () => {
+          await updateDoc(ref, {
+            decision: prevDecision,
+            approved: prevApproved,
+            approvedAt: prevApprovedAt,
+            approvedByUid: prevApprovedByUid,
+            updatedAt: serverTimestamp(),
+          });
+
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+      });
+    },
+    [setDecisionStrict, pushUndo],
+  );
+
+  const withUndoRevoke = React.useCallback(
+    async (eventId: string, uid: string) => {
+      const ref = doc(db, "events", eventId, "rsvps", uid);
+
+      const snap = await getDoc(ref);
+      const prev = snap.exists() ? snap.data() : null;
+
+      const prevDecision = (prev?.decision ?? null) as Decision | null;
+      const prevApproved = (prev?.approved ?? null) as boolean | null;
+      const prevApprovedAt = prev?.approvedAt ?? null;
+      const prevApprovedByUid = prev?.approvedByUid ?? null;
+
+      await Promise.resolve(revokeStrict(eventId, uid));
+
+      pushUndo({
+        label: "Godkendelse fjernet",
+        undo: async () => {
+          await updateDoc(ref, {
+            decision: prevDecision,
+            approved: prevApproved,
+            approvedAt: prevApprovedAt,
+            approvedByUid: prevApprovedByUid,
+            updatedAt: serverTimestamp(),
+          });
+
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+      });
+    },
+    [revokeStrict, pushUndo],
+  );
+
   // Flatten map into rows for GroupedList
   const rows = React.useMemo(() => {
     const out: RSVPRow[] = [];
@@ -55,9 +130,9 @@ export default function RequestsListView({
     [rows],
   );
 
-  // ✅ HOTKEYS MUST LIVE HERE (top-level), not inside renderGroupAfter
+  // ✅ HOTKEYS MUST LIVE HERE (top-level)
   useRequestHotkeys({
-    enabled: true, // or: !approvalsDisabled if you want
+    enabled: true,
     rows: visibleRows,
 
     onJump: (from, dir) => {
@@ -68,7 +143,8 @@ export default function RequestsListView({
       focusRow(next.eventId, next.uid);
     },
 
-    onSetDecision,
+    onSetDecision: (eventId, uid, decision) =>
+      withUndoSetDecision(eventId, uid, decision),
 
     onCopyApproved: (eventId) => onCopyApproved(eventId),
 
@@ -91,11 +167,9 @@ export default function RequestsListView({
       getGroupMeta={requestsGroupMeta({ onCopyApproved, eventsById })}
       sortHint={<RequestsHotkeysHint />}
       getRowKey={(r) => `${r.eventId}:${r.uid}`}
-      // ✅ main list excludes "No"
       filterGroupRows={(_, list) =>
         list.filter((r) => r.attendance !== RSVP_ATTENDANCE.No)
       }
-      // ✅ focusable wrapper so the active element has data-* for hotkeys
       renderRow={(r) => (
         <div
           tabIndex={0}
@@ -104,10 +178,16 @@ export default function RequestsListView({
           className="rounded-xl outline-none focus:bg-amber-50"
           onMouseDown={(e) => e.currentTarget.focus()}
         >
-          <RequestRowCard r={r} approvalsDisabled={approvalsDisabled} />
+          <RequestRowCard
+            r={r}
+            approvalsDisabled={approvalsDisabled}
+            onSetDecision={(next) =>
+              withUndoSetDecision(r.eventId, r.uid, next)
+            }
+            onRevokeApproval={() => withUndoRevoke(r.eventId, r.uid)}
+          />
         </div>
       )}
-      // ✅ render "No" under each event
       renderGroupAfter={(_, list) => {
         const noRows = list.filter((r) => r.attendance === RSVP_ATTENDANCE.No);
         return (

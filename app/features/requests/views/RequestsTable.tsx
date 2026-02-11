@@ -16,6 +16,11 @@ import {
 } from "../hooks/useRequestsHotkeys";
 import { RequestsHotkeysHint } from "./RequestsHotkeysHint";
 import { SortState } from "@/components/ui/patterns/table/types";
+import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
+import { useUndoStack } from "@/features/users/hooks/useUndoStack";
+import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
+import { useRevokeRsvpApproval } from "../hooks/useRevokeRsvpApproval";
 
 // ✅ import the hook + helper from wherever you placed it
 
@@ -55,6 +60,76 @@ export default function RequestsTable({
   approvalsDisabled,
   onSetDecision,
 }: Props) {
+  const { push: pushUndo } = useUndoStack();
+  const setDecisionStrict = useSetRsvpDecision();
+  const revokeStrict = useRevokeRsvpApproval();
+
+  const withUndoSetDecision = React.useCallback(
+    async (eventId: string, uid: string, next: Decision) => {
+      const ref = doc(db, "events", eventId, "rsvps", uid);
+
+      const snap = await getDoc(ref);
+      const prev = snap.exists() ? snap.data() : null;
+
+      const prevDecision = (prev?.decision ?? null) as Decision | null;
+      const prevApproved = (prev?.approved ?? null) as boolean | null;
+      const prevApprovedAt = prev?.approvedAt ?? null;
+      const prevApprovedByUid = prev?.approvedByUid ?? null;
+
+      await Promise.resolve(setDecisionStrict(eventId, uid, next));
+
+      pushUndo({
+        label: "Svar ændret",
+        undo: async () => {
+          await updateDoc(ref, {
+            decision: prevDecision,
+            approved: prevApproved,
+            approvedAt: prevApprovedAt,
+            approvedByUid: prevApprovedByUid,
+            updatedAt: serverTimestamp(),
+          });
+
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+      });
+    },
+    [setDecisionStrict, pushUndo],
+  );
+
+  const withUndoRevoke = React.useCallback(
+    async (eventId: string, uid: string) => {
+      const ref = doc(db, "events", eventId, "rsvps", uid);
+
+      const snap = await getDoc(ref);
+      const prev = snap.exists() ? snap.data() : null;
+
+      const prevDecision = (prev?.decision ?? null) as Decision | null;
+      const prevApproved = (prev?.approved ?? null) as boolean | null;
+      const prevApprovedAt = prev?.approvedAt ?? null;
+      const prevApprovedByUid = prev?.approvedByUid ?? null;
+
+      await Promise.resolve(revokeStrict(eventId, uid));
+
+      pushUndo({
+        label: "Godkendelse fjernet",
+        undo: async () => {
+          await updateDoc(ref, {
+            decision: prevDecision,
+            approved: prevApproved,
+            approvedAt: prevApprovedAt,
+            approvedByUid: prevApprovedByUid,
+            updatedAt: serverTimestamp(),
+          });
+
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+      });
+    },
+    [revokeStrict, pushUndo],
+  );
+
   const initialSort: SortState<SortKey> = { key: "name", dir: "desc" };
 
   // match what your main table shows (it hides "No")
@@ -195,6 +270,10 @@ export default function RequestsTable({
               decision={r.decision}
               approved={r.approved}
               disabled={approvalsDisabled}
+              onSetDecision={(next) =>
+                withUndoSetDecision(r.eventId, r.uid, next)
+              }
+              onRevokeApproval={() => withUndoRevoke(r.eventId, r.uid)}
             />
           ),
         },

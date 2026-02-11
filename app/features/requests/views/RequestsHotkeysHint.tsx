@@ -17,6 +17,7 @@ export function RequestsHotkeysHint() {
         <kbd className={kbd}>A</kbd> afvis,
         <kbd className={kbd}>F</kbd> afventer,
         <kbd className={kbd}>K / C</kbd> kopiér,
+        <kbd className={kbd}>Ctrl + Z</kbd> Fortryd,
       </span>
     </span>
   );
