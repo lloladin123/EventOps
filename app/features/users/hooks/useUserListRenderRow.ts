@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib//firestore/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.client";
 
 import { buildUserListRenderRow } from "../builders/buildUserListRenderRow";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
@@ -15,7 +15,7 @@ type Params = {
   setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
   setUserSubRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null
+    nextSubRole: CrewSubRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 
@@ -68,6 +68,6 @@ export function useUserListRenderRow({
       flashUid,
       setRowRef,
       setRoleRef,
-    ]
+    ],
   );
 }

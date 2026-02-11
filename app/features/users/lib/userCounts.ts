@@ -1,4 +1,4 @@
-import type { UserDoc } from "@/lib//firestore/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.client";
 import type { Role } from "@/types/rsvp";
 import { ROLE } from "@/types/rsvp";
 
@@ -10,7 +10,7 @@ type CountUsersOpts = {
 
 export function countUsers(
   rows: readonly UserRow[],
-  opts: CountUsersOpts = {}
+  opts: CountUsersOpts = {},
 ) {
   const exclude = new Set<Role>(opts.excludeRoles ?? []);
   let n = 0;

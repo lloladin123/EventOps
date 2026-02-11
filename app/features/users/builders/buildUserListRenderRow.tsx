@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib//firestore/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.client";
 
 import {
   neutralSelectClass,
@@ -19,7 +19,7 @@ type Params = {
   setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
   setUserSubRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null
+    nextSubRole: CrewSubRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 
@@ -162,7 +162,7 @@ export function buildUserListRenderRow({
                   onChange={(e) =>
                     setUserSubRole(
                       r.uid,
-                      e.target.value ? (e.target.value as CrewSubRole) : null
+                      e.target.value ? (e.target.value as CrewSubRole) : null,
                     )
                   }
                 >

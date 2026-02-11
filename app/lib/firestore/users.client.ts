@@ -35,7 +35,7 @@ export async function fetchRolesConfig(): Promise<RolesConfigDoc | null> {
 
 export function subscribeUsers(
   onRows: (rows: Array<{ uid: string; data: UserDoc }>) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
 ): Unsubscribe {
   return onSnapshot(
     collection(db, "users"),
@@ -46,11 +46,11 @@ export function subscribeUsers(
       }));
 
       rows.sort((a, b) =>
-        (a.data.email || "").localeCompare(b.data.email || "")
+        (a.data.email || "").localeCompare(b.data.email || ""),
       );
       onRows(rows);
     },
-    (err) => onError?.(err)
+    (err) => onError?.(err),
   );
 }
 
@@ -63,7 +63,7 @@ export async function updateUserRole(uid: string, nextRole: Role) {
 
 export async function updateUserSubRole(
   uid: string,
-  nextSubRole: CrewSubRole | null
+  nextSubRole: CrewSubRole | null,
 ) {
   await updateDoc(doc(db, "users", uid), { subRole: nextSubRole });
 }

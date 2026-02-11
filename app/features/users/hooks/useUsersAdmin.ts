@@ -7,7 +7,7 @@ import {
   updateUserRole,
   updateUserSubRole,
   type UserDoc,
-} from "@/lib//firestore/users.firestore";
+} from "@/lib//firestore/users.client";
 
 export function useUsersAdmin(enabled: boolean) {
   const [users, setUsers] = React.useState<
@@ -29,7 +29,7 @@ export function useUsersAdmin(enabled: boolean) {
         setUsers(rows);
         setBusy(false);
       },
-      () => setBusy(false)
+      () => setBusy(false),
     );
 
     return () => unsub();
@@ -43,7 +43,7 @@ export function useUsersAdmin(enabled: boolean) {
     async (uid: string, nextSubRole: CrewSubRole | null) => {
       await updateUserSubRole(uid, nextSubRole);
     },
-    []
+    [],
   );
 
   return { users, busy, setUserRole, setUserSubRole };

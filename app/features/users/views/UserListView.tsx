@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib//firestore/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.client";
 
 import GroupedList from "@/components/ui/GroupedList";
 import { UsersViewState } from "./UsersViewState";
@@ -27,7 +27,7 @@ type Props = {
   setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
   setUserSubRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null
+    nextSubRole: CrewSubRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 };
@@ -47,9 +47,9 @@ export default function UserListView({
   const visibleUsers = React.useMemo(
     () =>
       visibleNonAdminUsers(users).filter(
-        (u) => u.data.role !== ROLE.Sikkerhedsledelse
+        (u) => u.data.role !== ROLE.Sikkerhedsledelse,
       ),
-    [users]
+    [users],
   );
 
   const { flashUid, flash } = useFlashUid(2200);

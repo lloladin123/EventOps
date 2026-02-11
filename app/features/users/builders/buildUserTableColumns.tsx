@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib//firestore/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.client";
 
 import { UserIdentityCell } from "../cells/UserIdentityCell";
 import { RoleSelectCell } from "../cells/RoleSelectCell";
@@ -25,7 +25,7 @@ type Params = {
   setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
   setUserSubRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null
+    nextSubRole: CrewSubRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 

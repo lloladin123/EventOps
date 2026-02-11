@@ -15,7 +15,7 @@ import {
   countUsersWithoutRole,
   type UserRow,
 } from "@/features//users/lib/userCounts";
-import { subscribeUsers } from "@/lib//firestore/users.firestore";
+import { subscribeUsers } from "@/lib//firestore/users.client";
 
 type AdminNavProps = {
   className?: string;
@@ -61,7 +61,7 @@ function Badge({
     <span
       className={cx(
         "ml-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-        toneCls
+        toneCls,
       )}
       title={tone === "rose" ? "Nye anmodninger" : "Brugere uden rolle"}
     >
@@ -79,7 +79,9 @@ function AdminNavLink({ href, label }: AdminNavLinkProps) {
       href={href}
       className={cx(
         "block w-full rounded-lg px-3 py-2 text-sm font-semibold transition sm:inline-block sm:w-auto sm:rounded-md sm:px-2 sm:py-1 sm:text-xs",
-        active ? "bg-slate-900 text-white" : "text-slate-700 hover:bg-slate-100"
+        active
+          ? "bg-slate-900 text-white"
+          : "text-slate-700 hover:bg-slate-100",
       )}
     >
       {label}
@@ -146,8 +148,8 @@ export default function AdminNav({ className }: AdminNavProps) {
           perEventRef.current.set(event.id, docs);
           scheduleFlush();
         },
-        (err) => console.error("[AdminNav] subscribeEventRsvps", event.id, err)
-      )
+        (err) => console.error("[AdminNav] subscribeEventRsvps", event.id, err),
+      ),
     );
 
     // initial bump so badge updates once subscriptions start
@@ -178,7 +180,7 @@ export default function AdminNav({ className }: AdminNavProps) {
 
         setUsersNoRoleCount(countUsersWithoutRole(rows));
       },
-      (err) => console.error("[AdminNav] subscribeUsers", err)
+      (err) => console.error("[AdminNav] subscribeUsers", err),
     );
 
     return () => unsub();
@@ -252,7 +254,7 @@ export default function AdminNav({ className }: AdminNavProps) {
     <nav
       className={cx(
         "flex flex-col items-stretch gap-1 sm:flex-row sm:items-center sm:gap-2",
-        className
+        className,
       )}
       aria-label="Admin navigation"
     >

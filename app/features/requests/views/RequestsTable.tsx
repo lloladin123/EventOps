@@ -8,10 +8,7 @@ import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
 import { requestsGroupMeta } from "../ui/RequestsGroupMeta";
 import { RequestsNoResponsesTable } from "../components/RequestsNoResponsesTable";
-import {
-  attendanceLabel,
-  statusLabel,
-} from "@/features//rsvp/labels/rsvpLabels";
+import { attendanceLabel, statusLabel } from "@/features//rsvp/lib/rsvpLabels";
 import { RequestNameCell } from "../components/RequestNameCell";
 import { statusPillClass, fmtUpdatedAt, updatedAtMs } from "../ui/requestUi";
 import {
@@ -31,7 +28,7 @@ type Props = {
   onSetDecision: (
     eventId: string,
     uid: string,
-    decision: Decision
+    decision: Decision,
   ) => void | Promise<void>;
 };
 
@@ -47,7 +44,7 @@ type SortKey = Exclude<ColumnKey, "actions">;
 
 function focusRow(eventId: string, uid: string) {
   const el = document.querySelector<HTMLElement>(
-    `[data-eventid="${CSS.escape(eventId)}"][data-uid="${CSS.escape(uid)}"]`
+    `[data-eventid="${CSS.escape(eventId)}"][data-uid="${CSS.escape(uid)}"]`,
   );
   el?.focus();
 }
@@ -63,7 +60,7 @@ export default function RequestsTable({
   // match what your main table shows (it hides "No")
   const visibleRows = React.useMemo(
     () => rows.filter((r) => r.attendance !== RSVP_ATTENDANCE.No),
-    [rows]
+    [rows],
   );
 
   useRequestHotkeys({
@@ -96,8 +93,8 @@ export default function RequestsTable({
         next === DECISION.Approved
           ? "Godkend"
           : next === DECISION.Unapproved
-          ? "Afvis"
-          : "Sæt til afventer";
+            ? "Afvis"
+            : "Sæt til afventer";
       return window.confirm(`${verb} "${label}"?`);
     },
   });

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/lib//firestore/users.firestore";
+import type { UserDoc } from "@/lib//firestore/users.client";
 
 import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
@@ -27,7 +27,7 @@ type Props = {
   setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
   setUserSubRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null
+    nextSubRole: CrewSubRole | null,
   ) => void | Promise<void>;
 
   // ✅ NEW
@@ -58,9 +58,9 @@ export default function UserListTable({
   const visibleUsers = React.useMemo(
     () =>
       visibleNonAdminUsers(users).filter(
-        (u) => u.data.role !== ROLE.Sikkerhedsledelse
+        (u) => u.data.role !== ROLE.Sikkerhedsledelse,
       ),
-    [users]
+    [users],
   );
 
   const { flashUid, flash } = useFlashUid(2200);
@@ -108,7 +108,7 @@ export default function UserListTable({
       focusSubRoleSelect,
       focusMissingRelative,
       flashUid,
-    ]
+    ],
   );
 
   useUserHotkeys({

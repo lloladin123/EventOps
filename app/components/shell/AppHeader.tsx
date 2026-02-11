@@ -4,8 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 
 import UserBadge from "@/components/layout/UserBadge";
-import Breadcrumbs from "@/components/appShell/Breadcrumbs";
-import AdminNav from "@/components/appShell/AdminNav";
+import Breadcrumbs from "@/components/shell/Breadcrumbs";
+import AdminNav from "@/components/shell/AdminNav";
 import { useAuth } from "@/features//auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 

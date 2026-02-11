@@ -2,7 +2,7 @@
 
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import type { AttendanceFilter, StatusFilter } from "@/types/requests";
-import { attendanceLabel, statusLabel } from "../../rsvp/labels/rsvpLabels";
+import { attendanceLabel, statusLabel } from "../../rsvp/lib/rsvpLabels";
 
 const STATUS_OPTIONS: StatusFilter[] = [
   "all",
