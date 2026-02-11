@@ -197,38 +197,46 @@ export default function GroupedTable<
                 <thead className="bg-slate-50"></thead>
 
                 <tbody>
-                  {sortedRows.map((row, idx) => (
-                    <tr
-                      key={idx}
-                      className="
-                        border-t transition-colors
-                        focus-within:bg-amber-50
-                      "
-                    >
-                      {columns.map((c) => {
-                        const content = c.cell(row);
-                        const autoTitle = nodeToTitle(content);
+                  {sortedRows.map((row, idx) => {
+                    const rp = getRowProps?.(row);
 
-                        return (
-                          <td
-                            key={c.key}
-                            className={tdClassName(c.align, c.className)}
-                          >
-                            {c.truncate ? (
-                              <span
-                                className={wrapClassName(c.maxWidthClassName)}
-                                title={autoTitle}
-                              >
-                                {content}
-                              </span>
-                            ) : (
-                              content
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
+                    return (
+                      <tr
+                        key={idx}
+                        {...rp}
+                        className={[
+                          "border-t transition-colors",
+                          "hover:bg-slate-50", // optional but feels right
+                          "focus:bg-amber-50 focus:outline-none", // ✅ row itself can be focused
+                          "focus-within:bg-amber-50", // keep old behavior too
+                          rp?.className ?? "",
+                        ].join(" ")}
+                      >
+                        {columns.map((c) => {
+                          const content = c.cell(row);
+                          const autoTitle = nodeToTitle(content);
+
+                          return (
+                            <td
+                              key={c.key}
+                              className={tdClassName(c.align, c.className)}
+                            >
+                              {c.truncate ? (
+                                <span
+                                  className={wrapClassName(c.maxWidthClassName)}
+                                  title={autoTitle}
+                                >
+                                  {content}
+                                </span>
+                              ) : (
+                                content
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
