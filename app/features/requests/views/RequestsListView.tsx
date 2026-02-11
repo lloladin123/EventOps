@@ -175,7 +175,6 @@ export default function RequestsListView({
       rows={rows}
       getGroupId={(r) => r.eventId}
       getGroupMeta={requestsGroupMeta({ onCopyApproved, eventsById })}
-      sortHint={<RequestsHotkeysHint />}
       getRowKey={(r) => `${r.eventId}:${r.uid}`}
       filterGroupRows={(_, list) =>
         list.filter((r) => r.attendance !== RSVP_ATTENDANCE.No)

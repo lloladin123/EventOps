@@ -68,12 +68,13 @@ export function RequestsPanels({
             onToggle={() => setOpenPanelOpen((v) => !v)}
             focusKey={view}
             title={
-              <>
+              <div className="flex flex-col space-y-1">
                 <h2 className="text-lg font-semibold">Åbne events</h2>
+                <RequestsHotkeysHint />
                 <span className="text-sm text-amber-700 opacity-70">
                   {openNewCount} nye
                 </span>
-              </>
+              </div>
             }
           >
             <RequestsListView
