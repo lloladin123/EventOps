@@ -5,7 +5,7 @@ import { useState } from "react";
 import RequestsFilters from "../utils/RequestsFilters";
 import { useRequestsFilters } from "../hooks/useRequestsFilters";
 
-import { useEventsFirestore } from "@/utils/useEventsFirestore";
+import { useEventsFirestore } from "@/components/events/hooks/useEventsFirestore";
 import OpenCloseButton from "../../ui/OpenCloseButton";
 
 import { useRequestsRows } from "../hooks/useRequestsRows";
@@ -16,7 +16,7 @@ import { RequestsPanels } from "./RequestsPanels";
 
 import { usePersistedViewMode } from "../hooks/usePersistedViewMode";
 import { useRequestsPanelState } from "../hooks/useRequestsPanelState";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 
 // ✅ only this one (it owns L/T/V hotkeys)

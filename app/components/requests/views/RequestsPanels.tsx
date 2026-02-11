@@ -4,7 +4,7 @@ import * as React from "react";
 
 import RequestsTable from "./RequestsTable";
 import RequestsListView from "./RequestsListView";
-import { RequestsPanel } from "../../ui/RequestsPanel";
+import { RequestsPanel } from "../ui/RequestsPanel";
 
 import type { RSVPRow } from "@/types/requests";
 import type { Event } from "@/types/event";

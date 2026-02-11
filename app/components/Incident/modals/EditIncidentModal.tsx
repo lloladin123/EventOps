@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import type { Incident } from "@/types/incident";
-import IncidentFormFields from "./IncidentFormFields";
+import IncidentFormFields from "../IncidentFormFields";
 import { updateIncidentFirestore } from "@/app/lib/firestore/incidents";
 
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import {
   UploadedIncidentFile,
   uploadIncidentImages,

@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import OpenCloseButton from "./OpenCloseButton";
-import { usePanelArrowNav } from "../requests/hooks/usePanelArrowNav";
+import OpenCloseButton from "../../ui/OpenCloseButton";
+import { usePanelArrowNav } from "../hooks/usePanelArrowNav";
 
 type Props = {
   title: React.ReactNode;

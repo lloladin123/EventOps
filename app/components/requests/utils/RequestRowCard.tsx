@@ -5,7 +5,10 @@ import type { RSVPRow } from "@/types/requests";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 
 import RequestApprovalActions from "./RequestApprovalActions";
-import { attendanceLabel, statusLabel } from "@/utils/rsvpLabels";
+import {
+  attendanceLabel,
+  statusLabel,
+} from "@/components/events/lib/rsvpLabels";
 import { fmtUpdatedAt, statusPillClass } from "../ui/requestUi";
 
 function kv(label: string, value: React.ReactNode) {

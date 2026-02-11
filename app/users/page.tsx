@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@/app/components/auth/AuthProvider";
-import { useUsersAdmin } from "@/utils/useUsersAdmin";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
+import { useUsersAdmin } from "@/components/users/hooks/useUsersAdmin";
 
 import UserListTable from "@/components/users/views/UserListTable";
 import UserListView from "@/components/users/views/UserListView";

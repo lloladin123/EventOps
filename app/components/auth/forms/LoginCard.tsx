@@ -9,7 +9,7 @@ import {
   type Role,
   type CrewSubRole,
 } from "@/types/rsvp";
-import { useLogin } from "./useLogin";
+import { useLogin } from "../hooks/useLogin";
 
 export default function LoginCard() {
   const {

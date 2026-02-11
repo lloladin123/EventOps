@@ -3,7 +3,10 @@
 import * as React from "react";
 import type { RSVPRow } from "@/types/requests";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
-import { attendanceLabel, statusLabel } from "@/utils/rsvpLabels";
+import {
+  attendanceLabel,
+  statusLabel,
+} from "@/components/events/lib/rsvpLabels";
 import RequestApprovalActions from "./RequestApprovalActions";
 
 function fmtUpdatedAt(iso?: string) {

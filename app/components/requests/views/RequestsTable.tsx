@@ -8,7 +8,10 @@ import GroupedTable from "@/components/ui/GroupedTable";
 import type { SortState } from "@/components/ui/GroupedTable";
 import { requestsGroupMeta } from "../ui/requestsGroupMeta";
 import { RequestsNoResponsesTable } from "../utils/RequestsNoResponsesTable";
-import { attendanceLabel, statusLabel } from "@/utils/rsvpLabels";
+import {
+  attendanceLabel,
+  statusLabel,
+} from "@/components/events/lib/rsvpLabels";
 import { RequestNameCell } from "../utils/RequestNameCell";
 import { statusPillClass, fmtUpdatedAt, updatedAtMs } from "../ui/requestUi";
 import {

@@ -4,7 +4,7 @@ import * as React from "react";
 import type { Incident, IncidentType } from "@/types/incident";
 import { parseTimeToHHmm } from "@/utils/time";
 import { updateIncidentFirestore } from "@/app/lib/firestore/incidents";
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import {
   UploadedIncidentFile,
   uploadIncidentImages,

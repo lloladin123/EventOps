@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 import { setEventOpen } from "@/app/lib/firestore/events";
 

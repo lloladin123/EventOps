@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import OpenCloseButton from "../ui/OpenCloseButton";
+import OpenCloseButton from "../../ui/OpenCloseButton";
 
 type Props = {
   title: string;

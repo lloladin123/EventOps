@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import type { Event } from "@/types/event";
-import { createEventFirestore } from "@/utils/eventsFirestore";
+import { createEventFirestore } from "@/components/events/data/eventsFirestore";
 
 function makeId() {
   return `evt_${Date.now().toString(36)}_${Math.random()

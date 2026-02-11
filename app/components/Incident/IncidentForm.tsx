@@ -3,13 +3,13 @@
 import * as React from "react";
 import type { Incident, IncidentType } from "@/types/incident";
 
-import CloseLog from "@/components/events/CloseLog";
-import IncidentFormFields from "@/components/events/IncidentFormFields";
-import IncidentSubmitButton from "@/components/events/IncidentSubmitButton";
+import CloseLog from "@/components/events/close/CloseLog";
+import IncidentFormFields from "@/components/Incident/IncidentFormFields";
+import IncidentSubmitButton from "@/components/Incident/IncidentSubmitButton";
 
 import { nowHHmm, parseTimeToHHmm } from "@/utils/time";
-import { useAuthAndClosed } from "@/utils/useAuthAndClosed";
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuthAndClosed } from "@/components/events/hooks/useAuthAndClosed";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import { createIncidentFirestore } from "@/app/lib/firestore/incidents";
 import { uploadIncidentImages } from "@/lib//uploadIncidentImages";
 

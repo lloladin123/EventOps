@@ -4,22 +4,25 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 import type { Event } from "@/types/event";
 
-import EventCard from "@/components/events/EventCard";
-import EventSection from "@/components/events/EventSection";
+import EventCard from "@/components/events/event/EventCard";
+import EventSection from "@/components/events/event/EventSection";
 
-import { isEventOpen, setEventClosed } from "@/utils/eventStatus";
+import {
+  isEventOpen,
+  setEventClosed,
+} from "@/components/events/lib/eventStatus";
 import { setEventOpen, softDeleteEvent } from "@/app/lib/firestore/events";
 
-import { useRsvps } from "@/utils/useRsvps";
+import { useRsvps } from "@/components/events/hooks/useRsvps";
 import { useUiToggle } from "@/utils/useUiToggle";
 
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
 import type { RSVPAttendance } from "@/types/rsvpIndex";
-import { useEventsFirestore } from "@/utils/useEventsFirestore";
+import { useEventsFirestore } from "@/components/events/hooks/useEventsFirestore";
 
-import EventUndoStack from "./EventUndoStack";
-import { setEventDeleted } from "../utils/eventDeleted";
+import EventUndoStack from "../state/EventUndoStack";
+import { setEventDeleted } from "../lib/eventDeleted";
 
 export default function EventList() {
   const searchParams = useSearchParams();

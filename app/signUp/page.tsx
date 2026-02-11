@@ -1,4 +1,4 @@
-import SignupCard from "@/components/auth/SignupCard";
+import SignupCard from "@/components/auth/forms/SignupCard";
 import React from "react";
 
 const page = () => {

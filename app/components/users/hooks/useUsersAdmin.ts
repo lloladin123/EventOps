@@ -7,7 +7,7 @@ import {
   updateUserRole,
   updateUserSubRole,
   type UserDoc,
-} from "@/utils/users.firestore";
+} from "@/data/users.firestore";
 
 export function useUsersAdmin(enabled: boolean) {
   const [users, setUsers] = React.useState<

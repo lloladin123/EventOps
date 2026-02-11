@@ -5,22 +5,22 @@ import { useParams, useRouter } from "next/navigation";
 
 import type { Incident } from "@/types/incident";
 
-import EventHeader from "@/components/events/EventHeader";
-import IncidentForm from "@/components/events/IncidentForm";
+import EventHeader from "@/components/events/event/EventHeader";
+import IncidentForm from "@/components/Incident/IncidentForm";
 import LoginRedirect from "@/components/layout/LoginRedirect";
-import ApprovedUsers from "@/components/events/ApprovedUsers";
-import ExportIncidentPdfButton from "@/components/Incidents/ExportIncidentPdfButton";
+import ApprovedUsers from "@/components/events/attendance/ApprovedUsers";
+import ExportIncidentPdfButton from "@/components/Incident/ExportIncidentPdfButton";
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import { isAdmin, ROLE, type Role } from "@/types/rsvp";
-import { canAccessEventDetails } from "@/utils/eventAccess";
+import { canAccessEventDetails } from "@/components/events/lib/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
 import { subscribeIncidents } from "@/app/lib/firestore/incidents";
-import CloseLog from "@/components/events/CloseLog";
-import EditIncidentModal from "@/components/events/EditIncidentModal";
-import IncidentPanel from "@/components/events/IncidentPanel";
+import CloseLog from "@/components/events/close/CloseLog";
+import EditIncidentModal from "@/components/Incident/modals/EditIncidentModal";
+import IncidentPanel from "@/components/Incident/IncidentPanel";
 
 const ALLOWED_ROLES: Role[] = [
   ROLE.Admin,

@@ -1,10 +1,10 @@
 "use client";
 
 import LoginRedirect from "@/components/layout/LoginRedirect";
-import EventList from "@/components/events/EventList";
-import AddEventForm from "@/components/events/AddEventForm";
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import EventList from "@/components/events/event/EventList";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 import { isAdmin } from "@/types/rsvp";
+import AddEventForm from "@/components/events/event/AddEventForm";
 
 export default function EventsPage() {
   const { user, role, loading } = useAuth();

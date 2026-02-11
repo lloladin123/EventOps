@@ -1,7 +1,7 @@
 "use client";
 
-import LoginCard from "@/components/auth/LoginCard";
-import EmailLoginForm from "./components/auth/EmailLoginForm";
+import LoginCard from "@/components/auth/forms/LoginCard";
+import EmailLoginForm from "./components/auth/forms/EmailLoginForm";
 
 const ENABLE_TEST_LOGIN = process.env.NEXT_PUBLIC_ENABLE_TEST_LOGIN === "true";
 

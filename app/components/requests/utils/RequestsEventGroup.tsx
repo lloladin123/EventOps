@@ -7,7 +7,7 @@ import { DECISION, type Decision } from "@/types/rsvpIndex";
 import StateButton from "../../ui/StateButton";
 
 import { setRsvpDecision } from "@/app/lib/firestore/rsvps";
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 
 export default function RequestsEventGroup({
   eventId,

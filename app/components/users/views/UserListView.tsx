@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ROLE } from "@/types/rsvp";
 import type { Role, CrewSubRole } from "@/types/rsvp";
-import type { UserDoc } from "@/utils/users.firestore";
+import type { UserDoc } from "@/data/users.firestore";
 
 import GroupedList from "@/components/ui/GroupedList";
 import { UsersViewState } from "./UsersViewState";

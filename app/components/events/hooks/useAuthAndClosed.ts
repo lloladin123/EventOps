@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@/app/components/auth/AuthProvider";
-import { isEventClosed, setEventClosed } from "@/utils/eventStatus";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
+import {
+  isEventClosed,
+  setEventClosed,
+} from "@/components/events/lib/eventStatus";
 import { ROLE, type Role } from "@/types/rsvp";
 
 const CAN_CLOSE = new Set<Role>([

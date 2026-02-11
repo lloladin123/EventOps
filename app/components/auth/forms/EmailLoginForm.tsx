@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEmailLogin } from "./useEmailLogin";
+import { useEmailLogin } from "../hooks/useEmailLogin";
 import Link from "next/link";
 
 export default function EmailLoginForm() {

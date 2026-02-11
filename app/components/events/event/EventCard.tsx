@@ -7,14 +7,14 @@ import { isAdmin } from "@/types/rsvp";
 
 import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
-import AttendanceButtons from "./AttendanceButtons";
+import AttendanceButtons from "../attendance/AttendanceButtons";
 import { cn } from "@/components/ui/classNames";
 import { setEventOpen } from "@/app/lib/firestore/events";
-import { useAuth } from "@/app/components/auth/AuthProvider";
+import { useAuth } from "@/components/auth/provider/AuthProvider";
 
 import OpenCloseButton from "@/app/components/ui/OpenCloseButton";
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
-import { canAccessEventDetails } from "@/utils/eventAccess";
+import { canAccessEventDetails } from "@/components/events/lib/eventAccess";
 import EventCardMembers from "./EventCardMembers";
 
 type Props = {
