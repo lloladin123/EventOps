@@ -1,7 +1,7 @@
 import { PDFDocument } from "pdf-lib";
 import type { Body } from "./types";
 import { safeStr } from "./utils";
-import { createLayout } from "./layout";
+import { createLayout } from "./pdfLayout";
 import { createTheme } from "./theme";
 import { createRenderCtx } from "./context";
 import { drawHeader } from "./header";

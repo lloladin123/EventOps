@@ -1,11 +1,11 @@
-export type Layout = {
+export type pdfLayout = {
   PAGE_W: number;
   PAGE_H: number;
   M: number;
   CONTENT_W: number;
 };
 
-export function createLayout(): Layout {
+export function createLayout(): pdfLayout {
   const PAGE_W = 595.28;
   const PAGE_H = 841.89;
   const M = 40;

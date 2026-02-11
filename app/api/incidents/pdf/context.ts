@@ -4,7 +4,7 @@ import {
   type PDFFont,
   type PDFPage,
 } from "pdf-lib";
-import type { Layout } from "./layout";
+import type { Layout } from "./pdfLayout";
 import type { Theme } from "./theme";
 
 export type RenderCtx = {
