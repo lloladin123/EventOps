@@ -34,7 +34,6 @@ export default function CloseLog({
   const [secondsLeft, setSecondsLeft] = React.useState(WAIT_SECONDS);
   const [saving, setSaving] = React.useState(false);
 
-  // countdown for close-confirm modal
   React.useEffect(() => {
     if (!openCloseModal) return;
 
@@ -58,7 +57,7 @@ export default function CloseLog({
   const closeLog = async () => {
     try {
       setSaving(true);
-      await setEventOpen(eventId, false); // ✅ close == open:false
+      await setEventOpen(eventId, false);
       onClosed?.();
       setOpenCloseModal(false);
       router.push("/events");
@@ -72,7 +71,7 @@ export default function CloseLog({
   const reopenLog = async () => {
     try {
       setSaving(true);
-      await setEventOpen(eventId, true); // ✅ reopen == open:true
+      await setEventOpen(eventId, true);
       onReopened?.();
       setOpenReopenModal(false);
       router.push("/events");
@@ -139,8 +138,6 @@ export default function CloseLog({
           <div className="absolute inset-0 bg-black/50" />
 
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
-            {/* top accent */}
-
             <div className="p-6">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 ring-1 ring-red-100">
@@ -151,21 +148,24 @@ export default function CloseLog({
                   <h4 className="text-lg font-semibold text-slate-900">
                     Luk log permanent?
                   </h4>
+
+                  {/* ✅ paragraph contains only inline content */}
                   <p className="mt-1 text-sm text-slate-600">
                     Dette lukker kampen og loggen. Når den er lukket, kan der{" "}
                     <span className="font-semibold text-slate-900">
                       ikke tilføjes nye hændelser.
                     </span>
-                    <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-                      <span className="text-xs font-medium text-amber-900">
-                        Kun Admin eller Sikkerhedsledelse kan genåbne loggen.
-                      </span>
-                    </div>
                   </p>
+
+                  {/* ✅ block content moved OUTSIDE the <p> */}
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                    <span className="text-xs font-medium text-amber-900">
+                      Kun Admin eller Sikkerhedsledelse kan genåbne loggen.
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* warning panel */}
               <div className="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-red-900">
