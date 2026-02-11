@@ -22,7 +22,7 @@ export function IconButton({
       variant={variant}
       size={size}
       className={[
-        "h-8 w-8 px-0 py-0", // square
+        "h-10 w-10 px-0 py-0", // square
         className,
       ]
         .filter(Boolean)

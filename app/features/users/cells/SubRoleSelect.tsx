@@ -12,7 +12,7 @@ type Props = {
   setSubRoleRef?: (uid: string, el: HTMLSelectElement | null) => void;
   setUserSubRole: (
     uid: string,
-    next: CrewSubRole | null
+    next: CrewSubRole | null,
   ) => void | Promise<void>;
 };
 
@@ -32,12 +32,21 @@ export function SubRoleSelect({
     <select
       ref={(el) => setSubRoleRef?.(uid, el)}
       data-uid={uid}
-      className="w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2"
+      className="className={`
+    h-7 min-w-[160px]
+    rounded-xl border border-slate-200
+    bg-white px-3
+    text-sm text-slate-900
+    shadow-sm
+    transition
+    hover:border-slate-300
+    focus:border-slate-900 focus:ring-1 focus:ring-slate-900
+    disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
       value={subRole ?? ""}
       onChange={(e) =>
         setUserSubRole(
           uid,
-          e.target.value ? (e.target.value as CrewSubRole) : null
+          e.target.value ? (e.target.value as CrewSubRole) : null,
         )
       }
     >

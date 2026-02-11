@@ -64,9 +64,9 @@ export default function UserBadge() {
         </div>
       </div>
 
-      <div className="ml-auto flex items-center gap-2">
-        <IconButton title="Log ud" onClick={onLogout}>
-          <LogOut className="h-4 w-4" />
+      <div className="ml-auto flex items-center">
+        <IconButton className="" title="Log ud" onClick={onLogout}>
+          <LogOut className="h-20 w-20" />
         </IconButton>
       </div>
     </div>
