@@ -26,6 +26,9 @@ export function UserHotkeysHint() {
       <span>
         <kbd className={kbd}>Space</kbd> menu
       </span>
+      <span>
+        <kbd className={kbd}>Ctrl + z</kbd> Fortryd
+      </span>
     </span>
   );
 }

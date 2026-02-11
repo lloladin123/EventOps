@@ -1,8 +1,9 @@
+// RequestRowCard.tsx
 "use client";
 
 import * as React from "react";
 import type { RSVPRow } from "@/types/requests";
-import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
+import { DECISION, RSVP_ATTENDANCE, type Decision } from "@/types/rsvpIndex";
 
 import RequestApprovalActions from "./RequestApprovalActions";
 import { attendanceLabel, statusLabel } from "@/features/rsvp/lib/rsvpLabels";
@@ -21,10 +22,14 @@ export function RequestRowCard({
   r,
   approvalsDisabled,
   subtle,
+  onSetDecision,
+  onRevokeApproval,
 }: {
   r: RSVPRow;
   approvalsDisabled?: boolean;
   subtle?: boolean;
+  onSetDecision?: (next: Decision) => void | Promise<void>;
+  onRevokeApproval?: () => void | Promise<void>;
 }) {
   const who = r.userDisplayName?.trim() || r.uid;
   const roleLabel = r.userRole
@@ -83,6 +88,8 @@ export function RequestRowCard({
           approved={r.approved}
           answeredNo={r.attendance === RSVP_ATTENDANCE.No}
           disabled={approvalsDisabled}
+          onSetDecision={onSetDecision}
+          onRevokeApproval={onRevokeApproval}
         />
       </div>
     </div>
