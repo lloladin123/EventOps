@@ -29,19 +29,20 @@ const VARIANT_STYLES: Record<
   },
 
   yes: {
-    active: "border-green-700 bg-green-600 text-white ring-2 ring-green-300",
+    active: "!bg-green-600 !text-white !border-green-700 ring-2 ring-green-300",
     inactive:
-      "border-green-300 bg-green-50 text-green-700 hover:border-green-600 hover:bg-green-600 hover:text-white",
+      "!bg-green-50 !text-green-700 !border-green-300 hover:!border-green-600 hover:!bg-green-600 hover:!text-white",
   },
   maybe: {
-    active: "border-orange-700 bg-orange-500 text-white ring-2 ring-orange-300",
+    active:
+      "!bg-orange-500 !text-white !border-orange-700 ring-2 ring-orange-300",
     inactive:
-      "border-orange-300 bg-orange-50 text-orange-700 hover:border-orange-600 hover:bg-orange-500 hover:text-white",
+      "!bg-orange-50 !text-orange-700 !border-orange-300 hover:!border-orange-600 hover:!bg-orange-500 hover:!text-white",
   },
   no: {
-    active: "border-red-700 bg-red-600 text-white ring-2 ring-red-300",
+    active: "!bg-red-600 !text-white !border-red-700 ring-2 ring-red-300",
     inactive:
-      "border-red-300 bg-red-50 text-red-700 hover:border-red-600 hover:bg-red-600 hover:text-white",
+      "!bg-red-50 !text-red-700 !border-red-300 hover:!border-red-600 hover:!bg-red-600 hover:!text-white",
   },
 };
 
