@@ -10,7 +10,7 @@ import { IconButton } from "@/components/ui/primitives/IconButton";
 
 export default function UserBadge() {
   const router = useRouter();
-  const { user, role, subRole, loading, logout } = useAuth();
+  const { user, role, subRole, displayName, loading, logout } = useAuth();
 
   const onLogout = React.useCallback(async () => {
     await logout();
@@ -22,9 +22,6 @@ export default function UserBadge() {
   if (!user) {
     return <div className="text-sm text-slate-500">Ikke logget ind</div>;
   }
-
-  const displayName =
-    user.displayName?.trim() || user.email?.split("@")[0] || "Ukendt bruger";
 
   const roleLabel =
     role == null
