@@ -227,7 +227,7 @@ export default function ApprovedUsers({ eventId }: Props) {
                           className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100"
                           title="Fjern godkendelse (send tilbage til requests)"
                         >
-                          Tilbage til requests
+                          Tilbage til anmodninger
                         </button>
                       ) : null}
                     </div>
