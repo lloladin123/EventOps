@@ -2,7 +2,11 @@
 "use client";
 
 import * as React from "react";
-import { subscribeEventRsvps, type RsvpDoc } from "@/app/lib/firestore/rsvps";
+import {
+  setRsvpDecision,
+  subscribeEventRsvps,
+  type RsvpDoc,
+} from "@/app/lib/firestore/rsvps";
 import {
   RSVP_ATTENDANCE,
   RSVP_ATTENDANCE_LABEL,
@@ -10,6 +14,9 @@ import {
   type RSVPAttendance,
   type Decision,
 } from "@/types/rsvpIndex";
+import AdminAddApprovedStaffButton from "../event/AdminAddApprovedStaffButton";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { isAdmin } from "@/types/rsvp";
 
 type Props = { eventId: string };
 
@@ -126,6 +133,32 @@ export default function ApprovedUsers({ eventId }: Props) {
     window.setTimeout(() => setCopied(false), 900);
   };
 
+  const { role, user } = useAuth();
+  const canManage = isAdmin(role);
+  const adminUid = user?.uid ?? null;
+
+  const onRemoveApproval = React.useCallback(
+    async (uid: string, name: string) => {
+      const ok = window.confirm(`Fjern godkendelse for ${name}?`);
+      if (!ok) return;
+
+      try {
+        await setRsvpDecision(eventId, uid, DECISION.Pending, {
+          decidedByUid: adminUid,
+        });
+
+        window.dispatchEvent(new Event("requests-changed"));
+        window.dispatchEvent(new Event("events-changed"));
+      } catch (err) {
+        console.error("setRsvpDecision failed", err);
+        alert(
+          err instanceof Error ? err.message : "Kunne ikke fjerne godkendelse",
+        );
+      }
+    },
+    [eventId, adminUid],
+  );
+
   return (
     <div className="space-y-4 border-t pt-3">
       {/* Godkendte (ja/måske) */}
@@ -134,6 +167,8 @@ export default function ApprovedUsers({ eventId }: Props) {
           <div className="text-sm font-semibold text-slate-900">
             Godkendte ({approvedYesMaybe.length})
           </div>
+
+          <AdminAddApprovedStaffButton eventId={eventId} />
 
           <button
             type="button"
@@ -180,7 +215,22 @@ export default function ApprovedUsers({ eventId }: Props) {
                       ) : null}
                     </div>
 
-                    {attendancePill(r.attendance)}
+                    <div className="flex items-center gap-2">
+                      {attendancePill(r.attendance)}
+
+                      {canManage ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            onRemoveApproval(r.uid, displayNameFromRow(r))
+                          }
+                          className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                          title="Fjern godkendelse (send tilbage til requests)"
+                        >
+                          Tilbage til requests
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
 
                   {r.comment ? (
