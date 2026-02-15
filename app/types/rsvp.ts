@@ -12,7 +12,7 @@ export const ROLE = {
 export type Role = (typeof ROLE)[keyof typeof ROLE];
 
 export const isTrueAdmin = (
-  role: Role | null | undefined
+  role: Role | null | undefined,
 ): role is typeof ROLE.Admin => role === ROLE.Admin;
 
 export const isAdmin = (role: Role | null | undefined): boolean =>

@@ -52,8 +52,24 @@ export default function SignupCard() {
     setError(null);
     setOk(false);
 
+    const emailLocal = trimmedEmail.split("@")[0]?.trim().toLowerCase() ?? "";
+    const nameLower = normalizedName.toLowerCase();
+
     if (!normalizedName || normalizedName.length < 2) {
       setError("Skriv venligst dit navn (mindst 2 tegn).");
+      return;
+    }
+
+    if (normalizedName.includes("@")) {
+      setError("Navn må ikke være en email.");
+      return;
+    }
+
+    if (
+      nameLower === trimmedEmail.toLowerCase() ||
+      (emailLocal && nameLower === emailLocal)
+    ) {
+      setError("Navn må ikke være din email.");
       return;
     }
 
@@ -68,22 +84,19 @@ export default function SignupCard() {
         password,
       );
 
-      // ✅ Force displayName in Firebase Auth
       await updateProfile(cred.user, { displayName: normalizedName });
+      await cred.user.reload(); // optional but helps timing
 
       await setDoc(
         doc(db, "users", cred.user.uid),
         {
           displayName: normalizedName,
           email: cred.user.email,
+          createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          // only set createdAt if it's missing (see below)
         },
         { merge: true },
       );
-
-      // ✅ Do NOT write Firestore here.
-      // AuthProvider will create users/{uid} on first login if it doesn't exist.
 
       setOk(true);
       router.replace("/events");
