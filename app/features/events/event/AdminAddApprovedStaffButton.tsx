@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { useUserDisplay } from "@/features/auth/hooks/useUserDisplay";
 import { isAdmin } from "@/types/rsvp";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import {
@@ -18,13 +19,14 @@ export default function AdminAddApprovedStaffButton({
   className,
 }: Props) {
   const { user, role } = useAuth();
+  const { name: displayName } = useUserDisplay();
+
   const [loading, setLoading] = React.useState(false);
   const [myRsvp, setMyRsvp] = React.useState<RsvpDoc | null>(null);
 
   const uid = user?.uid ?? null;
   const allowed = !!uid && isAdmin(role);
 
-  // 🔥 Subscribe to my own RSVP
   React.useEffect(() => {
     if (!uid || !eventId) return;
 
@@ -37,13 +39,10 @@ export default function AdminAddApprovedStaffButton({
     );
   }, [eventId, uid]);
 
-  // Hide if not admin
   if (!allowed) return null;
 
-  // Hide if already approved
   const alreadyApproved =
     myRsvp?.decision === DECISION.Approved || myRsvp?.approved === true;
-
   if (alreadyApproved) return null;
 
   const handleClick = async () => {
@@ -52,13 +51,8 @@ export default function AdminAddApprovedStaffButton({
     try {
       setLoading(true);
 
-      const displayName =
-        user?.displayName?.trim() ||
-        user?.email?.split("@")[0] ||
-        "Ukendt bruger";
-
       await setRsvpAttendance(eventId, uid, RSVP_ATTENDANCE.Yes, {
-        userDisplayName: displayName,
+        userDisplayName: displayName, // ✅ Firestore-first, consistent everywhere
         role: (role as unknown as string) ?? null,
         subRole: null,
       });
