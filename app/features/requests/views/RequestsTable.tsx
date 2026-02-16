@@ -20,6 +20,7 @@ import { db } from "@/lib/firebase/client";
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 import { useRevokeRsvpApproval } from "../hooks/useRevokeRsvpApproval";
+import { RsvpRoleSelectCell } from "../components/RsvpRoleSelectCell";
 
 type Props = {
   rows: RSVPRow[];
@@ -38,6 +39,7 @@ type ColumnKey =
   | "name"
   | "attendance"
   | "status"
+  | "role"
   | "comment"
   | "updatedAt"
   | "actions";
@@ -240,6 +242,22 @@ export default function RequestsTable({
             </span>
           ),
         },
+        {
+          key: "role",
+          header: "Rolle",
+          headerTitle: "Sæt RSVP-rolle (event)",
+          sortValue: (r) => (r.rsvpRole ?? "").toLowerCase(),
+          cell: (r) => (
+            <RsvpRoleSelectCell
+              eventId={r.eventId}
+              uid={r.uid}
+              value={r.rsvpRole ?? null}
+              disabled={approvalsDisabled}
+              // later: options={eventsById[r.eventId]?.rsvpRoleOptions}
+            />
+          ),
+        },
+
         {
           key: "comment",
           header: "Kommentar",

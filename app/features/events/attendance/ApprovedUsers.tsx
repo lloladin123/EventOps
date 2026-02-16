@@ -21,8 +21,8 @@ import { isAdmin } from "@/types/rsvp";
 type Props = { eventId: string };
 
 type Row = { uid: string } & RsvpDoc & {
-    userRole?: string | null;
-    userSubRole?: string | null;
+    rsvpRole?: string | null;
+    rsvpSubRole?: string | null;
   };
 
 function labelFromUid(uid: string) {
@@ -38,8 +38,8 @@ function displayNameFromRow(r: Row) {
 }
 
 function roleLabelFromRow(r: Row) {
-  const role = (r as any).role ?? (r as any).userRole ?? null;
-  const subRole = (r as any).subRole ?? (r as any).userSubRole ?? null;
+  const role = (r as any).rsvpRole ?? null;
+  const subRole = (r as any).rsvpSubRole ?? null;
   if (!role) return null;
   return subRole ? `${role} • ${subRole}` : role;
 }

@@ -1,6 +1,6 @@
 import type { Event } from "@/types/event";
 import { Decision, RSVPAttendance } from "./rsvpIndex";
-import type { Role, CrewSubRole } from "./rsvp"; // 👈 add
+import type { Role, CrewSubRole } from "./rsvp";
 
 export type StatusFilter = Decision | "all";
 export type AttendanceFilter = RSVPAttendance | "all";
@@ -16,7 +16,7 @@ export type RSVPRow = {
   approved: boolean;
   event?: Event;
 
-  // 👇 add these two
-  userRole?: Role | null;
-  userSubRole?: CrewSubRole | null;
+  // ✅ RSVP-scoped (event role), NOT system role
+  rsvpRole?: Role | null;
+  rsvpSubRole?: CrewSubRole | null;
 };
