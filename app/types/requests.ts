@@ -9,6 +9,7 @@ export type RSVPRow = {
   eventId: string;
   uid: string;
   userDisplayName?: string;
+  systemRole?: string | null;
   attendance: RSVPAttendance;
   comment?: string;
   updatedAt?: string;

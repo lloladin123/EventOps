@@ -20,7 +20,7 @@ export type EventDoc = Event & {
 // Subscribe to all events
 export function subscribeEvents(
   onData: (events: Array<Event & { deleted?: boolean }>) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
 ) {
   const q = query(collection(db, "events"), orderBy("date", "asc"));
 
@@ -34,7 +34,7 @@ export function subscribeEvents(
 
       onData(rows);
     },
-    (err) => onError?.(err)
+    (err) => onError?.(err),
   );
 }
 
@@ -66,7 +66,7 @@ export async function setEventOpen(eventId: string, open: boolean) {
 export function subscribeEvent(
   eventId: string,
   onData: (event: EventDoc | null) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
 ) {
   return onSnapshot(
     doc(db, "events", eventId),
@@ -74,6 +74,41 @@ export function subscribeEvent(
       if (!snap.exists()) return onData(null);
       onData({ ...(snap.data() as any), id: snap.id } as EventDoc);
     },
-    (err) => onError?.(err)
+    (err) => onError?.(err),
   );
+}
+
+export type EditableEventFields = Partial<
+  Pick<
+    Event,
+    | "title"
+    | "date"
+    | "location"
+    | "meetingTime"
+    | "startTime"
+    | "description"
+    | "open"
+  >
+>;
+
+export async function updateEventFields(
+  eventId: string,
+  patch: EditableEventFields,
+) {
+  // Extra guard: avoid empty writes
+  if (!patch || Object.keys(patch).length === 0) return;
+
+  await updateDoc(doc(db, "events", eventId), {
+    ...patch,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// Optional convenience helpers (nice for inline edits)
+export async function setEventTitle(eventId: string, title: string) {
+  await updateEventFields(eventId, { title });
+}
+
+export async function setEventLocation(eventId: string, location: string) {
+  await updateEventFields(eventId, { location });
 }

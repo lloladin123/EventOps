@@ -92,6 +92,10 @@ export default function SignupCard() {
         {
           displayName: normalizedName,
           email: cred.user.email,
+
+          // ✅ default system role for new users
+          systemRole: "Bruger",
+
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         },

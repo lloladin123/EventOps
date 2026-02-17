@@ -28,24 +28,24 @@ function toLegacyRsvpShape(args: {
   userDisplayName: string;
   doc: RsvpDoc | null;
 }): RSVP | null {
-  const { eventId, effectiveRole, effectiveSubRole, userDisplayName, doc } =
-    args;
+  const { eventId, userDisplayName, doc } = args;
   if (!doc) return null;
 
-  const resolvedRole = (doc.role as Role) ?? effectiveRole ?? ROLE.Crew;
-  const isCrew = resolvedRole === ROLE.Crew;
+  const resolvedRsvpRole = ((doc as any).rsvpRole ?? undefined) as
+    | Role
+    | undefined;
 
   return {
     id: makeId(),
     eventId,
-    userRole: resolvedRole,
-    userSubRole: isCrew
-      ? ((doc.subRole as CrewSubRole) ?? effectiveSubRole ?? null)
-      : null,
+
+    approved: doc.approved ?? undefined,
+    rsvpRole: resolvedRsvpRole,
+
     attendance: doc.attendance ?? RSVP_ATTENDANCE.Maybe,
     comment: doc.comment ?? "",
-    approved: doc.approved ?? undefined,
     userDisplayName: doc.userDisplayName?.trim() || userDisplayName,
+
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -123,7 +123,6 @@ export function useRsvps(opts?: RsvpOptions) {
         (doc) => {
           setMyByEvent((prev) => ({ ...prev, [eventId]: doc }));
         },
-        // If you want zero console noise, don't console.error here either:
         (err) =>
           console.error("[useRsvps] subscribeMyRsvp error", eventId, err),
       ),
@@ -144,25 +143,14 @@ export function useRsvps(opts?: RsvpOptions) {
             ? { attendance: patch.attendance as any }
             : {}),
           ...(patch.comment !== undefined ? { comment: patch.comment } : {}),
-          role: (effectiveRole ?? ROLE.Crew) as any,
-          subRole:
-            (effectiveRole ?? ROLE.Crew) === ROLE.Crew
-              ? (effectiveSubRole as any)
-              : null,
           userDisplayName: hasRealName
             ? userDisplayName
             : (prev[eventId]?.userDisplayName ?? userDisplayName),
         },
       }));
 
-      const meta = {
-        role: (effectiveRole ?? ROLE.Crew) as any,
-        subRole:
-          (effectiveRole ?? ROLE.Crew) === ROLE.Crew
-            ? (effectiveSubRole as any)
-            : null,
-        userDisplayName: userDisplayName,
-      };
+      // ✅ attendance/comment should NOT set roles
+      const meta = { userDisplayName };
 
       if (patch.attendance !== undefined) {
         void setRsvpAttendance(
@@ -176,7 +164,7 @@ export function useRsvps(opts?: RsvpOptions) {
         void setRsvpComment(eventId, uid, patch.comment ?? "", meta);
       }
     },
-    [uid, effectiveRole, effectiveSubRole, userDisplayName, hasRealName],
+    [uid, userDisplayName, hasRealName],
   );
 
   const onChangeAttendance = React.useCallback(

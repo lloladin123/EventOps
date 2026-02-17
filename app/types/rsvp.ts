@@ -28,8 +28,7 @@ export type RSVP = {
 
   approved?: boolean;
 
-  userRole: Role;
-  userSubRole?: CrewSubRole | null;
+  rsvpRole?: Role;
 
   attendance: RSVPAttendance;
   comment: string;

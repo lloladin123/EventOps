@@ -21,7 +21,7 @@ import IncidentPanel from "@/features/incidents/ui/IncidentPanel";
 import EditIncidentModal from "@/features/incidents/EditIncidentModal/EditIncidentModal";
 import ExportIncidentPdfButton from "@/features/incidents/ui/ExportIncidentPdfButton";
 import { db } from "@/app/lib/firebase/client";
-import type { Role } from "@/types/rsvp";
+import { ROLE, type Role } from "@/types/rsvp";
 
 export default function EventDetailPage() {
   const router = useRouter();
@@ -31,31 +31,38 @@ export default function EventDetailPage() {
   const { user, systemRole, loading } = useAuth();
   const uid = user?.uid ?? null;
 
-  // ✅ load THIS user's RSVP role for THIS event (needed for Logfører access)
+  // ✅ RSVP access inputs (must be resolved before redirecting)
   const [rsvpRole, setRsvpRole] = React.useState<Role | null>(null);
-  const [rsvpLoading, setRsvpLoading] = React.useState(false);
+  const [rsvpApproved, setRsvpApproved] = React.useState<boolean | undefined>(
+    undefined,
+  );
+  const [rsvpResolved, setRsvpResolved] = React.useState(false);
 
   React.useEffect(() => {
     if (!id || !uid) {
       setRsvpRole(null);
-      setRsvpLoading(false);
+      setRsvpApproved(undefined);
+      setRsvpResolved(false);
       return;
     }
 
-    setRsvpLoading(true);
+    setRsvpResolved(false);
+
     const ref = doc(db, "events", id, "rsvps", uid);
 
     const unsub = onSnapshot(
       ref,
       (snap) => {
-        const data = snap.exists() ? snap.data() : null;
+        const data = snap.exists() ? (snap.data() as any) : null;
         setRsvpRole((data?.rsvpRole ?? null) as Role | null);
-        setRsvpLoading(false);
+        setRsvpApproved(data?.approved ?? undefined);
+        setRsvpResolved(true); // ✅ only mark resolved after we got a snapshot result
       },
       (err) => {
         console.error("[EventDetailPage] rsvp subscribe failed", err);
         setRsvpRole(null);
-        setRsvpLoading(false);
+        setRsvpApproved(undefined);
+        setRsvpResolved(true); // ✅ resolved even on error (so you can block/redirect deterministically)
       },
     );
 
@@ -75,7 +82,7 @@ export default function EventDetailPage() {
   );
   const [editing, setEditing] = React.useState<Incident | null>(null);
 
-  // keep approval state fresh
+  // keep approval state fresh (optional)
   const [tick, setTick] = React.useState(0);
   React.useEffect(() => {
     const rerender = () => setTick((t) => t + 1);
@@ -87,7 +94,7 @@ export default function EventDetailPage() {
     };
   }, []);
 
-  // ✅ access control: ONLY through canAccessEventDetails
+  // ✅ access control
   const allowed = React.useMemo(() => {
     return canAccessEventDetails({
       eventId: id,
@@ -95,10 +102,10 @@ export default function EventDetailPage() {
       systemRole,
       rsvpRole,
     });
-  }, [id, uid, systemRole, rsvpRole, tick]);
+  }, [id, uid, systemRole, rsvpRole, rsvpApproved, tick]);
 
-  // ✅ don’t redirect until both auth and RSVP role are resolved (Logfører depends on it)
-  const accessResolved = !loading && !!uid && !rsvpLoading;
+  // ✅ don’t redirect until auth + RSVP snapshot resolved
+  const accessResolved = !loading && !!uid && rsvpResolved;
   const shouldBlock = accessResolved && !allowed;
 
   React.useEffect(() => {
@@ -128,7 +135,7 @@ export default function EventDetailPage() {
     return () => unsub();
   }, [id]);
 
-  // 🔥 Subscribe to incidents (only when allowed + have eventId)
+  // 🔥 Subscribe to incidents (only when allowed + resolved)
   React.useEffect(() => {
     if (!accessResolved) return;
     if (!allowed) return;
@@ -153,9 +160,7 @@ export default function EventDetailPage() {
     return () => unsub();
   }, [id, accessResolved, allowed]);
 
-  const onAddIncident = React.useCallback((_incident: Incident) => {
-    // Firestore snapshot will update the list automatically.
-  }, []);
+  const onAddIncident = React.useCallback((_incident: Incident) => {}, []);
 
   const onDeleteIncident = React.useCallback(
     (incidentId: string) => {
@@ -177,6 +182,8 @@ export default function EventDetailPage() {
     <LoginRedirect
       unauthorizedRedirectTo="/events"
       description="Du har ikke adgang til denne kamp."
+      eventId={id} // ✅ REQUIRED if LoginRedirect uses RSVP gating
+      allowedRsvpRoles={[ROLE.Logfører, ROLE.Sikkerhedsledelse]}
     >
       {shouldBlock ? (
         <main className="mx-auto max-w-4xl p-6">
@@ -184,7 +191,7 @@ export default function EventDetailPage() {
             Ingen adgang…
           </div>
         </main>
-      ) : eventLoading ? (
+      ) : !accessResolved || eventLoading ? (
         <main className="mx-auto max-w-4xl p-6">
           <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
             Loader…

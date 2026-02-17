@@ -65,7 +65,7 @@ export default function GroupedTable<
   renderEmpty = null,
   onRowClick,
 }: Props<Row, GroupId, ColumnKey, SortKey>) {
-  const { sort } = useSortState(initialSort);
+  const { sort, toggleSort } = useSortState(initialSort);
   const sortable = React.useMemo(() => hasSortable(columns), [columns]);
 
   const grouped = React.useMemo(
@@ -114,7 +114,46 @@ export default function GroupedTable<
             <div className="overflow-x-auto">
               <table className={`${tableMinWidthClassName} w-full`}>
                 <thead className="bg-slate-50">
-                  {/* header rendering can go here */}
+                  <tr className="border-b border-slate-200">
+                    {columns.map((c) => {
+                      const isSortable = typeof c.sortValue === "function";
+                      const active = isSortable && sort.key === (c.key as any);
+                      const dir = active ? sort.dir : null;
+
+                      return (
+                        <th
+                          key={c.key}
+                          scope="col"
+                          title={
+                            c.headerTitle ??
+                            (typeof c.header === "string" ? c.header : "")
+                          }
+                          onClick={
+                            isSortable
+                              ? () => toggleSort(c.key as any)
+                              : undefined
+                          }
+                          className={[
+                            "px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600",
+                            c.align === "right" && "text-right",
+                            isSortable &&
+                              "cursor-pointer select-none hover:bg-slate-100",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        >
+                          <span className="inline-flex items-center gap-1">
+                            {c.header}
+                            {isSortable ? (
+                              <span className="text-slate-400">
+                                {active ? (dir === "asc" ? "▲" : "▼") : "↕"}
+                              </span>
+                            ) : null}
+                          </span>
+                        </th>
+                      );
+                    })}
+                  </tr>
                 </thead>
 
                 <tbody>

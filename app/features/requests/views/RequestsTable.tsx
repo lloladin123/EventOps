@@ -217,8 +217,11 @@ export default function RequestsTable({
           headerTitle: "Sortér efter navn",
           sortValue: (r) => r.userDisplayName?.trim() || r.uid,
 
-          // ✅ This is the critical bit: a focusable element per row with data attrs
-          cell: (r) => <RequestNameCell row={r} />,
+          cell: (r) => (
+            <div className="flex h-full w-full items-center justify-center">
+              <RequestNameCell row={r} />
+            </div>
+          ),
         },
         {
           key: "attendance",

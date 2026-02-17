@@ -108,8 +108,7 @@ export async function setRsvpAttendance(
     {
       attendance,
       uid,
-      role: meta?.role ?? null,
-      subRole: meta?.subRole ?? null,
+      // ❌ stop assigning role/subRole here
       userDisplayName: meta?.userDisplayName ?? null,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,
@@ -132,8 +131,7 @@ export async function setRsvpComment(
     {
       comment,
       uid,
-      role: meta?.role ?? null,
-      subRole: meta?.subRole ?? null,
+      // ❌ stop assigning role/subRole here
       userDisplayName: meta?.userDisplayName ?? null,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,

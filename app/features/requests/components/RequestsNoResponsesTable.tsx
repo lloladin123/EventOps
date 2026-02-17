@@ -75,7 +75,7 @@ export function RequestsNoResponsesTable({
               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
                 Fremmøde
               </th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
+              <th className="px-0 py-2 text-xs font-semibold text-slate-600">
                 Status
               </th>
               <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">
@@ -93,18 +93,12 @@ export function RequestsNoResponsesTable({
           <tbody>
             {sorted.map((r) => {
               const who = r.userDisplayName?.trim() || r.uid;
-              const roleLabel = r.userRole
-                ? r.userSubRole
-                  ? `${r.userRole} – ${r.userSubRole}`
-                  : r.userRole
-                : "—";
 
               return (
                 <tr key={r.uid} className="border-t">
                   <td className="px-4 py-2 align-top">
-                    <div className="text-sm text-slate-900">
-                      <div className="font-medium">{who}</div>
-                      <div className="text-xs text-slate-500">{roleLabel}</div>
+                    <div className="text-sm font-medium text-slate-900">
+                      {who}
                     </div>
                   </td>
 
@@ -112,7 +106,7 @@ export function RequestsNoResponsesTable({
                     {attendanceLabel(r.attendance)}
                   </td>
 
-                  <td className="px-4 py-2 align-top">
+                  <td className="py-2 align-top">
                     <span className={statusPill(r.decision)}>
                       {statusLabel(r.decision)}
                     </span>

@@ -36,7 +36,7 @@ export function useRequestsRows({
   showClosedEvents,
 }: Params): Result {
   const [eventsById, setEventsById] = React.useState<Map<string, Event>>(
-    () => new Map()
+    () => new Map(),
   );
   const [rows, setRows] = React.useState<RSVPRow[]>([]);
 
@@ -82,16 +82,21 @@ export function useRequestsRows({
 
             updatedAt: toIso(d.updatedAt) || toIso(d.approvedAt) || "",
             event,
-            userRole: d.role ?? d.userRole ?? null,
-            userSubRole: d.subRole ?? d.userSubRole ?? null,
+
+            // ✅ System role shown under name
+            systemRole: d.systemRole ?? null,
+
+            // (keep RSVP-scoped roles if you still use them elsewhere)
+            rsvpRole: d.rsvpRole ?? null,
+            rsvpSubRole: d.rsvpSubRole ?? null,
           }));
 
           perEvent.set(event.id, list);
           flush();
         },
         (err) =>
-          console.error("[useRequestsRows] subscribeEventRsvps", event.id, err)
-      )
+          console.error("[useRequestsRows] subscribeEventRsvps", event.id, err),
+      ),
     );
 
     // If there are no visible events, clear rows right away

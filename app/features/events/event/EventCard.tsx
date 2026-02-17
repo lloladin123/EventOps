@@ -7,7 +7,7 @@ import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
 import AttendanceButtons from "../attendance/AttendanceButtons";
 import { cn } from "@/components/ui/utils/cn";
-import { setEventOpen } from "@/app/lib/firestore/events";
+import { setEventOpen, updateEventFields } from "@/app/lib/firestore/events";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
 
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
@@ -16,6 +16,8 @@ import EventCardMembers from "./EventCardMembers";
 import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
 import { isSystemAdmin } from "@/types/systemRoles";
 import { Role } from "@/types/rsvp";
+import { InlineEdit } from "../utils/InlineEdit";
+import { Wrench } from "lucide-react";
 
 type Props = {
   event: Event;
@@ -28,31 +30,25 @@ type Props = {
   onDelete?: (event: Event) => void;
 };
 
-// ✅ Badge that includes approval state (color) instead of a separate status bar
 function requestBadge(attendance?: RSVPAttendance, approved?: boolean) {
-  // No request made
   if (!attendance || attendance === RSVP_ATTENDANCE.No) {
     return {
       text: "Ingen anmodning",
       cls: "bg-slate-50 text-slate-700 ring-slate-200",
     };
   }
-
-  // Approved / rejected / pending
   if (approved === true) {
     return {
       text: "Din anmodning er godkendt",
       cls: "bg-emerald-50 text-emerald-800 ring-emerald-200",
     };
   }
-
   if (approved === false) {
     return {
       text: "Din anmodning blev afvist",
       cls: "bg-rose-50 text-rose-800 ring-rose-200",
     };
   }
-
   return {
     text: "Afventer godkendelse",
     cls: "bg-amber-50 text-amber-900 ring-amber-200",
@@ -74,6 +70,14 @@ export default function EventCard({
 
   const badge = requestBadge(attendanceValue, approved);
 
+  console.log("EventCard access inputs", {
+    eventId: event.id,
+    uid: user?.uid,
+    systemRole,
+    rsvpRole,
+    approved,
+  });
+
   const canOpenDetails =
     !!user &&
     !loading &&
@@ -81,7 +85,7 @@ export default function EventCard({
       eventId: event.id,
       uid: user.uid,
       systemRole,
-      rsvpRole, // ✅ critical
+      rsvpRole,
     });
 
   const closeNow = async () => {
@@ -95,6 +99,15 @@ export default function EventCard({
     await setEventOpen(event.id, true);
     window.dispatchEvent(
       new CustomEvent<Event>("event-opened", { detail: event }),
+    );
+  };
+
+  const commitPatch = async (patch: Partial<Event>) => {
+    await updateEventFields(event.id, patch as any);
+    window.dispatchEvent(
+      new CustomEvent<Event>("event-updated", {
+        detail: { ...event, ...patch },
+      }),
     );
   };
 
@@ -114,27 +127,36 @@ export default function EventCard({
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          {canOpenDetails ? (
-            <Link
-              href={`/events/${event.id}`}
-              aria-label={`Åbn detaljer for ${event.title}`}
-              className="group flex items-center gap-2 text-lg font-semibold text-slate-900 hover:text-slate-600"
-            >
-              <span className="group-hover:underline">{event.title}</span>
-              <span className="text-slate-400 transition group-hover:translate-x-0.5">
-                ›
-              </span>
-            </Link>
+          {/* Title (editable for admins, plain for users) */}
+          {admin ? (
+            <span className="inline-flex items-center gap-1">
+              <InlineEdit
+                value={event.title}
+                placeholder="Titel"
+                canEdit
+                className="text-lg font-semibold text-slate-900"
+                onCommit={async (next) => {
+                  await updateEventFields(event.id, { title: next });
+                }}
+              />
+              <Wrench className="h-4 w-4 text-slate-400 opacity-70" />
+            </span>
           ) : (
-            <span
-              className="text-lg font-semibold text-slate-900"
-              title={!user || loading ? "" : "Kun godkendte kan åbne detaljer"}
-            >
+            <span className="text-lg font-semibold text-slate-900">
               {event.title}
             </span>
           )}
 
-          {/* ✅ Status is now color-coded here (no need for separate bar) */}
+          {/* Dedicated details link (safe, no edit conflicts) */}
+          {canOpenDetails && (
+            <Link
+              href={`/events/${event.id}`}
+              className="inline-flex items-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition"
+            >
+              Se detaljer →
+            </Link>
+          )}
+
           {!admin && (
             <span
               className={cn(
@@ -154,7 +176,8 @@ export default function EventCard({
           )}
         </div>
 
-        <EventMeta event={event} />
+        {/* ✅ Make EVERY meta field editable inside EventMeta */}
+        <EventMeta event={event} admin={admin} onPatch={commitPatch} />
 
         {!admin && <EventCardMembers eventId={event.id} max={6} />}
 

@@ -8,7 +8,6 @@ import UserListTable from "@/features/users/views/UserListTable";
 import UserListView from "@/features/users/views/UserListView";
 
 import {
-  isSystemAdmin,
   isSystemSuperAdmin,
   SYSTEM_ROLE,
   type SystemRole,
@@ -157,8 +156,8 @@ export default function UsersPage() {
         <UserListTable
           users={users}
           busy={busy}
-          roles={selectableSystemRoles}
-          setUserRole={setUserRole}
+          systemRoles={selectableSystemRoles}
+          setUserSystemRole={setUserRole}
           deleteUser={deleteUser}
         />
       ) : (

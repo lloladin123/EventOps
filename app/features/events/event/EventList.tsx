@@ -128,6 +128,9 @@ export default function EventList() {
                         my?.attendance as RSVPAttendance | undefined
                       }
                       approved={my?.approved}
+                      rsvpRole={
+                        (my as any)?.rsvpRole ?? (my as any)?.role ?? null
+                      }
                       commentValue={my?.comment ?? ""}
                       onChangeAttendance={onChangeAttendance}
                       onChangeComment={onChangeComment}

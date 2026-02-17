@@ -11,3 +11,9 @@ export const isSystemAdmin = (r: SystemRole | null | undefined) =>
 
 export const isSystemSuperAdmin = (r: SystemRole | null | undefined) =>
   r === SYSTEM_ROLE.Superadmin;
+
+export const SYSTEM_ROLE_GROUP = {
+  AdminOnly: [SYSTEM_ROLE.Admin, SYSTEM_ROLE.Superadmin] as const,
+  SuperadminOnly: [SYSTEM_ROLE.Superadmin] as const,
+  All: [SYSTEM_ROLE.User, SYSTEM_ROLE.Admin, SYSTEM_ROLE.Superadmin] as const,
+} as const;
