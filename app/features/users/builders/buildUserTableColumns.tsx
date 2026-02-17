@@ -7,7 +7,6 @@ import { DeleteUserButton } from "../cells/DeleteUserButton";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 
 type Row = { uid: string; data: UserDoc };
-type ColumnKey = "user" | "uid" | "systemRole" | "actions";
 
 function asText(v: unknown) {
   return (v ?? "").toString().trim().toLowerCase();
@@ -32,13 +31,11 @@ type Params = {
 };
 
 export function buildUserTableColumns({
-  systemRoles,
   setUserSystemRole,
   deleteUser,
   setRowRef,
   setRoleRef,
   focusRoleSelect,
-  focusMissingRelative,
   flash,
 }: Params) {
   const columns = [

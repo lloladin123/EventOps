@@ -20,12 +20,7 @@ type Props = {
   ) => void | Promise<void>;
 };
 
-export function RoleSelectCell({
-  uid,
-  role,
-  setRoleRef,
-  setUserSystemRole,
-}: Props) {
+export function RoleSelectCell({ uid, role, setRoleRef }: Props) {
   const [selected, setSelected] = React.useState<SystemRole | "">(role ?? "");
   const [saving, setSaving] = React.useState(false);
   const systemRoles = Object.values(SYSTEM_ROLE) as SystemRole[];
@@ -34,27 +29,6 @@ export function RoleSelectCell({
     if (saving) return;
     setSelected(role ?? "");
   }, [role, saving]);
-
-  const onChange = async (next: string) => {
-    const nextRole: SystemRole | null =
-      next === "" ? null : (next as SystemRole);
-
-    // Optional safety: block Superadmin edits from UI
-    if (nextRole === SYSTEM_ROLE.Superadmin) return;
-
-    const prev = selected;
-    setSelected(nextRole ?? "");
-    setSaving(true);
-
-    try {
-      await Promise.resolve(updateUserSystemRole(uid, nextRole));
-    } catch (err) {
-      console.error("Failed to set systemRole", err);
-      setSelected(prev);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   return (
     <select

@@ -6,17 +6,12 @@ import {
   isEventClosed,
   setEventClosed,
 } from "@/features/events/lib/eventStatus";
-import { ROLE, type Role } from "@/types/rsvp";
-
-const CAN_CLOSE = new Set<Role>([
-  ROLE.Admin,
-  ROLE.Sikkerhedsledelse,
-  ROLE.Logfører,
-]);
+import { isSystemAdmin } from "@/types/systemRoles";
 
 export function useAuthAndClosed(eventId: string) {
   const authAny = useAuth() as any;
-  const { user, role, loading } = authAny;
+
+  const { user, systemRole, loading } = authAny;
 
   // if AuthProvider exposes Firestore profile name, prefer it
   const profileDisplayName: string | null =
@@ -46,14 +41,12 @@ export function useAuthAndClosed(eventId: string) {
     [eventId],
   );
 
-  // ✅ Prefer profile displayName, then Firebase Auth displayName.
-  // ❌ Never fall back to email (prevents leaking emails into logs)
   const loggedBy =
     loading || !user
       ? ""
       : profileDisplayName?.trim() || user.displayName?.trim() || "";
 
-  const canClose = !loading && !!role && CAN_CLOSE.has(role);
+  const canClose = !loading && isSystemAdmin(systemRole);
 
   return { loggedBy, closed, setClosed, canClose };
 }

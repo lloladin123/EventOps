@@ -1,6 +1,6 @@
 "use client";
 
-import { countNonAdminUsers, countUsersWithoutRole } from "../lib/userCounts";
+import { countNonAdminUsers } from "../lib/userCounts";
 
 type Row = { uid: string; data: any };
 

@@ -29,7 +29,7 @@ export default function IncidentForm({
   onAddIncident,
 }: Props) {
   const { loggedBy, canClose } = useAuthAndClosed(eventId);
-  const { user, role } = useAuth();
+  const { user, systemRole } = useAuth();
 
   const closed = !eventOpen;
 
@@ -83,12 +83,12 @@ export default function IncidentForm({
         files: uploadedFiles,
         createdAt: new Date().toISOString(),
         createdByUid: (user as any)?.uid ?? null,
-        createdByRole: role ?? null,
+        createdByRole: systemRole ?? null,
       };
 
       await createIncidentFirestore(eventId, incident, {
         createdByUid: (user as any)?.uid ?? null,
-        createdByRole: role ?? null,
+        createdByRole: systemRole ?? null,
       });
 
       onAddIncident(incident);

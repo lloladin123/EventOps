@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { ROLE } from "@/types/rsvp";
 import type { RSVP, Role, CrewSubRole } from "@/types/rsvp";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
