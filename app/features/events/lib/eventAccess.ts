@@ -21,7 +21,7 @@ export function canAccessEventDetails({
   if (isSystemAdmin(systemRole)) return true;
 
   // ✅ RSVP-based special access
-  if (rsvpRole === ROLE.Logfører || rsvpRole === ROLE.Sikkerhedsledelse)
+  if (rsvpRole === ROLE.Logfører || rsvpRole === ROLE.Sikkerhedschef)
     return true;
 
   if (!uid) return false;
