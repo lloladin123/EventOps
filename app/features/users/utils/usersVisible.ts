@@ -1,10 +1,15 @@
 // usersVisible.ts
-import { ROLE } from "@/types/rsvp";
-import type { Role } from "@/types/rsvp";
 import type { UserDoc } from "@/lib/firestore/users.client";
+import type { SystemRole } from "@/types/systemRoles";
 
-export function visibleNonAdminUsers(
-  users: Array<{ uid: string; data: UserDoc }>,
-) {
-  return users.filter(({ data }) => (data.role as Role | null) !== ROLE.Admin);
+type UserRow = {
+  uid: string;
+  data: UserDoc & { systemRole?: SystemRole | null };
+};
+
+export function visibleNonAdminUsers(users: UserRow[]) {
+  return users.filter(({ data }) => {
+    const role = data.systemRole ?? null;
+    return role !== "Admin" && role !== "Superadmin";
+  });
 }
