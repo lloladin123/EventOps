@@ -1,25 +1,37 @@
 "use client";
 
 import type { UserDoc } from "@/lib/firestore/users.client";
-import type { Role } from "@/types/rsvp";
 
 type Props = {
   uid: string;
   data: UserDoc;
   setRowRef?: (uid: string, el: HTMLElement | null) => void;
-  onActivate?: () => void; // ✅ new
+  onActivate?: () => void;
+
+  // ✅ add
+  focusRoleSelect?: (uid: string) => void;
 };
 
-export function UserIdentityCell({ uid, data, setRowRef, onActivate }: Props) {
-  const hasRole = !!(data.role as Role | null);
-  const needsRole = !hasRole;
-
+export function UserIdentityCell({
+  uid,
+  data,
+  setRowRef,
+  onActivate,
+  focusRoleSelect,
+}: Props) {
   return (
     <div
       ref={(el) => setRowRef?.(uid, el)}
       tabIndex={0}
       data-userfocus="row"
       data-uid={uid}
+      onKeyDown={(e) => {
+        // Space focuses dropdown; otherwise don't interfere
+        if ((e.key === " " || e.code === "Space") && focusRoleSelect) {
+          e.preventDefault();
+          focusRoleSelect(uid);
+        }
+      }}
       onClick={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("button,a,input,select,textarea,[role='button']"))
@@ -33,13 +45,7 @@ export function UserIdentityCell({ uid, data, setRowRef, onActivate }: Props) {
         "cursor-pointer outline-none transition-colors duration-200",
       ].join(" ")}
     >
-      <span
-        aria-hidden
-        className={[
-          "w-1 shrink-0 rounded-full",
-          needsRole ? "bg-amber-400" : "bg-transparent",
-        ].join(" ")}
-      />
+      <span aria-hidden className="w-1 shrink-0 rounded-full" />
 
       <div className="pointer-events-none text-sm text-slate-900">
         <div className="font-medium">{data.displayName || "—"}</div>

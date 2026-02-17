@@ -11,7 +11,12 @@ function isTypingTarget(target: EventTarget | null) {
   const el = target as HTMLElement | null;
   if (!el) return false;
   const tag = el.tagName;
-  return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    el.isContentEditable ||
+    !!el.closest('[role="combobox"]') // ✅ add (Radix SelectTrigger etc)
+  );
 }
 
 const ROW_SELECTOR = '[data-userfocus="row"][data-uid]';
@@ -50,7 +55,6 @@ function useLatestRef<T>(value: T) {
 type Params<TUser extends UserLike> = {
   enabled: boolean;
   users: readonly TUser[];
-  onJumpMissing: (fromUid: string | null, dir: 1 | -1) => void;
   onDeleteUser: (uid: string) => void | Promise<void>;
 
   getDeleteLabel?: (row: TUser) => string;
@@ -60,7 +64,6 @@ type Params<TUser extends UserLike> = {
 export function useUserHotkeys<TUser extends UserLike>({
   enabled,
   users,
-  onJumpMissing,
   onDeleteUser,
   getDeleteLabel = defaultDeleteLabel,
   confirmDelete = (label) =>
@@ -68,7 +71,6 @@ export function useUserHotkeys<TUser extends UserLike>({
 }: Params<TUser>) {
   const enabledRef = useLatestRef(enabled);
   const usersRef = useLatestRef(users);
-  const onJumpMissingRef = useLatestRef(onJumpMissing);
   const onDeleteUserRef = useLatestRef(onDeleteUser);
   const getDeleteLabelRef = useLatestRef(getDeleteLabel);
   const confirmDeleteRef = useLatestRef(confirmDelete);
@@ -77,19 +79,15 @@ export function useUserHotkeys<TUser extends UserLike>({
     const onKeyDown = (e: KeyboardEvent) => {
       if (!enabledRef.current) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (isTypingTarget(e.target)) return;
 
       const key = e.key;
 
-      // ✅ Arrow navigation by DOM order (respects sorting)
+      // ✅ Arrow navigation must work even if focus is on <select>
       if (key === "ArrowDown" || key === "ArrowUp") {
         const dir: 1 | -1 = key === "ArrowDown" ? 1 : -1;
 
-        // Shift+Arrow: keep your "missing role" jump behavior
         if (e.shiftKey) {
           e.preventDefault();
-          const uidNow = currentUidFromFocus();
-          onJumpMissingRef.current(uidNow, dir);
           return;
         }
 
@@ -106,13 +104,8 @@ export function useUserHotkeys<TUser extends UserLike>({
         return;
       }
 
-      // n / Shift+n => cycle missing role
-      if (key === "n" || key === "N") {
-        e.preventDefault();
-        const uidNow = currentUidFromFocus();
-        onJumpMissingRef.current(uidNow, e.shiftKey ? -1 : 1);
-        return;
-      }
+      // ✅ only AFTER arrow handling, block typing targets
+      if (isTypingTarget(e.target)) return;
 
       // s => delete focused user
       if (key === "s" || key === "S") {

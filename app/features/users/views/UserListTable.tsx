@@ -1,83 +1,78 @@
 "use client";
 
 import * as React from "react";
-import { isTrueAdmin, ROLE } from "@/types/rsvp";
-import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/lib/firestore/users.client";
-
 import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
+import { SortState } from "@/components/ui/patterns/table/types";
+import { getAuth } from "firebase/auth";
+
+import { UsersViewState } from "./UsersViewState";
+import { usersGroupMeta } from "../config/UsersGroupMeta";
+import { UserHotkeysHint } from "./UserHotkeysHint";
+
 import { useUserHotkeys } from "../hooks/useUserHotkeys";
 import { useFlashUid } from "../hooks/useFlashUid";
 import { useUserRowFocus } from "../hooks/useUserRowFocus";
 import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";
-import { confirmDeleteUser } from "../utils/confirmDeleteUser";
-import { UsersViewState } from "./UsersViewState";
-import { usersGroupMeta } from "../config/UsersGroupMeta";
-import { buildUserTableColumns } from "../builders/buildUserTableColumns";
-import { visibleNonAdminUsers } from "../utils/usersVisible";
 import { useFlashFocus } from "../hooks/useFlashFocus";
-import { UserHotkeysHint } from "./UserHotkeysHint";
-import { SortState } from "@/components/ui/patterns/table/types";
-import { getAuth } from "firebase/auth";
+import { confirmDeleteUser } from "../utils/confirmDeleteUser";
+
+import {
+  SYSTEM_ROLE,
+  type SystemRole,
+  isSystemAdmin,
+} from "@/types/systemRoles";
+
+import { buildUserTableColumns } from "../builders/buildUserTableColumns";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
   busy: boolean;
-  roles: readonly Role[];
-  crewSubRoles: readonly CrewSubRole[];
-  setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
-  setUserSubRole: (
+
+  systemRoles: readonly SystemRole[];
+  setUserSystemRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null,
+    nextRole: SystemRole | null,
   ) => void | Promise<void>;
 
-  // ✅ NEW
   deleteUser: (uid: string) => void | Promise<void>;
 };
 
 type Row = { uid: string; data: UserDoc };
-
-// Single group id
 type GroupId = "all";
 
-type ColumnKey = "user" | "uid" | "role" | "subRole" | "actions";
+type ColumnKey = "user" | "uid" | "systemRole" | "actions";
 type SortKey = Exclude<ColumnKey, "actions">;
 
 export default function UserListTable({
   users,
   busy,
-  roles,
-  crewSubRoles,
-  setUserRole,
-  setUserSubRole,
+  systemRoles,
+  setUserSystemRole,
   deleteUser,
 }: Props) {
   const uid = getAuth().currentUser?.uid ?? null;
 
-  const currentUserRole = React.useMemo(() => {
+  const currentSystemRole = React.useMemo(() => {
     if (!uid) return null;
-    return (users.find((u) => u.uid === uid)?.data.role ?? null) as Role | null;
+    return (users.find((u) => u.uid === uid)?.data.systemRole ??
+      null) as SystemRole | null;
   }, [users, uid]);
 
   const visibleUsers = React.useMemo(() => {
-    const base = visibleNonAdminUsers(users); // already removes Admin
+    // 🚫 Never show Superadmins in this list
+    const base = users.filter(
+      (u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin,
+    );
 
-    // Only true admin can see Sikkerhedsledelse
-    return isTrueAdmin(currentUserRole)
-      ? base
-      : base.filter((u) => u.data.role !== ROLE.Sikkerhedsledelse);
-  }, [users, currentUserRole]);
+    // No "staff" concept anymore — admins and non-admins see the same base list
+    if (isSystemAdmin(currentSystemRole)) return base;
+    return base;
+  }, [users, currentSystemRole]);
 
   const { flashUid, flash } = useFlashUid(2200);
 
-  const {
-    setRowRef,
-    setRoleRef,
-    setSubRoleRef,
-    focusRoleSelect,
-    focusSubRoleSelect,
-  } = useUserRowFocus();
-
+  const { setRowRef, setRoleRef, focusRoleSelect } = useUserRowFocus();
   const focusRoleSelectFlash = useFlashFocus(flash, focusRoleSelect);
 
   const { focusMissingRelative } = useMissingRoleNavigator({
@@ -88,38 +83,32 @@ export default function UserListTable({
   const columns = React.useMemo(
     () =>
       buildUserTableColumns({
-        roles,
-        crewSubRoles,
-        setUserRole,
-        setUserSubRole,
+        systemRoles,
+        setUserSystemRole,
         deleteUser,
         setRowRef,
         setRoleRef,
-        setSubRoleRef,
-        focusSubRoleSelect,
-        focusMissingRelative,
+        focusRoleSelect,
         flashUid,
         flash,
+        focusMissingRelative,
       }),
     [
-      roles,
-      crewSubRoles,
-      setUserRole,
-      setUserSubRole,
+      systemRoles,
+      setUserSystemRole,
       deleteUser,
       setRowRef,
       setRoleRef,
-      setSubRoleRef,
-      focusSubRoleSelect,
-      focusMissingRelative,
       flashUid,
+      focusRoleSelect,
+      flash,
+      focusMissingRelative,
     ],
   );
 
   useUserHotkeys({
     enabled: true,
     users: visibleUsers,
-    onJumpMissing: focusMissingRelative,
     onDeleteUser: deleteUser,
     confirmDelete: (_label, row) => confirmDeleteUser(row.uid, row.data),
   });

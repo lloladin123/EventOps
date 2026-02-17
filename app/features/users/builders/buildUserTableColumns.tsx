@@ -1,79 +1,57 @@
-"use client";
-
-import * as React from "react";
-import {} from "@/types/rsvp";
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import type { SystemRole } from "@/types/systemRoles";
 import type { UserDoc } from "@/lib/firestore/users.client";
 
 import { UserIdentityCell } from "../cells/UserIdentityCell";
 import { RoleSelectCell } from "../cells/RoleSelectCell";
-import { SubRoleSelect } from "../cells/SubRoleSelect";
 import { DeleteUserButton } from "../cells/DeleteUserButton";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 
 type Row = { uid: string; data: UserDoc };
-type ColumnKey = "user" | "uid" | "role" | "subRole" | "actions";
 
 function asText(v: unknown) {
   return (v ?? "").toString().trim().toLowerCase();
 }
 
 type Params = {
-  roles: readonly Role[];
-  crewSubRoles: readonly CrewSubRole[];
-  setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
-  setUserSubRole: (
+  systemRoles: readonly SystemRole[];
+  setUserSystemRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null,
+    nextRole: SystemRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 
-  // focus + refs
   setRowRef: (uid: string, el: HTMLElement | null) => void;
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
-  setSubRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
 
-  focusSubRoleSelect: (uid: string) => void;
+  focusRoleSelect: (uid: string) => void; // ✅ add
   focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
 
-  // flash state
   flashUid: string | null;
   flash: (uid: string) => void;
 };
 
 export function buildUserTableColumns({
-  roles,
-  crewSubRoles,
-  setUserRole,
-  setUserSubRole,
+  setUserSystemRole,
   deleteUser,
   setRowRef,
   setRoleRef,
-  setSubRoleRef,
-  focusSubRoleSelect,
-  focusMissingRelative,
+  focusRoleSelect,
   flash,
 }: Params) {
-  const columns: Array<{
-    key: ColumnKey;
-    header: string;
-    headerTitle?: string;
-    align?: "left" | "right" | "center";
-    sortValue?: (r: Row) => string;
-    cell: (r: Row) => React.ReactNode;
-  }> = [
+  const columns = [
     {
       key: "user",
       header: "Bruger",
       headerTitle: "Sortér efter navn",
-      sortValue: (r) =>
+      sortValue: (r: Row) =>
         r.data.displayName?.trim() || r.data.email?.split("@")[0] || r.uid,
-      cell: (r) => (
+      cell: (r: Row) => (
         <UserIdentityCell
           uid={r.uid}
           data={r.data}
           setRowRef={setRowRef}
           onActivate={() => flash(r.uid)}
+          focusRoleSelect={focusRoleSelect} // ✅ add
         />
       ),
     },
@@ -81,47 +59,28 @@ export function buildUserTableColumns({
       key: "uid",
       header: "UID",
       headerTitle: "Sortér efter UID",
-      sortValue: (r) => asText(r.uid),
-      cell: (r) => <code className="text-xs text-slate-700">{r.uid}</code>,
+      sortValue: (r: Row) => asText(r.uid),
+      cell: (r: Row) => <code className="text-xs text-slate-700">{r.uid}</code>,
     },
     {
-      key: "role",
-      header: "Rolle",
-      headerTitle: "Sortér efter rolle",
-      sortValue: (r) => asText(r.data.role ?? ""),
-      cell: (r) => (
+      key: "systemRole",
+      header: "System rolle",
+      headerTitle: "Sortér efter systemrolle",
+      sortValue: (r: Row) => asText(r.data.systemRole ?? ""),
+      cell: (r: Row) => (
         <RoleSelectCell
           uid={r.uid}
-          role={(r.data.role ?? null) as Role | null}
-          roles={roles}
+          role={(r.data.systemRole ?? null) as SystemRole | null}
           setRoleRef={setRoleRef}
-          setUserRole={setUserRole}
-          focusSubRoleSelect={focusSubRoleSelect}
-          focusMissingRelative={focusMissingRelative}
-        />
-      ),
-    },
-    {
-      key: "subRole",
-      header: "Under rolle",
-      headerTitle: "Sortér efter subrole",
-      sortValue: (r) => asText(r.data.subRole ?? ""),
-      cell: (r) => (
-        <SubRoleSelect
-          uid={r.uid}
-          role={(r.data.role ?? null) as Role | null}
-          subRole={(r.data.subRole ?? null) as CrewSubRole | null}
-          crewSubRoles={crewSubRoles}
-          setSubRoleRef={setSubRoleRef}
-          setUserSubRole={setUserSubRole}
+          setUserSystemRole={setUserSystemRole}
         />
       ),
     },
     {
       key: "actions",
       header: " ",
-      align: "right",
-      cell: (r) => (
+      align: "right" as const,
+      cell: (r: Row) => (
         <DeleteUserButton
           uid={r.uid}
           data={r.data}
@@ -132,5 +91,5 @@ export function buildUserTableColumns({
     },
   ];
 
-  return columns as any; // GroupedTable typing is usually picky; cast if needed
+  return columns as any;
 }

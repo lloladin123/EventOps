@@ -16,13 +16,13 @@ import {
 } from "@/types/rsvpIndex";
 import AdminAddApprovedStaffButton from "../event/AdminAddApprovedStaffButton";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin } from "@/types/rsvp";
+import { isSystemAdmin } from "@/types/systemRoles";
 
 type Props = { eventId: string };
 
 type Row = { uid: string } & RsvpDoc & {
-    userRole?: string | null;
-    userSubRole?: string | null;
+    rsvpRole?: string | null;
+    rsvpSubRole?: string | null;
   };
 
 function labelFromUid(uid: string) {
@@ -38,8 +38,8 @@ function displayNameFromRow(r: Row) {
 }
 
 function roleLabelFromRow(r: Row) {
-  const role = (r as any).role ?? (r as any).userRole ?? null;
-  const subRole = (r as any).subRole ?? (r as any).userSubRole ?? null;
+  const role = (r as any).rsvpRole ?? null;
+  const subRole = (r as any).rsvpSubRole ?? null;
   if (!role) return null;
   return subRole ? `${role} • ${subRole}` : role;
 }
@@ -133,8 +133,9 @@ export default function ApprovedUsers({ eventId }: Props) {
     window.setTimeout(() => setCopied(false), 900);
   };
 
-  const { role, user } = useAuth();
-  const canManage = isAdmin(role);
+  const { systemRole, user } = useAuth();
+  const canManage = isSystemAdmin(systemRole);
+
   const adminUid = user?.uid ?? null;
 
   const onRemoveApproval = React.useCallback(

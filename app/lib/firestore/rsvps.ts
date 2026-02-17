@@ -38,19 +38,19 @@ export function subscribeMyRsvp(
   eventId: string,
   uid: string,
   onData: (doc: RsvpDoc | null) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
 ): Unsubscribe {
   return onSnapshot(
     rsvpRef(eventId, uid),
     (snap) => onData(snap.exists() ? (snap.data() as RsvpDoc) : null),
-    (err) => onError?.(err)
+    (err) => onError?.(err),
   );
 }
 
 export function subscribeEventRsvps(
   eventId: string,
   onData: (rows: Array<{ uid: string } & RsvpDoc>) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
 ): Unsubscribe {
   const q = query(collection(db, "events", eventId, "rsvps"));
 
@@ -59,8 +59,10 @@ export function subscribeEventRsvps(
     (snap) => {
       const rows: Array<{ uid: string } & RsvpDoc> = snap.docs.map((d) => {
         const data = d.data() as RsvpDoc;
+
         return {
-          uid: d.id, // ✅ always string
+          uid: d.id,
+
           attendance: data.attendance,
           comment: data.comment,
 
@@ -70,18 +72,24 @@ export function subscribeEventRsvps(
           approvedAt: data.approvedAt,
           approvedByUid: data.approvedByUid,
 
-          role: data.role,
-          subRole: data.subRole,
+          // ✅ legacy fields (keep for now)
+          role: (data as any).role ?? null,
+          subRole: (data as any).subRole ?? null,
+
+          // ✅ NEW RSVP role fields (what your dropdown writes)
+          rsvpRole: (data as any).rsvpRole ?? null,
+          rsvpSubRole: (data as any).rsvpSubRole ?? null,
+
           userDisplayName: data.userDisplayName,
 
           updatedAt: data.updatedAt,
           createdAt: data.createdAt,
-        };
+        } as any;
       });
 
       onData(rows);
     },
-    (err) => onError?.(err)
+    (err) => onError?.(err),
   );
 }
 
@@ -93,19 +101,18 @@ export async function setRsvpAttendance(
     role?: string | null;
     subRole?: string | null;
     userDisplayName?: string | null;
-  }
+  },
 ) {
   await setDoc(
     rsvpRef(eventId, uid),
     {
       attendance,
       uid,
-      role: meta?.role ?? null,
-      subRole: meta?.subRole ?? null,
+      // ❌ stop assigning role/subRole here
       userDisplayName: meta?.userDisplayName ?? null,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,
-    { merge: true }
+    { merge: true },
   );
 }
 
@@ -117,19 +124,18 @@ export async function setRsvpComment(
     role?: string | null;
     subRole?: string | null;
     userDisplayName?: string | null;
-  }
+  },
 ) {
   await setDoc(
     rsvpRef(eventId, uid),
     {
       comment,
       uid,
-      role: meta?.role ?? null,
-      subRole: meta?.subRole ?? null,
+      // ❌ stop assigning role/subRole here
       userDisplayName: meta?.userDisplayName ?? null,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,
-    { merge: true }
+    { merge: true },
   );
 }
 
@@ -137,7 +143,7 @@ export async function setRsvpApproved(
   eventId: string,
   uid: string,
   approved: boolean,
-  meta?: { approvedByUid?: string | null }
+  meta?: { approvedByUid?: string | null },
 ) {
   await setDoc(
     rsvpRef(eventId, uid),
@@ -147,7 +153,7 @@ export async function setRsvpApproved(
       approvedByUid: meta?.approvedByUid ?? null,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,
-    { merge: true }
+    { merge: true },
   );
 }
 
@@ -155,7 +161,7 @@ export async function setRsvpDecision(
   eventId: string,
   uid: string,
   decision: Decision,
-  meta?: { decidedByUid?: string | null }
+  meta?: { decidedByUid?: string | null },
 ) {
   await setDoc(
     rsvpRef(eventId, uid),
@@ -166,6 +172,6 @@ export async function setRsvpDecision(
       approvedByUid: meta?.decidedByUid ?? null,
       updatedAt: serverTimestamp(),
     },
-    { merge: true }
+    { merge: true },
   );
 }

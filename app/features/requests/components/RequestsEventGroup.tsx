@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { Event } from "@/types/event";
 import type { RSVPRow } from "@/types/requests";
-import { DECISION, type Decision } from "@/types/rsvpIndex";
+import { DECISION, RSVP_ATTENDANCE, type Decision } from "@/types/rsvpIndex";
 
 import { setRsvpDecision } from "@/app/lib/firestore/rsvps";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
@@ -52,22 +52,19 @@ export default function RequestsEventGroup({
     { value: DECISION.Unapproved, label: "Afvis" },
   ] as const;
 
-  // ✅ split list into yes/maybe/no
   const { actionable, saidNo } = React.useMemo(() => {
-    const actionable: RSVPRow[] = []; // yes + maybe
-    const maybes: RSVPRow[] = [];
+    const actionable: RSVPRow[] = [];
     const saidNo: RSVPRow[] = [];
 
     for (const r of list) {
-      if (r.attendance === "no") {
+      if (r.attendance === RSVP_ATTENDANCE.No) {
         saidNo.push(r);
-        continue;
+      } else {
+        actionable.push(r);
       }
-      actionable.push(r);
-      if (r.attendance === "maybe") maybes.push(r);
     }
 
-    return { actionable, maybes, saidNo };
+    return { actionable, saidNo };
   }, [list]);
 
   return (
@@ -109,11 +106,11 @@ export default function RequestsEventGroup({
             <th className="text-left py-1">Beslutning</th>
           </tr>
         </thead>
+
         <tbody>
           {actionable.map((r) => {
             const decision: Decision =
-              (r as any).decision ??
-              (r.approved ? DECISION.Approved : DECISION.Pending);
+              r.decision ?? (r.approved ? DECISION.Approved : DECISION.Pending);
 
             const rowKey = `${r.eventId}:${r.uid}`;
             const isSaving = saving.has(rowKey);
@@ -124,14 +121,12 @@ export default function RequestsEventGroup({
                   <div className="font-medium">
                     {r.userDisplayName?.trim() || "Ukendt navn"}
                   </div>
-                  <div className="text-xs opacity-70">
-                    {r.userRole ?? "—"}
-                    {r.userSubRole ? ` • ${r.userSubRole}` : ""}
-                  </div>
                 </td>
 
                 <td className="py-2">
-                  {r.attendance === "maybe" ? "måske" : r.attendance}
+                  {r.attendance === RSVP_ATTENDANCE.Maybe
+                    ? "måske"
+                    : r.attendance}
                 </td>
 
                 <td className="py-2 opacity-80">{r.comment || "—"}</td>
@@ -173,7 +168,6 @@ export default function RequestsEventGroup({
         </tbody>
       </table>
 
-      {/* ✅ NO list (simple, no actions) */}
       {saidNo.length > 0 && (
         <div className="border-t pt-3">
           <div className="text-sm font-semibold">
@@ -191,10 +185,7 @@ export default function RequestsEventGroup({
                   <div className="text-sm font-medium">
                     {r.userDisplayName?.trim() || "Ukendt navn"}
                   </div>
-                  <div className="text-xs opacity-70">
-                    {r.userRole ?? "—"}
-                    {r.userSubRole ? ` • ${r.userSubRole}` : ""}
-                  </div>
+
                   {r.comment ? (
                     <div className="mt-1 text-xs opacity-80">
                       Kommentar: {r.comment}

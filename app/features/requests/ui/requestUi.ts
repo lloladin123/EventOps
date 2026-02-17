@@ -16,7 +16,7 @@ export function statusPillClass(decision?: string) {
   const d = decision ?? DECISION.Pending;
 
   const base =
-    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset transition";
+    "inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset transition";
 
   if (d === DECISION.Approved) {
     return [

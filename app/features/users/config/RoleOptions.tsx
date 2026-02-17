@@ -1,21 +1,24 @@
 "use client";
-import { ROLE } from "@/types/rsvp";
-import type { Role } from "@/types/rsvp";
 
-const PUBLIC_ROLES = Object.values(ROLE).filter(
-  (r) => r !== ROLE.Admin,
-) as Role[];
+import { SYSTEM_ROLE } from "@/types/systemRoles";
+import type { SystemRole } from "@/types/systemRoles";
 
-export function RoleOptions({ roles }: { roles: readonly Role[] }) {
-  // Only allow roles that are both:
-  // 1) explicitly public
-  // 2) passed into this component
-  const safeRoles = roles.filter((r) => PUBLIC_ROLES.includes(r));
+type Props = {
+  roles?: readonly SystemRole[]; // 👈 make optional
+  value?: SystemRole | "";
+};
+
+const PUBLIC_SYSTEM_ROLES = Object.values(SYSTEM_ROLE).filter(
+  (r) => r !== SYSTEM_ROLE.Superadmin,
+) as SystemRole[];
+
+export function RoleOptions({ roles = [] }: Props) {
+  const safeRoles = roles.filter((r) => PUBLIC_SYSTEM_ROLES.includes(r));
 
   return (
     <>
       <option value="" disabled>
-        Select role…
+        Select system role…
       </option>
       {safeRoles.map((opt) => (
         <option key={opt} value={opt}>

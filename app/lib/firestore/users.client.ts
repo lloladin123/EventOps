@@ -9,12 +9,15 @@ import {
 
 import { db } from "@/app/lib/firebase/client";
 import type { Role, CrewSubRole } from "@/types/rsvp";
+import { SystemRole } from "@/types/systemRoles";
 
 export type UserDoc = {
   email?: string;
   displayName?: string;
   role?: Role;
   subRole?: CrewSubRole | null;
+
+  systemRole?: SystemRole | null;
 };
 
 export type RolesConfigDoc = {
@@ -66,4 +69,13 @@ export async function updateUserSubRole(
   nextSubRole: CrewSubRole | null,
 ) {
   await updateDoc(doc(db, "users", uid), { subRole: nextSubRole });
+}
+
+export async function updateUserSystemRole(
+  uid: string,
+  nextRole: SystemRole | null,
+) {
+  await updateDoc(doc(db, "users", uid), {
+    systemRole: nextRole,
+  });
 }

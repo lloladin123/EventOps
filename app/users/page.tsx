@@ -8,33 +8,29 @@ import UserListTable from "@/features/users/views/UserListTable";
 import UserListView from "@/features/users/views/UserListView";
 
 import {
-  ROLE,
-  ROLES,
-  CREW_SUBROLES,
-  isAdmin,
-  type Role,
-  type CrewSubRole,
-} from "@/types/rsvp";
+  isSystemSuperAdmin,
+  SYSTEM_ROLE,
+  type SystemRole,
+} from "@/types/systemRoles";
 
-import { deleteDoc, deleteField, doc, updateDoc } from "firebase/firestore";
+import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase/client";
 import ViewModeToggle, {
   ViewMode,
 } from "@/components/ui/patterns/ViewModeToggle";
 
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
+import { UserDoc } from "@/lib/firestore/users.client";
 
 export default function UsersPage() {
-  const { role: myRole, loading } = useAuth();
-  const isAllowed = isAdmin(myRole);
+  type UserDocWithSystemRole = UserDoc & {
+    systemRole?: SystemRole | null;
+  };
 
-  const {
-    users,
-    busy,
-    setUserRole: setUserRoleStrict,
-    setUserSubRole: setUserSubRoleStrict,
-  } = useUsersAdmin(isAllowed);
+  const { systemRole, loading } = useAuth();
+  const isAllowed = isSystemSuperAdmin(systemRole);
 
+  const { users, busy } = useUsersAdmin(isAllowed);
   const { push: pushUndo } = useUndoStack();
 
   // Helper to read current snapshot for a user from already-loaded list
@@ -43,93 +39,46 @@ export default function UsersPage() {
     [users],
   );
 
-  // Helpers to apply role/subRole in both directions (so undo/redo share code)
-  const applyRole = React.useCallback(
-    async (
-      uid: string,
-      roleValue: Role | null,
-      subRoleValue: CrewSubRole | null,
-    ) => {
-      if (roleValue === null) {
-        await updateDoc(doc(db, "users", uid), {
-          role: deleteField(),
-          subRole: deleteField(),
-        });
-        return;
-      }
-
-      // use existing strict helper for role (keeps your existing logic)
-      await Promise.resolve(setUserRoleStrict(uid, roleValue));
-
-      // ensure subRole matches intended state (remove if null)
+  // ✅ Apply system role
+  const applySystemRole = React.useCallback(
+    async (uid: string, next: SystemRole | null) => {
       await updateDoc(doc(db, "users", uid), {
-        subRole: subRoleValue == null ? deleteField() : subRoleValue,
+        systemRole: next,
+        updatedAt: serverTimestamp(),
       });
     },
-    [setUserRoleStrict],
+    [],
   );
 
-  const applySubRole = React.useCallback(
-    async (uid: string, subRoleValue: CrewSubRole | null) => {
-      await Promise.resolve(setUserSubRoleStrict(uid, subRoleValue));
-    },
-    [setUserSubRoleStrict],
-  );
-
-  // ✅ ROLE change with undo/redo (restore previous role + subRole)
+  // ✅ SYSTEM ROLE change with undo/redo
   const setUserRole = React.useCallback(
-    async (uid: string, nextRole: Role | null) => {
-      const prev = getUserSnapshot(uid);
-      const prevRole = (prev?.role ?? null) as Role | null;
-      const prevSubRole = (prev?.subRole ?? null) as CrewSubRole | null;
+    async (uid: string, nextRole: SystemRole | null) => {
+      const prev = getUserSnapshot(uid) as UserDocWithSystemRole | null;
+      const prevRole = (prev?.systemRole ?? null) as SystemRole | null;
 
-      // If role changes, we typically also clear subRole unless you do something else in setUserRoleStrict.
-      // We'll treat "nextSubRole" as null for role changes (matches your original behavior).
-      const nextSubRole: CrewSubRole | null = null;
-
-      // Apply change (forward)
-      await applyRole(uid, nextRole, nextSubRole);
+      await applySystemRole(uid, nextRole);
 
       pushUndo({
-        label: "Rolle ændret",
+        label: "Systemrolle ændret",
         undo: async () => {
-          await applyRole(uid, prevRole, prevSubRole);
+          await applySystemRole(uid, prevRole);
         },
         redo: async () => {
-          await applyRole(uid, nextRole, nextSubRole);
+          await applySystemRole(uid, nextRole);
         },
       });
     },
-    [applyRole, getUserSnapshot, pushUndo],
+    [applySystemRole, getUserSnapshot, pushUndo],
   );
 
-  // ✅ SUBROLE change with undo/redo
-  const setUserSubRole = React.useCallback(
-    async (uid: string, nextSubRole: CrewSubRole | null) => {
-      const prev = getUserSnapshot(uid);
-      const prevSubRole = (prev?.subRole ?? null) as CrewSubRole | null;
-
-      await applySubRole(uid, nextSubRole);
-
-      pushUndo({
-        label: "Underrolle ændret",
-        undo: async () => {
-          await applySubRole(uid, prevSubRole);
-        },
-        redo: async () => {
-          await applySubRole(uid, nextSubRole);
-        },
-      });
-    },
-    [applySubRole, getUserSnapshot, pushUndo],
-  );
+  // ✅ system roles don’t have subRole; keep a no-op so the table compiles
+  const setUserSubRole = React.useCallback(async () => {}, []);
 
   // ✅ DELETE with grace period + undo/redo
   const pendingDeletesRef = React.useRef(new Map<string, number>());
 
   const deleteUser = React.useCallback(
     async (uid: string) => {
-      // If already pending, don't schedule twice
       if (pendingDeletesRef.current.has(uid)) return;
 
       const timeoutId = window.setTimeout(async () => {
@@ -142,7 +91,6 @@ export default function UsersPage() {
       pushUndo({
         label: "Bruger slettet",
         undo: async () => {
-          // "Undo" cancels the scheduled deletion
           const t = pendingDeletesRef.current.get(uid);
           if (t != null) {
             window.clearTimeout(t);
@@ -150,7 +98,6 @@ export default function UsersPage() {
           }
         },
         redo: async () => {
-          // "Redo" re-schedules the deletion (fresh 7s window)
           if (pendingDeletesRef.current.has(uid)) return;
 
           const t2 = window.setTimeout(async () => {
@@ -171,17 +118,15 @@ export default function UsersPage() {
     return (localStorage.getItem("users:view") as ViewMode) ?? "table";
   });
 
-  const selectableRoles = React.useMemo(
-    () =>
-      myRole === ROLE.Admin
-        ? ROLES
-        : ROLES.filter((r) => r !== ROLE.Sikkerhedsledelse),
-    [myRole],
-  );
-
   React.useEffect(() => {
     localStorage.setItem("users:view", view);
   }, [view]);
+
+  // ✅ options for dropdown
+  const selectableSystemRoles = React.useMemo<SystemRole[]>(
+    () => Object.values(SYSTEM_ROLE),
+    [],
+  );
 
   if (loading) {
     return (
@@ -211,18 +156,17 @@ export default function UsersPage() {
         <UserListTable
           users={users}
           busy={busy}
-          roles={selectableRoles}
-          crewSubRoles={CREW_SUBROLES}
-          setUserRole={setUserRole}
-          setUserSubRole={setUserSubRole}
+          systemRoles={selectableSystemRoles}
+          setUserSystemRole={setUserRole}
           deleteUser={deleteUser}
         />
       ) : (
         <UserListView
           users={users}
           busy={busy}
-          roles={selectableRoles}
-          crewSubRoles={CREW_SUBROLES}
+          // @ts-expect-error migrating: view expects RSVP Role strings, but it’s just a string list in UI
+          roles={selectableSystemRoles}
+          crewSubRoles={[]}
           setUserRole={setUserRole}
           setUserSubRole={setUserSubRole}
           deleteUser={deleteUser}

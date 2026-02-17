@@ -5,12 +5,13 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 
 import { auth, db } from "@/app/lib/firebase/client";
-import type { Role, CrewSubRole } from "@/types/rsvp";
 import { devRoleFromEmail } from "@/features/auth/utils/devRoleFromEmail";
+import { SYSTEM_ROLE, type SystemRole } from "@/types/systemRoles";
 
 type UserDoc = {
-  role?: Role | null;
-  subRole?: CrewSubRole | null;
+  // ✅ NEW global permissions role
+  systemRole?: SystemRole | null;
+
   email?: string | null;
   displayName?: string | null;
   createdAt?: unknown;
@@ -19,8 +20,10 @@ type UserDoc = {
 
 type AuthState = {
   user: User | null;
-  role: Role | null;
-  subRole: CrewSubRole | null;
+
+  // ✅ use this for permissions going forward
+  systemRole: SystemRole | null;
+
   displayName: string | null;
   loading: boolean;
   logout: () => Promise<void>;
@@ -36,8 +39,9 @@ function cleanName(v: unknown): string | null {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<User | null>(null);
-  const [role, setRole] = React.useState<Role | null>(null);
-  const [subRole, setSubRole] = React.useState<CrewSubRole | null>(null);
+
+  const [systemRole, setSystemRole] = React.useState<SystemRole | null>(null);
+
   const [displayName, setDisplayName] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -59,8 +63,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!u) {
         setUser(null);
-        setRole(null);
-        setSubRole(null);
+
+        setSystemRole(null);
+
         setDisplayName(null);
         setLoading(false);
         return;
@@ -77,18 +82,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const safeEmail = typeof u.email === "string" ? u.email : null;
           const nameFromAuth = cleanName(u.displayName);
 
-          await setDoc(ref, {
-            role: seeded?.role ?? null,
-            subRole: seeded?.subRole ?? null,
-            email: safeEmail,
-            displayName: nameFromAuth,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-          } satisfies UserDoc);
+          // ✅ decide system role seed
+          // If your devRoleFromEmail returns Admin, treat that as system admin.
+          // Otherwise default to "user".
+          const seededSystemRole: SystemRole =
+            seeded?.role === ("Admin" as any)
+              ? SYSTEM_ROLE.Admin
+              : SYSTEM_ROLE.User;
 
-          // expose immediately (before next snapshot tick)
-          setRole(seeded?.role ?? null);
-          setSubRole(seeded?.subRole ?? null);
+          await setDoc(
+            ref,
+            {
+              systemRole: seededSystemRole,
+
+              email: safeEmail,
+              displayName: nameFromAuth,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            } satisfies UserDoc,
+            { merge: true },
+          );
+
+          // expose immediately
+          setSystemRole(seededSystemRole);
+
           setDisplayName(nameFromAuth);
           setLoading(false);
           return;
@@ -96,14 +113,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const data = snap.data() as UserDoc;
 
-        setRole(data.role ?? null);
-        setSubRole(data.subRole ?? null);
+        // ✅ system role is authoritative for permissions
+        setSystemRole(data.systemRole ?? SYSTEM_ROLE.User);
 
-        // Prefer Firestore displayName, fallback to Firebase Auth displayName
+        // displayName: prefer doc, fallback auth
         const nameFromDoc = cleanName(data.displayName);
         const nameFromAuth = cleanName(u.displayName);
-
         setDisplayName(nameFromDoc ?? nameFromAuth ?? null);
+
         setLoading(false);
       });
     });
@@ -120,8 +137,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = React.useMemo<AuthState>(
-    () => ({ user, role, subRole, displayName, loading, logout }),
-    [user, role, subRole, displayName, loading, logout],
+    () => ({
+      user,
+      systemRole,
+      displayName,
+      loading,
+      logout,
+    }),
+    [user, systemRole, displayName, loading, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

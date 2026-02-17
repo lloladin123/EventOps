@@ -32,11 +32,6 @@ export function RequestRowCard({
   onRevokeApproval?: () => void | Promise<void>;
 }) {
   const who = r.userDisplayName?.trim() || r.uid;
-  const roleLabel = r.userRole
-    ? r.userSubRole
-      ? `${r.userRole} – ${r.userSubRole}`
-      : r.userRole
-    : "—";
 
   const statusText = statusLabel(r.decision);
   const attendanceText = attendanceLabel(r.attendance);
@@ -62,8 +57,6 @@ export function RequestRowCard({
         </div>
 
         <div className="mt-1 text-xs text-slate-500">
-          {roleLabel}
-          <span className="mx-2 text-slate-300">•</span>
           Opdateret: {fmtUpdatedAt(r.updatedAt)}
         </div>
 

@@ -1,34 +1,38 @@
 "use client";
 
 import * as React from "react";
-import { ROLE } from "@/types/rsvp";
-import type { Role, CrewSubRole } from "@/types/rsvp";
 import type { UserDoc } from "@/lib/firestore/users.client";
+import type { SystemRole } from "@/types/systemRoles";
+import { isSystemAdmin, SYSTEM_ROLE } from "@/types/systemRoles";
 
 import GroupedList from "@/components/ui/patterns/GroupedList";
 import { UsersViewState } from "./UsersViewState";
 import { usersGroupMeta } from "../config/UsersGroupMeta";
 
 import { useFlashUid } from "../hooks/useFlashUid";
-import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";
 import { useUserHotkeys } from "../hooks/useUserHotkeys";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 import { useUserListRowFocus } from "../hooks/useUserListRowFocus";
 import { useUserListRenderRow } from "../hooks/useUserListRenderRow";
-import { visibleNonAdminUsers } from "../utils/usersVisible";
-import { useFlashFocus } from "../hooks/useFlashFocus";
 import { UserHotkeysHint } from "./UserHotkeysHint";
+import { getAuth } from "firebase/auth";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
   busy: boolean;
-  roles: readonly Role[];
-  crewSubRoles: readonly CrewSubRole[];
-  setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
-  setUserSubRole: (
+
+  systemRoles: readonly SystemRole[];
+
+  setUserSystemRole?: (
     uid: string,
-    nextSubRole: CrewSubRole | null,
+    nextRole: SystemRole | null,
   ) => void | Promise<void>;
+
+  setUserRole?: (
+    uid: string,
+    nextRole: SystemRole | null,
+  ) => void | Promise<void>;
+
   deleteUser: (uid: string) => void | Promise<void>;
 };
 
@@ -38,46 +42,48 @@ type GroupId = "all";
 export default function UserListView({
   users,
   busy,
-  roles,
-  crewSubRoles,
+  systemRoles,
+  setUserSystemRole,
   setUserRole,
-  setUserSubRole,
   deleteUser,
 }: Props) {
-  const visibleUsers = React.useMemo(
-    () =>
-      visibleNonAdminUsers(users).filter(
-        (u) => u.data.role !== ROLE.Sikkerhedsledelse,
-      ),
-    [users],
-  );
+  const uid = getAuth().currentUser?.uid ?? null;
+
+  const currentSystemRole = React.useMemo(() => {
+    if (!uid) return null;
+    return (users.find((u) => u.uid === uid)?.data.systemRole ??
+      null) as SystemRole | null;
+  }, [users, uid]);
+
+  const visibleUsers = React.useMemo(() => {
+    // 🚫 Never show Superadmins in this list
+    const base = users.filter(
+      (u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin,
+    );
+
+    // No "staff" concept anymore — admins and non-admins see the same base list
+    // (keeping this check is harmless, but it no longer changes filtering)
+    if (isSystemAdmin(currentSystemRole)) return base;
+    return base;
+  }, [users, currentSystemRole]);
 
   const { flashUid, flash } = useFlashUid(2200);
 
   const { setRowRef, setRoleRef, focusRoleSelect } = useUserListRowFocus();
 
-  const focusRoleSelectFlash = useFlashFocus(flash, focusRoleSelect);
-
-  const { focusMissingRelative } = useMissingRoleNavigator({
-    visibleUsers,
-    focusRole: focusRoleSelectFlash,
-  });
-
   useUserHotkeys({
     enabled: true,
     users: visibleUsers,
-    onJumpMissing: focusMissingRelative,
     onDeleteUser: deleteUser,
     confirmDelete: (_label, row) => confirmDeleteUser(row.uid, row.data),
   });
 
+  const setRole = setUserSystemRole ?? setUserRole ?? (async () => {});
+
   const renderRow = useUserListRenderRow({
-    roles,
-    crewSubRoles,
-    setUserRole,
-    setUserSubRole,
+    systemRoles,
+    setUserSystemRole: setRole,
     deleteUser,
-    focusMissingRelative,
     flashUid,
     flash,
     focusRoleSelect,

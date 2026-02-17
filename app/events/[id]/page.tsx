@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
+import { doc, onSnapshot } from "firebase/firestore";
 
 import type { Incident } from "@/types/incident";
 
@@ -11,7 +12,6 @@ import ApprovedUsers from "@/features/events/attendance/ApprovedUsers";
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin, ROLE, type Role } from "@/types/rsvp";
 import { canAccessEventDetails } from "@/features/events/lib/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
@@ -20,20 +20,54 @@ import IncidentForm from "@/features/incidents/ui/IncidentForm";
 import IncidentPanel from "@/features/incidents/ui/IncidentPanel";
 import EditIncidentModal from "@/features/incidents/EditIncidentModal/EditIncidentModal";
 import ExportIncidentPdfButton from "@/features/incidents/ui/ExportIncidentPdfButton";
-
-const ALLOWED_ROLES: Role[] = [
-  ROLE.Admin,
-  ROLE.Sikkerhedsledelse,
-  ROLE.Logfører,
-];
+import { db } from "@/app/lib/firebase/client";
+import { ROLE, type Role } from "@/types/rsvp";
 
 export default function EventDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
 
-  const { user, role, loading } = useAuth();
+  const { user, systemRole, loading } = useAuth();
   const uid = user?.uid ?? null;
+
+  // ✅ RSVP access inputs (must be resolved before redirecting)
+  const [rsvpRole, setRsvpRole] = React.useState<Role | null>(null);
+  const [rsvpApproved, setRsvpApproved] = React.useState<boolean | undefined>(
+    undefined,
+  );
+  const [rsvpResolved, setRsvpResolved] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!id || !uid) {
+      setRsvpRole(null);
+      setRsvpApproved(undefined);
+      setRsvpResolved(false);
+      return;
+    }
+
+    setRsvpResolved(false);
+
+    const ref = doc(db, "events", id, "rsvps", uid);
+
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const data = snap.exists() ? (snap.data() as any) : null;
+        setRsvpRole((data?.rsvpRole ?? null) as Role | null);
+        setRsvpApproved(data?.approved ?? undefined);
+        setRsvpResolved(true); // ✅ only mark resolved after we got a snapshot result
+      },
+      (err) => {
+        console.error("[EventDetailPage] rsvp subscribe failed", err);
+        setRsvpRole(null);
+        setRsvpApproved(undefined);
+        setRsvpResolved(true); // ✅ resolved even on error (so you can block/redirect deterministically)
+      },
+    );
+
+    return () => unsub();
+  }, [id, uid]);
 
   // 🔥 Firestore event
   const [event, setEvent] = React.useState<EventDoc | null>(null);
@@ -48,7 +82,7 @@ export default function EventDetailPage() {
   );
   const [editing, setEditing] = React.useState<Incident | null>(null);
 
-  // keep approval state fresh
+  // keep approval state fresh (optional)
   const [tick, setTick] = React.useState(0);
   React.useEffect(() => {
     const rerender = () => setTick((t) => t + 1);
@@ -60,13 +94,18 @@ export default function EventDetailPage() {
     };
   }, []);
 
-  // access control
+  // ✅ access control
   const allowed = React.useMemo(() => {
-    if (isAdmin(role)) return true; // Admin + Sikkerhedsledelse
-    return canAccessEventDetails({ eventId: id, uid, role });
-  }, [id, uid, role, tick]);
+    return canAccessEventDetails({
+      eventId: id,
+      uid,
+      systemRole,
+      rsvpRole,
+    });
+  }, [id, uid, systemRole, rsvpRole, rsvpApproved, tick]);
 
-  const accessResolved = !loading && !!uid;
+  // ✅ don’t redirect until auth + RSVP snapshot resolved
+  const accessResolved = !loading && !!uid && rsvpResolved;
   const shouldBlock = accessResolved && !allowed;
 
   React.useEffect(() => {
@@ -96,9 +135,8 @@ export default function EventDetailPage() {
     return () => unsub();
   }, [id]);
 
-  // 🔥 Subscribe to incidents (only when allowed + have eventId)
+  // 🔥 Subscribe to incidents (only when allowed + resolved)
   React.useEffect(() => {
-    // Don’t even try until auth resolved and user is allowed
     if (!accessResolved) return;
     if (!allowed) return;
 
@@ -122,11 +160,7 @@ export default function EventDetailPage() {
     return () => unsub();
   }, [id, accessResolved, allowed]);
 
-  // ✅ With Firestore subscribe, we don’t need optimistic local state.
-  // Keep this as a no-op to avoid touching IncidentForm props right now.
-  const onAddIncident = React.useCallback((_incident: Incident) => {
-    // Firestore snapshot will update the list automatically.
-  }, []);
+  const onAddIncident = React.useCallback((_incident: Incident) => {}, []);
 
   const onDeleteIncident = React.useCallback(
     (incidentId: string) => {
@@ -146,9 +180,10 @@ export default function EventDetailPage() {
 
   return (
     <LoginRedirect
-      allowedRoles={ALLOWED_ROLES}
       unauthorizedRedirectTo="/events"
       description="Du har ikke adgang til denne kamp."
+      eventId={id} // ✅ REQUIRED if LoginRedirect uses RSVP gating
+      allowedRsvpRoles={[ROLE.Logfører, ROLE.Sikkerhedsledelse]}
     >
       {shouldBlock ? (
         <main className="mx-auto max-w-4xl p-6">
@@ -156,7 +191,7 @@ export default function EventDetailPage() {
             Ingen adgang…
           </div>
         </main>
-      ) : eventLoading ? (
+      ) : !accessResolved || eventLoading ? (
         <main className="mx-auto max-w-4xl p-6">
           <div className="rounded-2xl border bg-white p-4 text-sm text-slate-700">
             Loader…
@@ -199,6 +234,7 @@ export default function EventDetailPage() {
                 Kunne ikke hente hændelser: {incidentsError}
               </div>
             ) : null}
+
             <ExportIncidentPdfButton
               eventId={event.id}
               eventTitle={event.title}
@@ -217,6 +253,7 @@ export default function EventDetailPage() {
                 onDelete={onDeleteIncident}
               />
             )}
+
             {editing && (
               <EditIncidentModal
                 incident={editing}

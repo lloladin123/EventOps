@@ -1,16 +1,29 @@
 import { isApproved } from "@/features/rsvp";
+import { isSystemAdmin, type SystemRole } from "@/types/systemRoles";
 import { ROLE, type Role } from "@/types/rsvp";
 
 type Args = {
   eventId: string;
   uid: string | null | undefined;
-  role: Role | null | undefined;
+  systemRole: SystemRole | null | undefined;
+  rsvpRole: Role | null | undefined; // ✅ event-scoped role
 };
 
-// Admin always allowed. Everyone else must be approved.
-export function canAccessEventDetails({ eventId, uid, role }: Args): boolean {
-  if (role === ROLE.Admin || role === ROLE.Logfører || ROLE.Sikkerhedsledelse)
+// System admins always allowed.
+// Otherwise: Logfører (RSVP role) allowed.
+// Otherwise: must be approved.
+export function canAccessEventDetails({
+  eventId,
+  uid,
+  systemRole,
+  rsvpRole,
+}: Args): boolean {
+  if (isSystemAdmin(systemRole)) return true;
+
+  // ✅ RSVP-based special access
+  if (rsvpRole === ROLE.Logfører || rsvpRole === ROLE.Sikkerhedsledelse)
     return true;
+
   if (!uid) return false;
   return isApproved(eventId, uid);
 }

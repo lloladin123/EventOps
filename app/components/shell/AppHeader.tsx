@@ -6,12 +6,12 @@ import UserBadge from "@/components/layout/UserBadge";
 import Breadcrumbs from "@/components/shell/Breadcrumbs";
 import AdminNav from "@/components/shell/AdminNav/AdminNav";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin } from "@/types/rsvp";
+import { isSystemAdmin } from "@/types/systemRoles";
 
 export default function AppHeader() {
-  const { user, role, loading } = useAuth();
+  const { user, systemRole, loading } = useAuth();
 
-  const showAdminNav = !loading && isAdmin(role);
+  const showAdminNav = !loading && isSystemAdmin(systemRole);
 
   return (
     <header className="top-0 z-10 border-b border-slate-200 bg-white">

@@ -13,7 +13,6 @@ import { useRsvps } from "@/features/rsvp/hooks/useRsvps";
 import { useUiToggle } from "@/app/utils/useUiToggle";
 
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin } from "@/types/rsvp";
 import type { RSVPAttendance } from "@/types/rsvpIndex";
 import { useEventsFirestore } from "@/features/events/hooks/useEventsFirestore";
 
@@ -21,12 +20,13 @@ import { useEventBuckets } from "../hooks/useEventBuckets";
 import { useEventUndoConfigs } from "../hooks/useEventUndoConfigs";
 import { useScrollToEvent } from "../hooks/useScrollToEvent";
 import EventUndoStack from "../state/EventUndoStack/EventUndoStack";
+import { isSystemAdmin } from "@/types/systemRoles";
 
 export default function EventList() {
   const searchParams = useSearchParams();
 
-  const { role, loading: authLoading } = useAuth();
-  const admin = isAdmin(role);
+  const { systemRole, loading: authLoading } = useAuth();
+  const admin = isSystemAdmin(systemRole);
 
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
@@ -128,6 +128,9 @@ export default function EventList() {
                         my?.attendance as RSVPAttendance | undefined
                       }
                       approved={my?.approved}
+                      rsvpRole={
+                        (my as any)?.rsvpRole ?? (my as any)?.role ?? null
+                      }
                       commentValue={my?.comment ?? ""}
                       onChangeAttendance={onChangeAttendance}
                       onChangeComment={onChangeComment}

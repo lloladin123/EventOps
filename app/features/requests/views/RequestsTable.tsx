@@ -20,6 +20,7 @@ import { db } from "@/lib/firebase/client";
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
 import { useRevokeRsvpApproval } from "../hooks/useRevokeRsvpApproval";
+import { RsvpRoleSelectCell } from "../components/RsvpRoleSelectCell";
 
 type Props = {
   rows: RSVPRow[];
@@ -38,6 +39,7 @@ type ColumnKey =
   | "name"
   | "attendance"
   | "status"
+  | "role"
   | "comment"
   | "updatedAt"
   | "actions";
@@ -215,8 +217,11 @@ export default function RequestsTable({
           headerTitle: "Sortér efter navn",
           sortValue: (r) => r.userDisplayName?.trim() || r.uid,
 
-          // ✅ This is the critical bit: a focusable element per row with data attrs
-          cell: (r) => <RequestNameCell row={r} />,
+          cell: (r) => (
+            <div className="flex h-full w-full items-center justify-center">
+              <RequestNameCell row={r} />
+            </div>
+          ),
         },
         {
           key: "attendance",
@@ -240,6 +245,22 @@ export default function RequestsTable({
             </span>
           ),
         },
+        {
+          key: "role",
+          header: "Rolle",
+          headerTitle: "Sæt RSVP-rolle (event)",
+          sortValue: (r) => (r.rsvpRole ?? "").toLowerCase(),
+          cell: (r) => (
+            <RsvpRoleSelectCell
+              eventId={r.eventId}
+              uid={r.uid}
+              value={r.rsvpRole ?? null}
+              disabled={approvalsDisabled}
+              // later: options={eventsById[r.eventId]?.rsvpRoleOptions}
+            />
+          ),
+        },
+
         {
           key: "comment",
           header: "Kommentar",

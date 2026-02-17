@@ -1,37 +1,43 @@
 import type { UserDoc } from "@/lib/firestore/users.client";
-import type { Role } from "@/types/rsvp";
-import { ROLE } from "@/types/rsvp";
+import type { SystemRole } from "@/types/systemRoles";
 
-export type UserRow = { uid: string; data: UserDoc };
+export type UserRow = {
+  uid: string;
+  data: UserDoc & { systemRole?: SystemRole | null };
+};
 
 type CountUsersOpts = {
-  excludeRoles?: readonly Role[];
+  excludeSystemRoles?: readonly SystemRole[];
 };
 
 export function countUsers(
   rows: readonly UserRow[],
   opts: CountUsersOpts = {},
 ) {
-  const exclude = new Set<Role>(opts.excludeRoles ?? []);
+  const exclude = new Set<SystemRole>(opts.excludeSystemRoles ?? []);
   let n = 0;
 
   for (const r of rows) {
-    const role = (r.data.role ?? null) as Role | null;
+    const role = (r.data.systemRole ?? null) as SystemRole | null;
     if (role && exclude.has(role)) continue;
     n++;
   }
   return n;
 }
 
+/** Count users that are NOT admins/superadmins */
 export function countNonAdminUsers(rows: readonly UserRow[]) {
-  return countUsers(rows, { excludeRoles: [ROLE.Admin] });
+  return countUsers(rows, {
+    excludeSystemRoles: ["Admin", "Superadmin"],
+  });
 }
 
-/** ✅ NEW: users that have no role assigned yet */
+/** Users that have no system role assigned yet (or default "Bruger") */
 export function countUsersWithoutRole(rows: readonly UserRow[]) {
   let n = 0;
   for (const r of rows) {
-    if (!r.data.role) n++;
+    const role = r.data.systemRole ?? null;
+    if (!role || role === "Bruger") n++;
   }
   return n;
 }

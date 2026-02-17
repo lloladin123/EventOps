@@ -3,20 +3,12 @@ import { RSVPAttendance } from "./rsvpIndex";
 /** C#-ish enum style, but safe for TS + runtime */
 export const ROLE = {
   Kontrollør: "Kontrollør",
-  Admin: "Admin",
   Sikkerhedsledelse: "Sikkerhedsledelse",
   Logfører: "Logfører",
   Crew: "Crew",
 } as const;
 
 export type Role = (typeof ROLE)[keyof typeof ROLE];
-
-export const isTrueAdmin = (
-  role: Role | null | undefined,
-): role is typeof ROLE.Admin => role === ROLE.Admin;
-
-export const isAdmin = (role: Role | null | undefined): boolean =>
-  role === ROLE.Admin || role === ROLE.Sikkerhedsledelse;
 
 export const CREW_SUBROLE = {
   Scanning: "Scanning",
@@ -36,8 +28,7 @@ export type RSVP = {
 
   approved?: boolean;
 
-  userRole: Role;
-  userSubRole?: CrewSubRole | null;
+  rsvpRole?: Role;
 
   attendance: RSVPAttendance;
   comment: string;

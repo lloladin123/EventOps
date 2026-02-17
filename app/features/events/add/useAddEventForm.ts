@@ -3,35 +3,12 @@
 import * as React from "react";
 import type { Event } from "@/types/event";
 import { createEventFirestore } from "@/features/events/data/eventsFirestore";
+import { normalizeTime } from "../lib/normalizeTime";
 
 function makeId() {
   return `evt_${Date.now().toString(36)}_${Math.random()
     .toString(36)
     .slice(2, 8)}`;
-}
-
-function normalizeTime(input: string): string | null {
-  const raw = input.trim();
-  if (!raw) return null;
-
-  if (/^\d{4}$/.test(raw)) {
-    const hh = raw.slice(0, 2);
-    const mm = raw.slice(2, 4);
-    const h = Number(hh);
-    const m = Number(mm);
-    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return `${hh}:${mm}`;
-    return null;
-  }
-
-  if (/^\d{2}:\d{2}$/.test(raw)) {
-    const [hh, mm] = raw.split(":");
-    const h = Number(hh);
-    const m = Number(mm);
-    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return `${hh}:${mm}`;
-    return null;
-  }
-
-  return null;
 }
 
 type Args = { onAdded?: (event: Event) => void };
