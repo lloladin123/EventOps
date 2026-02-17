@@ -14,14 +14,14 @@ export function useUserRowFocus() {
     (uid: string, el: HTMLSelectElement | null) => {
       roleRefs.current.set(uid, el);
     },
-    []
+    [],
   );
 
   const setSubRoleRef = React.useCallback(
     (uid: string, el: HTMLSelectElement | null) => {
       subRoleRefs.current.set(uid, el);
     },
-    []
+    [],
   );
 
   const scrollToUid = React.useCallback((uid: string) => {
@@ -39,7 +39,7 @@ export function useUserRowFocus() {
         el.focus();
       });
     },
-    [scrollToUid]
+    [scrollToUid],
   );
 
   const focusSubRoleSelect = React.useCallback(
@@ -51,7 +51,7 @@ export function useUserRowFocus() {
         el.focus();
       });
     },
-    [scrollToUid]
+    [scrollToUid],
   );
 
   return {

@@ -1,8 +1,8 @@
 export const SYSTEM_ROLE = {
-  User: "user",
-  Support: "support",
-  Admin: "admin",
-  Superadmin: "superadmin",
+  User: "User",
+  Support: "Support",
+  Admin: "Admin",
+  Superadmin: "Superadmin",
 } as const;
 
 export type SystemRole = (typeof SYSTEM_ROLE)[keyof typeof SYSTEM_ROLE];

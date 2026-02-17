@@ -4,8 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin } from "@/types/rsvp";
 import { setEventOpen } from "@/app/lib/firestore/events";
+import { isSystemAdmin } from "@/types/systemRoles";
 
 type Props = {
   eventId: string;
@@ -25,7 +25,7 @@ export default function CloseLog({
   onReopened,
 }: Props) {
   const router = useRouter();
-  const { role, loading } = useAuth();
+  const { systemRole, loading } = useAuth();
 
   const closed = !open;
 
@@ -82,7 +82,7 @@ export default function CloseLog({
     }
   };
 
-  const showReopen = !loading && closed && isAdmin(role);
+  const showReopen = !loading && closed && isSystemAdmin(systemRole);
 
   return (
     <>

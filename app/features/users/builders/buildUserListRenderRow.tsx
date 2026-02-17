@@ -1,24 +1,19 @@
 "use client";
 
-import { ROLE } from "@/types/rsvp";
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import * as React from "react";
 import type { UserDoc } from "@/lib/firestore/users.client";
+import { SYSTEM_ROLE } from "@/types/systemRoles";
+import type { SystemRole } from "@/types/systemRoles";
 
-import {
-  neutralSelectClass,
-  roleSelectClass,
-} from "../config/userSelectStyles";
-import { RoleOptions } from "../config/RoleOptions";
+import { roleSelectClass } from "../config/userSelectStyles";
 
 type Row = { uid: string; data: UserDoc };
 
 type Params = {
-  roles: readonly Role[];
-  crewSubRoles: readonly CrewSubRole[];
-  setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
-  setUserSubRole: (
+  systemRoles: readonly SystemRole[];
+  setUserSystemRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null,
+    nextRole: SystemRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 
@@ -27,7 +22,7 @@ type Params = {
 
   // ui helpers
   flashUid: string | null;
-  flash: (uid: string) => void; // ✅ add
+  flash: (uid: string) => void;
   focusRoleSelect: (uid: string) => void;
 
   setRowRef: (uid: string, el: HTMLElement | null) => void;
@@ -37,11 +32,106 @@ type Params = {
   confirmDeleteUser: (uid: string, data: UserDoc) => boolean;
 };
 
+function SystemRolePicker({
+  uid,
+  role,
+  systemRoles,
+  setRoleRef,
+  setUserSystemRole,
+  onAfterPick,
+}: {
+  uid: string;
+  role: SystemRole | null;
+  systemRoles: readonly SystemRole[];
+  setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
+  setUserSystemRole: (
+    uid: string,
+    nextRole: SystemRole | null,
+  ) => void | Promise<void>;
+  onAfterPick: (next: SystemRole | null) => void;
+}) {
+  const [selected, setSelected] = React.useState<SystemRole | "">(role ?? "");
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (saving) return;
+    setSelected(role ?? "");
+  }, [role, saving]);
+
+  const commit = async (next: SystemRole | null) => {
+    if (next === SYSTEM_ROLE.Superadmin) return;
+
+    const prev = selected;
+    setSaving(true);
+    try {
+      await Promise.resolve(setUserSystemRole(uid, next));
+      onAfterPick(next);
+    } catch (err) {
+      console.error("Failed to set systemRole", err);
+      setSelected(prev);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const effectiveRoles = systemRoles?.length
+    ? systemRoles
+    : (Object.values(SYSTEM_ROLE) as SystemRole[]);
+
+  const selectedAsRole: SystemRole | null =
+    selected === "" ? null : (selected as SystemRole);
+
+  const currentAsRole: SystemRole | null = role ?? null;
+
+  return (
+    <select
+      ref={(el) => setRoleRef(uid, el)}
+      data-uid={uid}
+      className={roleSelectClass(false)}
+      value={selected}
+      disabled={saving}
+      onChange={(e) => {
+        // ✅ arrow keys update local selection WITHOUT saving
+        setSelected((e.target.value as SystemRole) ?? "");
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          if (selectedAsRole !== currentAsRole) commit(selectedAsRole);
+        }
+        if (e.key === "Escape") {
+          // ✅ revert
+          setSelected(role ?? "");
+          (e.currentTarget as HTMLSelectElement).blur();
+        }
+      }}
+      onBlur={() => {
+        // ✅ save when user leaves the field
+        if (selectedAsRole !== currentAsRole) commit(selectedAsRole);
+      }}
+      onPointerDownCapture={(e) => {
+        e.stopPropagation();
+        e.currentTarget.focus();
+      }}
+    >
+      <option value="" disabled>
+        Select system role…
+      </option>
+
+      {effectiveRoles
+        .filter((r) => r !== SYSTEM_ROLE.Superadmin)
+        .map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+    </select>
+  );
+}
+
 export function buildUserListRenderRow({
-  roles,
-  crewSubRoles,
-  setUserRole,
-  setUserSubRole,
+  systemRoles,
+  setUserSystemRole,
   deleteUser,
   focusMissingRelative,
   flashUid,
@@ -54,45 +144,52 @@ export function buildUserListRenderRow({
   return function renderRow(r: Row) {
     const displayName = r.data.displayName?.trim() || "—";
     const email = r.data.email?.trim() || "—";
-    const role = (r.data.role ?? null) as Role | null;
-    const subRole = (r.data.subRole ?? null) as CrewSubRole | null;
-
-    const needsRole = !role;
-    const isCrew = role === ROLE.Crew;
+    const systemRole = (r.data.systemRole ?? null) as SystemRole | null;
 
     return (
       <div
         ref={(el) => setRowRef(r.uid, el)}
         tabIndex={0}
+        data-userfocus="row"
         data-uid={r.uid}
         onClick={(e) => {
           const t = e.target as HTMLElement | null;
           if (t?.closest("button,a,input,select,textarea,[role='button']"))
             return;
+
+          // Keep focus on the row by default (NOT the dropdown)
           flash(r.uid);
-          focusRoleSelect(r.uid);
           (e.currentTarget as HTMLElement).focus();
         }}
+        onKeyDown={(e) => {
+          // ignore if user is typing in an input/select etc.
+          const t = e.target as HTMLElement | null;
+          if (t && t !== e.currentTarget) return;
+
+          if (e.key === " " || e.code === "Space") {
+            e.preventDefault();
+            focusRoleSelect(r.uid);
+            return;
+          }
+
+          if (e.key === "Enter") {
+            e.preventDefault();
+            focusRoleSelect(r.uid);
+          }
+        }}
         className={[
-          "flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between transition-colors duration-300",
-          needsRole ? "border-l-4 border-l-amber-400" : "",
-          flashUid === r.uid ? "bg-amber-100" : "", // ✅ highlight
+          "flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between transition-colors duration-150",
+          "focus:bg-amber-100 focus:outline-none", // ✅ highlight on keyboard focus
+          flashUid === r.uid ? "bg-amber-100" : "",
         ]
+
           .filter(Boolean)
           .join(" ")}
       >
         {/* Left */}
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="truncate text-sm font-semibold text-slate-900">
-              {displayName}
-            </div>
-
-            {needsRole ? (
-              <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-inset ring-amber-200">
-                Mangler rolle
-              </span>
-            ) : null}
+          <div className="truncate text-sm font-semibold text-slate-900">
+            {displayName}
           </div>
 
           <dl className="mt-2 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
@@ -111,73 +208,21 @@ export function buildUserListRenderRow({
             </div>
           </dl>
 
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <div>
-              <div className="mb-1 text-xs font-semibold text-slate-600">
-                Rolle
-              </div>
-
-              <select
-                ref={(el) => setRoleRef(r.uid, el)}
-                data-uid={r.uid}
-                className={roleSelectClass(needsRole)}
-                value={role ?? ""}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  e.preventDefault();
-
-                  const picked = (e.currentTarget.value || "") as Role | "";
-                  if (!picked) return;
-
-                  // IMPORTANT: no subrole focus/flash
-                  if (picked !== ROLE.Crew) {
-                    requestAnimationFrame(() => focusMissingRelative(r.uid, 1));
-                  }
-                }}
-                onChange={async (e) => {
-                  const next = e.target.value as Role;
-                  await setUserRole(r.uid, next);
-
-                  // IMPORTANT: no subrole focus/flash
-                  if (next !== ROLE.Crew) {
-                    requestAnimationFrame(() => focusMissingRelative(r.uid, 1));
-                  }
-                }}
-              >
-                <RoleOptions roles={roles} />
-              </select>
+          <div className="mt-3">
+            <div className="mb-1 text-xs font-semibold text-slate-600">
+              System role
             </div>
 
-            <div>
-              <div className="mb-1 text-xs font-semibold text-slate-600">
-                Under rolle
-              </div>
-
-              {isCrew ? (
-                <select
-                  data-uid={r.uid}
-                  className={neutralSelectClass}
-                  value={subRole ?? ""}
-                  onChange={(e) =>
-                    setUserSubRole(
-                      r.uid,
-                      e.target.value ? (e.target.value as CrewSubRole) : null,
-                    )
-                  }
-                >
-                  <option value="">(none)</option>
-                  {crewSubRoles.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-sm text-slate-400">
-                  —
-                </div>
-              )}
-            </div>
+            <SystemRolePicker
+              uid={r.uid}
+              role={systemRole}
+              systemRoles={systemRoles}
+              setRoleRef={setRoleRef}
+              setUserSystemRole={setUserSystemRole}
+              onAfterPick={() => {
+                requestAnimationFrame(() => focusMissingRelative(r.uid, 1));
+              }}
+            />
           </div>
         </div>
 

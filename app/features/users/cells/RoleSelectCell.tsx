@@ -1,81 +1,110 @@
 "use client";
 
-import type { Role } from "@/types/rsvp";
-import { ROLE } from "@/types/rsvp";
-import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { useRoleSelectHandlers } from "../hooks/useRoleSelectHandlers";
+import * as React from "react";
+import { SYSTEM_ROLE } from "@/types/systemRoles";
+import type { SystemRole } from "@/types/systemRoles";
+
+import { roleSelectClass } from "../config/userSelectStyles";
+import { RoleOptions } from "../config/RoleOptions";
+import { updateUserSystemRole } from "@/lib/firestore/users.client";
 
 type Props = {
   uid: string;
-  role: Role | null;
-  roles: readonly Role[];
-  setRoleRef?: (uid: string, el: HTMLSelectElement | null) => void;
-  setUserRole: (uid: string, nextRole: Role | null) => void | Promise<void>;
-  focusSubRoleSelect: (uid: string) => void;
-  focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
+  role: SystemRole | null;
+
+  setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
+
+  setUserSystemRole: (
+    uid: string,
+    nextRole: SystemRole | null,
+  ) => void | Promise<void>;
 };
 
 export function RoleSelectCell({
   uid,
   role,
-  roles,
   setRoleRef,
-  setUserRole,
-  focusSubRoleSelect,
-  focusMissingRelative,
+  setUserSystemRole,
 }: Props) {
-  const { user, role: myRole } = useAuth();
+  const [selected, setSelected] = React.useState<SystemRole | "">(role ?? "");
+  const [saving, setSaving] = React.useState(false);
+  const systemRoles = Object.values(SYSTEM_ROLE) as SystemRole[];
 
-  const isSelf = user?.uid === uid;
-  const isAdmin = myRole === ROLE.Admin;
-  const isSafetyManager = myRole === ROLE.Sikkerhedsledelse;
+  React.useEffect(() => {
+    if (saving) return;
+    setSelected(role ?? "");
+  }, [role, saving]);
 
-  // ❌ Rule 1: SafetyManager cannot edit themself
-  const disableSelect = isSafetyManager && !isAdmin && isSelf;
+  const onChange = async (next: string) => {
+    const nextRole: SystemRole | null =
+      next === "" ? null : (next as SystemRole);
 
-  // ❌ Rule 2: SafetyManager cannot promote to SafetyManager
-  const visibleRoles = roles.filter((r) => {
-    if (r === ROLE.Admin) return false; // never show Admin
-    if (r === ROLE.Sikkerhedsledelse && !isAdmin) return false; // only Admin sees it
-    return true;
-  });
+    // Optional safety: block Superadmin edits from UI
+    if (nextRole === SYSTEM_ROLE.Superadmin) return;
 
-  const { onKeyDown, onChange } = useRoleSelectHandlers({
-    uid,
-    setUserRole,
-    focusSubRoleSelect,
-    focusMissingRelative,
-  });
+    const prev = selected;
+    setSelected(nextRole ?? "");
+    setSaving(true);
+
+    try {
+      await Promise.resolve(updateUserSystemRole(uid, nextRole));
+    } catch (err) {
+      console.error("Failed to set systemRole", err);
+      setSelected(prev);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <select
-      ref={(el) => setRoleRef?.(uid, el)}
+      ref={(el) => setRoleRef(uid, el)}
       data-uid={uid}
-      value={role ?? ""}
-      disabled={disableSelect}
-      onKeyDown={onKeyDown}
-      onChange={onChange}
-      className={`
-    h-7 min-w-[160px]
-    rounded-xl border border-slate-200
-    bg-white px-3
-    text-sm text-slate-900
-    shadow-sm
-    transition
-    hover:border-slate-300
-    focus:border-slate-900 focus:ring-1 focus:ring-slate-900
-    disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400
-  `}
-    >
-      <option value="" disabled>
-        Vælg rolle
-      </option>
+      className={roleSelectClass(false)}
+      value={selected}
+      tabIndex={-1}
+      disabled={saving}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          (e.currentTarget as HTMLSelectElement).blur();
+          const row = (e.currentTarget as HTMLElement).closest(
+            "[data-uid]",
+          ) as HTMLElement | null;
+          row?.focus();
+        }
+      }}
+      onChange={async (e) => {
+        const row = (e.currentTarget as HTMLElement).closest(
+          "[data-uid]",
+        ) as HTMLElement | null;
 
-      {visibleRoles.map((r) => (
-        <option key={r} value={r}>
-          {r}
-        </option>
-      ))}
+        const nextRole: SystemRole | null =
+          e.target.value === "" ? null : (e.target.value as SystemRole);
+
+        if (nextRole === SYSTEM_ROLE.Superadmin) return;
+
+        const prev = selected;
+        setSelected(nextRole ?? "");
+        setSaving(true);
+
+        try {
+          await Promise.resolve(updateUserSystemRole(uid, nextRole));
+        } catch (err) {
+          console.error("Failed to set systemRole", err);
+          setSelected(prev);
+        } finally {
+          setSaving(false);
+          // ✅ give hotkeys control back immediately
+          requestAnimationFrame(() => row?.focus());
+        }
+      }}
+      onPointerDownCapture={(e) => {
+        e.stopPropagation();
+        e.currentTarget.focus();
+      }}
+    >
+      <RoleOptions roles={systemRoles} value={selected} />
     </select>
   );
 }

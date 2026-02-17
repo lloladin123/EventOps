@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
+import { doc, onSnapshot } from "firebase/firestore";
 
 import type { Incident } from "@/types/incident";
 
@@ -11,7 +12,6 @@ import ApprovedUsers from "@/features/events/attendance/ApprovedUsers";
 import { deleteIncidentFirestore } from "@/app/lib/firestore/incidents";
 
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin, ROLE, type Role } from "@/types/rsvp";
 import { canAccessEventDetails } from "@/features/events/lib/eventAccess";
 
 import { subscribeEvent, type EventDoc } from "@/app/lib/firestore/events";
@@ -20,20 +20,47 @@ import IncidentForm from "@/features/incidents/ui/IncidentForm";
 import IncidentPanel from "@/features/incidents/ui/IncidentPanel";
 import EditIncidentModal from "@/features/incidents/EditIncidentModal/EditIncidentModal";
 import ExportIncidentPdfButton from "@/features/incidents/ui/ExportIncidentPdfButton";
-
-const ALLOWED_ROLES: Role[] = [
-  ROLE.Admin,
-  ROLE.Sikkerhedsledelse,
-  ROLE.Logfører,
-];
+import { db } from "@/app/lib/firebase/client";
+import type { Role } from "@/types/rsvp";
 
 export default function EventDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
 
-  const { user, role, loading } = useAuth();
+  const { user, systemRole, loading } = useAuth();
   const uid = user?.uid ?? null;
+
+  // ✅ load THIS user's RSVP role for THIS event (needed for Logfører access)
+  const [rsvpRole, setRsvpRole] = React.useState<Role | null>(null);
+  const [rsvpLoading, setRsvpLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!id || !uid) {
+      setRsvpRole(null);
+      setRsvpLoading(false);
+      return;
+    }
+
+    setRsvpLoading(true);
+    const ref = doc(db, "events", id, "rsvps", uid);
+
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        const data = snap.exists() ? snap.data() : null;
+        setRsvpRole((data?.rsvpRole ?? null) as Role | null);
+        setRsvpLoading(false);
+      },
+      (err) => {
+        console.error("[EventDetailPage] rsvp subscribe failed", err);
+        setRsvpRole(null);
+        setRsvpLoading(false);
+      },
+    );
+
+    return () => unsub();
+  }, [id, uid]);
 
   // 🔥 Firestore event
   const [event, setEvent] = React.useState<EventDoc | null>(null);
@@ -60,13 +87,18 @@ export default function EventDetailPage() {
     };
   }, []);
 
-  // access control
+  // ✅ access control: ONLY through canAccessEventDetails
   const allowed = React.useMemo(() => {
-    if (isAdmin(role)) return true; // Admin + Sikkerhedsledelse
-    return canAccessEventDetails({ eventId: id, uid, role });
-  }, [id, uid, role, tick]);
+    return canAccessEventDetails({
+      eventId: id,
+      uid,
+      systemRole,
+      rsvpRole,
+    });
+  }, [id, uid, systemRole, rsvpRole, tick]);
 
-  const accessResolved = !loading && !!uid;
+  // ✅ don’t redirect until both auth and RSVP role are resolved (Logfører depends on it)
+  const accessResolved = !loading && !!uid && !rsvpLoading;
   const shouldBlock = accessResolved && !allowed;
 
   React.useEffect(() => {
@@ -98,7 +130,6 @@ export default function EventDetailPage() {
 
   // 🔥 Subscribe to incidents (only when allowed + have eventId)
   React.useEffect(() => {
-    // Don’t even try until auth resolved and user is allowed
     if (!accessResolved) return;
     if (!allowed) return;
 
@@ -122,8 +153,6 @@ export default function EventDetailPage() {
     return () => unsub();
   }, [id, accessResolved, allowed]);
 
-  // ✅ With Firestore subscribe, we don’t need optimistic local state.
-  // Keep this as a no-op to avoid touching IncidentForm props right now.
   const onAddIncident = React.useCallback((_incident: Incident) => {
     // Firestore snapshot will update the list automatically.
   }, []);
@@ -146,7 +175,6 @@ export default function EventDetailPage() {
 
   return (
     <LoginRedirect
-      allowedRoles={ALLOWED_ROLES}
       unauthorizedRedirectTo="/events"
       description="Du har ikke adgang til denne kamp."
     >
@@ -199,6 +227,7 @@ export default function EventDetailPage() {
                 Kunne ikke hente hændelser: {incidentsError}
               </div>
             ) : null}
+
             <ExportIncidentPdfButton
               eventId={event.id}
               eventTitle={event.title}
@@ -217,6 +246,7 @@ export default function EventDetailPage() {
                 onDelete={onDeleteIncident}
               />
             )}
+
             {editing && (
               <EditIncidentModal
                 incident={editing}

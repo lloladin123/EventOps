@@ -1,25 +1,24 @@
 "use client";
 
 import * as React from "react";
-import type { Role, CrewSubRole } from "@/types/rsvp";
+import type { SystemRole } from "@/types/systemRoles";
 
 import { buildUserListRenderRow } from "../builders/buildUserListRenderRow";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 
 type Params = {
-  roles: readonly Role[];
-  crewSubRoles: readonly CrewSubRole[];
-  setUserRole: (uid: string, nextRole: Role) => void | Promise<void>;
-  setUserSubRole: (
+  systemRoles: readonly SystemRole[];
+  setUserSystemRole: (
     uid: string,
-    nextSubRole: CrewSubRole | null,
+    nextRole: SystemRole | null,
   ) => void | Promise<void>;
+
   deleteUser: (uid: string) => void | Promise<void>;
 
   focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
 
   flashUid: string | null;
-  flash: (uid: string) => void; // ✅ add
+  flash: (uid: string) => void;
   focusRoleSelect: (uid: string) => void;
 
   setRowRef: (uid: string, el: HTMLElement | null) => void;
@@ -27,10 +26,8 @@ type Params = {
 };
 
 export function useUserListRenderRow({
-  roles,
-  crewSubRoles,
-  setUserRole,
-  setUserSubRole,
+  systemRoles,
+  setUserSystemRole,
   deleteUser,
   focusMissingRelative,
   flashUid,
@@ -42,10 +39,8 @@ export function useUserListRenderRow({
   return React.useMemo(
     () =>
       buildUserListRenderRow({
-        roles,
-        crewSubRoles,
-        setUserRole,
-        setUserSubRole,
+        systemRoles,
+        setUserSystemRole,
         deleteUser,
         focusMissingRelative,
         flashUid,
@@ -56,13 +51,13 @@ export function useUserListRenderRow({
         confirmDeleteUser,
       }),
     [
-      roles,
-      crewSubRoles,
-      setUserRole,
-      setUserSubRole,
+      systemRoles,
+      setUserSystemRole,
       deleteUser,
       focusMissingRelative,
       flashUid,
+      flash,
+      focusRoleSelect,
       setRowRef,
       setRoleRef,
     ],

@@ -11,7 +11,7 @@ import { IconButton } from "@/components/ui/primitives/IconButton";
 
 export default function UserBadge() {
   const router = useRouter();
-  const { role, subRole, logout } = useAuth();
+  const { systemRole, logout } = useAuth();
   const { name, email, loading, user } = useUserDisplay();
 
   const onLogout = React.useCallback(async () => {
@@ -25,13 +25,7 @@ export default function UserBadge() {
     return <div className="text-sm text-slate-500">Ikke logget ind</div>;
   }
 
-  const roleLabel =
-    role == null
-      ? "—"
-      : role === ROLE.Crew && subRole
-        ? `${role} – ${subRole}`
-        : role;
-
+  const roleLabel = systemRole;
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm">
       <div className="flex flex-wrap gap-4">

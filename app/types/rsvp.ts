@@ -3,7 +3,6 @@ import { RSVPAttendance } from "./rsvpIndex";
 /** C#-ish enum style, but safe for TS + runtime */
 export const ROLE = {
   Kontrollør: "Kontrollør",
-  Admin: "Admin",
   Sikkerhedsledelse: "Sikkerhedsledelse",
   Logfører: "Logfører",
   Crew: "Crew",

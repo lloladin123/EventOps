@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import type { Event } from "@/types/event";
-import { isAdmin } from "@/types/rsvp";
 
 import EventMeta from "./EventMeta";
 import EventComment from "./EventComment";
@@ -15,12 +14,15 @@ import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
 import { canAccessEventDetails } from "@/features/events/lib/eventAccess";
 import EventCardMembers from "./EventCardMembers";
 import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
+import { isSystemAdmin } from "@/types/systemRoles";
+import { Role } from "@/types/rsvp";
 
 type Props = {
   event: Event;
   attendanceValue?: RSVPAttendance;
   approved?: boolean;
   commentValue: string;
+  rsvpRole?: Role | null;
   onChangeAttendance: (eventId: string, attendance: RSVPAttendance) => void;
   onChangeComment: (eventId: string, comment: string) => void;
   onDelete?: (event: Event) => void;
@@ -62,23 +64,25 @@ export default function EventCard({
   attendanceValue,
   approved,
   commentValue,
+  rsvpRole,
   onChangeAttendance,
   onChangeComment,
   onDelete,
 }: Props) {
-  const { user, role, loading } = useAuth();
-  const admin = isAdmin(role);
+  const { user, systemRole, loading } = useAuth();
+  const admin = isSystemAdmin(systemRole);
 
   const badge = requestBadge(attendanceValue, approved);
-
-  const isApproved = approved === true;
-  const isAttending = attendanceValue !== RSVP_ATTENDANCE.No;
 
   const canOpenDetails =
     !!user &&
     !loading &&
-    (admin ? true : isApproved && isAttending) &&
-    canAccessEventDetails({ eventId: event.id, uid: user.uid, role });
+    canAccessEventDetails({
+      eventId: event.id,
+      uid: user.uid,
+      systemRole,
+      rsvpRole, // ✅ critical
+    });
 
   const closeNow = async () => {
     await setEventOpen(event.id, false);

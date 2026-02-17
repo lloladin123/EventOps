@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin } from "@/types/rsvp";
 
 import AdminNavLink from "./AdminNavLink";
 import Badge from "../Badge";
@@ -13,14 +12,15 @@ import { useAdminRsvpRequestsCount } from "./hooks/useAdminRsvpRequestsCount";
 import { useUsersWithoutRoleCount } from "./hooks/useUsersWithoutRoleCount";
 import { useAdminNavKeybindings } from "./hooks/useAdminNavKeybindings";
 import { cn } from "@/components/ui/utils/cn";
+import { isSystemAdmin } from "@/types/systemRoles";
 
 type AdminNavProps = {
   className?: string;
 };
 
 export default function AdminNav({ className }: AdminNavProps) {
-  const { role } = useAuth();
-  const admin = isAdmin(role);
+  const { systemRole } = useAuth();
+  const admin = isSystemAdmin(systemRole);
   const router = useRouter();
 
   const newRequestsCount = useAdminRsvpRequestsCount(admin);

@@ -13,9 +13,6 @@ export function UserHotkeysHint() {
         <kbd className={kbd}>Shift + ↑ / ↓</kbd> spring mangler
       </span>
       <span>
-        <kbd className={kbd}>N</kbd> næste
-      </span>
-      <span>
         <kbd className={kbd}>S</kbd> slet
       </span>
       <span>

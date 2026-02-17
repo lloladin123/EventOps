@@ -1,9 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "@/app/lib/firebase/client";
+
 import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { useUserDisplay } from "@/features/auth/hooks/useUserDisplay";
-import { isAdmin } from "@/types/rsvp";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import {
   setRsvpDecision,
@@ -11,6 +13,7 @@ import {
   subscribeMyRsvp,
   type RsvpDoc,
 } from "@/lib/firestore/rsvps";
+import { isSystemAdmin } from "@/types/systemRoles";
 
 type Props = { eventId: string; className?: string };
 
@@ -18,14 +21,14 @@ export default function AdminAddApprovedStaffButton({
   eventId,
   className,
 }: Props) {
-  const { user, role } = useAuth();
+  const { user, systemRole } = useAuth();
   const { name: displayName } = useUserDisplay();
 
   const [loading, setLoading] = React.useState(false);
   const [myRsvp, setMyRsvp] = React.useState<RsvpDoc | null>(null);
 
   const uid = user?.uid ?? null;
-  const allowed = !!uid && isAdmin(role);
+  const allowed = !!uid && isSystemAdmin(systemRole);
 
   React.useEffect(() => {
     if (!uid || !eventId) return;
@@ -51,12 +54,23 @@ export default function AdminAddApprovedStaffButton({
     try {
       setLoading(true);
 
+      // 1) create/update RSVP (only known props -> no TS error)
       await setRsvpAttendance(eventId, uid, RSVP_ATTENDANCE.Yes, {
-        userDisplayName: displayName, // ✅ Firestore-first, consistent everywhere
-        role: (role as unknown as string) ?? null,
+        userDisplayName: displayName,
+        role: null,
         subRole: null,
       });
 
+      // 2) (optional) ensure new RSVP role fields exist without changing shared lib
+      //    NOTE: this sets them only if missing; remove this block if you don’t want it.
+      const ref = doc(db, "events", eventId, "rsvps", uid);
+      await updateDoc(ref, {
+        rsvpRole: null,
+        rsvpSubRole: null,
+        updatedAt: serverTimestamp(),
+      });
+
+      // 3) approve
       await setRsvpDecision(eventId, uid, DECISION.Approved, {
         decidedByUid: uid,
       });

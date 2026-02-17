@@ -1,11 +1,11 @@
 import LoginRedirect from "@/components/layout/LoginRedirect/LoginRedirect";
 import RequestsClient from "@/features/requests/views/RequestsClient";
-import { ROLE } from "@/types/rsvp";
+import { SYSTEM_ROLE } from "@/types/systemRoles";
 
 export default function RequestsPage() {
   return (
     <LoginRedirect
-      allowedRoles={[ROLE.Admin, ROLE.Sikkerhedsledelse]}
+      allowedSystemRoles={[SYSTEM_ROLE.Admin]}
       unauthorizedRedirectTo="/login"
       description="Du har ikke adgang til Requests."
     >

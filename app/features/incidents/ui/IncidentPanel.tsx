@@ -3,13 +3,13 @@
 import * as React from "react";
 import type { Incident } from "@/types/incident";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isAdmin as isAdminRole } from "@/types/rsvp";
 
 import IncidentTable from "./IncidentTable";
 import IncidentListView from "./IncidentListView";
 import ViewModeToggle, {
   ViewMode,
 } from "@/components/ui/patterns/ViewModeToggle";
+import { isSystemAdmin } from "@/types/systemRoles";
 
 type Props = {
   eventId: string;
@@ -68,8 +68,8 @@ export default function IncidentPanel({
 }: Props) {
   const safeIncidents: Incident[] = Array.isArray(incidents) ? incidents : [];
 
-  const { role, user } = useAuth();
-  const admin = isAdminRole(role);
+  const { systemRole, user } = useAuth();
+  const admin = isSystemAdmin(systemRole);
   const uid = user?.uid ?? null;
 
   const [view, setView] = React.useState<ViewMode>(() => getInitialView());
