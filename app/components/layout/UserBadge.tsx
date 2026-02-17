@@ -6,7 +6,6 @@ import { LogOut } from "lucide-react";
 
 import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { useUserDisplay } from "@/features/auth/hooks/useUserDisplay";
-import { ROLE } from "@/types/rsvp";
 import { IconButton } from "@/components/ui/primitives/IconButton";
 
 export default function UserBadge() {
