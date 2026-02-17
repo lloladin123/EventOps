@@ -21,9 +21,7 @@ import {
   SYSTEM_ROLE,
   type SystemRole,
   isSystemAdmin,
-  isSystemStaff,
 } from "@/types/systemRoles";
-// ^ move your SYSTEM_ROLE helpers into their own module instead of keeping them in this file
 
 import { buildUserTableColumns } from "../builders/buildUserTableColumns";
 
@@ -62,10 +60,14 @@ export default function UserListTable({
   }, [users, uid]);
 
   const visibleUsers = React.useMemo(() => {
-    if (isSystemAdmin(currentSystemRole)) return users;
+    // 🚫 Never show Superadmins in this list
+    const base = users.filter(
+      (u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin,
+    );
 
-    // non-admins: hide staff accounts
-    return users.filter((u) => !isSystemStaff(u.data.systemRole ?? null));
+    // No "staff" concept anymore — admins and non-admins see the same base list
+    if (isSystemAdmin(currentSystemRole)) return base;
+    return base;
   }, [users, currentSystemRole]);
 
   const { flashUid, flash } = useFlashUid(2200);
@@ -86,12 +88,10 @@ export default function UserListTable({
         deleteUser,
         setRowRef,
         setRoleRef,
+        focusRoleSelect,
         flashUid,
         flash,
         focusMissingRelative,
-
-        // permissions (recommended)
-        currentSystemRole,
       }),
     [
       systemRoles,
@@ -100,9 +100,9 @@ export default function UserListTable({
       setRowRef,
       setRoleRef,
       flashUid,
+      focusRoleSelect,
       flash,
       focusMissingRelative,
-      currentSystemRole,
     ],
   );
 

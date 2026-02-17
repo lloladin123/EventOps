@@ -24,6 +24,7 @@ type Params = {
   setRowRef: (uid: string, el: HTMLElement | null) => void;
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
 
+  focusRoleSelect: (uid: string) => void; // ✅ add
   focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
 
   flashUid: string | null;
@@ -36,6 +37,7 @@ export function buildUserTableColumns({
   deleteUser,
   setRowRef,
   setRoleRef,
+  focusRoleSelect,
   focusMissingRelative,
   flash,
 }: Params) {
@@ -52,6 +54,7 @@ export function buildUserTableColumns({
           data={r.data}
           setRowRef={setRowRef}
           onActivate={() => flash(r.uid)}
+          focusRoleSelect={focusRoleSelect} // ✅ add
         />
       ),
     },
@@ -71,11 +74,8 @@ export function buildUserTableColumns({
         <RoleSelectCell
           uid={r.uid}
           role={(r.data.systemRole ?? null) as SystemRole | null}
-          roles={systemRoles}
           setRoleRef={setRoleRef}
-          setUserRole={setUserSystemRole}
-          focusSubRoleSelect={() => {}}
-          focusMissingRelative={focusMissingRelative}
+          setUserSystemRole={setUserSystemRole}
         />
       ),
     },

@@ -17,9 +17,6 @@ type Params = {
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 
-  // navigation
-  focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
-
   // ui helpers
   flashUid: string | null;
   flash: (uid: string) => void;
@@ -38,7 +35,6 @@ function SystemRolePicker({
   systemRoles,
   setRoleRef,
   setUserSystemRole,
-  onAfterPick,
 }: {
   uid: string;
   role: SystemRole | null;
@@ -48,7 +44,6 @@ function SystemRolePicker({
     uid: string,
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
-  onAfterPick: (next: SystemRole | null) => void;
 }) {
   const [selected, setSelected] = React.useState<SystemRole | "">(role ?? "");
   const [saving, setSaving] = React.useState(false);
@@ -58,6 +53,11 @@ function SystemRolePicker({
     setSelected(role ?? "");
   }, [role, saving]);
 
+  const selectedAsRole: SystemRole | null =
+    selected === "" ? null : (selected as SystemRole);
+
+  const currentAsRole: SystemRole | null = role ?? null;
+
   const commit = async (next: SystemRole | null) => {
     if (next === SYSTEM_ROLE.Superadmin) return;
 
@@ -65,7 +65,6 @@ function SystemRolePicker({
     setSaving(true);
     try {
       await Promise.resolve(setUserSystemRole(uid, next));
-      onAfterPick(next);
     } catch (err) {
       console.error("Failed to set systemRole", err);
       setSelected(prev);
@@ -78,11 +77,6 @@ function SystemRolePicker({
     ? systemRoles
     : (Object.values(SYSTEM_ROLE) as SystemRole[]);
 
-  const selectedAsRole: SystemRole | null =
-    selected === "" ? null : (selected as SystemRole);
-
-  const currentAsRole: SystemRole | null = role ?? null;
-
   return (
     <select
       ref={(el) => setRoleRef(uid, el)}
@@ -91,7 +85,6 @@ function SystemRolePicker({
       value={selected}
       disabled={saving}
       onChange={(e) => {
-        // ✅ arrow keys update local selection WITHOUT saving
         setSelected((e.target.value as SystemRole) ?? "");
       }}
       onKeyDown={(e) => {
@@ -100,13 +93,11 @@ function SystemRolePicker({
           if (selectedAsRole !== currentAsRole) commit(selectedAsRole);
         }
         if (e.key === "Escape") {
-          // ✅ revert
           setSelected(role ?? "");
           (e.currentTarget as HTMLSelectElement).blur();
         }
       }}
       onBlur={() => {
-        // ✅ save when user leaves the field
         if (selectedAsRole !== currentAsRole) commit(selectedAsRole);
       }}
       onPointerDownCapture={(e) => {
@@ -133,7 +124,6 @@ export function buildUserListRenderRow({
   systemRoles,
   setUserSystemRole,
   deleteUser,
-  focusMissingRelative,
   flashUid,
   flash,
   focusRoleSelect,
@@ -157,12 +147,10 @@ export function buildUserListRenderRow({
           if (t?.closest("button,a,input,select,textarea,[role='button']"))
             return;
 
-          // Keep focus on the row by default (NOT the dropdown)
           flash(r.uid);
           (e.currentTarget as HTMLElement).focus();
         }}
         onKeyDown={(e) => {
-          // ignore if user is typing in an input/select etc.
           const t = e.target as HTMLElement | null;
           if (t && t !== e.currentTarget) return;
 
@@ -179,14 +167,12 @@ export function buildUserListRenderRow({
         }}
         className={[
           "flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between transition-colors duration-150",
-          "focus:bg-amber-100 focus:outline-none", // ✅ highlight on keyboard focus
+          "focus:bg-amber-100 focus:outline-none",
           flashUid === r.uid ? "bg-amber-100" : "",
         ]
-
           .filter(Boolean)
           .join(" ")}
       >
-        {/* Left */}
         <div className="min-w-0">
           <div className="truncate text-sm font-semibold text-slate-900">
             {displayName}
@@ -219,14 +205,10 @@ export function buildUserListRenderRow({
               systemRoles={systemRoles}
               setRoleRef={setRoleRef}
               setUserSystemRole={setUserSystemRole}
-              onAfterPick={() => {
-                requestAnimationFrame(() => focusMissingRelative(r.uid, 1));
-              }}
             />
           </div>
         </div>
 
-        {/* Right */}
         <div className="shrink-0 sm:pt-0.5">
           <button
             type="button"

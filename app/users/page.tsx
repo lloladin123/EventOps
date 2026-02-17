@@ -9,6 +9,7 @@ import UserListView from "@/features/users/views/UserListView";
 
 import {
   isSystemAdmin,
+  isSystemSuperAdmin,
   SYSTEM_ROLE,
   type SystemRole,
 } from "@/types/systemRoles";
@@ -28,7 +29,7 @@ export default function UsersPage() {
   };
 
   const { systemRole, loading } = useAuth();
-  const isAllowed = isSystemAdmin(systemRole);
+  const isAllowed = isSystemSuperAdmin(systemRole);
 
   const { users, busy } = useUsersAdmin(isAllowed);
   const { push: pushUndo } = useUndoStack();
@@ -167,7 +168,6 @@ export default function UsersPage() {
           // @ts-expect-error migrating: view expects RSVP Role strings, but it’s just a string list in UI
           roles={selectableSystemRoles}
           crewSubRoles={[]}
-          // @ts-expect-error migrating: setter now assigns systemRole
           setUserRole={setUserRole}
           setUserSubRole={setUserSubRole}
           deleteUser={deleteUser}

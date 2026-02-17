@@ -30,6 +30,7 @@ type Props<
   renderGroupAfter?: (groupId: GroupId, groupRows: Row[]) => React.ReactNode;
 
   renderEmpty?: React.ReactNode | (() => React.ReactNode);
+  onRowClick?: (row: Row) => void;
 };
 
 function useSortState<K extends string>(initial: SortState<K>) {
@@ -62,6 +63,7 @@ export default function GroupedTable<
   getRowProps,
   disableRowHover = false,
   renderEmpty = null,
+  onRowClick,
 }: Props<Row, GroupId, ColumnKey, SortKey>) {
   const { sort } = useSortState(initialSort);
   const sortable = React.useMemo(() => hasSortable(columns), [columns]);
@@ -123,8 +125,27 @@ export default function GroupedTable<
                       <tr
                         key={idx}
                         {...rp}
+                        tabIndex={onRowClick ? 0 : (rp as any)?.tabIndex}
+                        onClick={(e) => {
+                          // keep existing row props handler
+                          (rp as any)?.onClick?.(e);
+
+                          if (!onRowClick) return;
+
+                          const t = e.target as HTMLElement | null;
+                          if (
+                            t?.closest(
+                              "button,a,input,select,textarea,[role='button']",
+                            )
+                          )
+                            return;
+
+                          onRowClick(row);
+                          (e.currentTarget as HTMLTableRowElement).focus();
+                        }}
                         className={[
                           "border-t transition-colors",
+                          onRowClick && "cursor-pointer",
                           !disableRowHover && "hover:bg-amber-50",
                           "focus:bg-amber-50 focus:outline-none",
                           "focus-within:bg-amber-50",

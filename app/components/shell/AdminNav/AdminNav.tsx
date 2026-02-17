@@ -9,10 +9,9 @@ import Badge from "../Badge";
 import KbdHint from "./KbdHint";
 
 import { useAdminRsvpRequestsCount } from "./hooks/useAdminRsvpRequestsCount";
-import { useUsersWithoutRoleCount } from "./hooks/useUsersWithoutRoleCount";
 import { useAdminNavKeybindings } from "./hooks/useAdminNavKeybindings";
 import { cn } from "@/components/ui/utils/cn";
-import { isSystemAdmin } from "@/types/systemRoles";
+import { isSystemAdmin, isSystemSuperAdmin } from "@/types/systemRoles";
 
 type AdminNavProps = {
   className?: string;
@@ -21,10 +20,10 @@ type AdminNavProps = {
 export default function AdminNav({ className }: AdminNavProps) {
   const { systemRole } = useAuth();
   const admin = isSystemAdmin(systemRole);
+  const superAdmin = isSystemSuperAdmin(systemRole);
   const router = useRouter();
 
   const newRequestsCount = useAdminRsvpRequestsCount(admin);
-  const usersNoRoleCount = useUsersWithoutRoleCount(admin);
 
   useAdminNavKeybindings(admin, router.push);
 
@@ -45,17 +44,17 @@ export default function AdminNav({ className }: AdminNavProps) {
           </span>
         }
       />
-
-      <AdminNavLink
-        href="/users"
-        label={
-          <span className="group inline-flex items-center">
-            Brugere
-            {admin && <Badge count={usersNoRoleCount} tone="amber" />}
-            <KbdHint>g b</KbdHint>
-          </span>
-        }
-      />
+      {superAdmin && (
+        <AdminNavLink
+          href="/users"
+          label={
+            <span className="group inline-flex items-center">
+              Brugere
+              <KbdHint>g b</KbdHint>
+            </span>
+          }
+        />
+      )}
 
       <AdminNavLink
         href="/requests"

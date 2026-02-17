@@ -12,10 +12,7 @@ type Params = {
     uid: string,
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
-
   deleteUser: (uid: string) => void | Promise<void>;
-
-  focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
 
   flashUid: string | null;
   flash: (uid: string) => void;
@@ -29,7 +26,6 @@ export function useUserListRenderRow({
   systemRoles,
   setUserSystemRole,
   deleteUser,
-  focusMissingRelative,
   flashUid,
   flash,
   focusRoleSelect,
@@ -42,7 +38,6 @@ export function useUserListRenderRow({
         systemRoles,
         setUserSystemRole,
         deleteUser,
-        focusMissingRelative,
         flashUid,
         flash,
         focusRoleSelect,
@@ -54,7 +49,6 @@ export function useUserListRenderRow({
       systemRoles,
       setUserSystemRole,
       deleteUser,
-      focusMissingRelative,
       flashUid,
       flash,
       focusRoleSelect,

@@ -7,15 +7,31 @@ type Props = {
   data: UserDoc;
   setRowRef?: (uid: string, el: HTMLElement | null) => void;
   onActivate?: () => void;
+
+  // ✅ add
+  focusRoleSelect?: (uid: string) => void;
 };
 
-export function UserIdentityCell({ uid, data, setRowRef, onActivate }: Props) {
+export function UserIdentityCell({
+  uid,
+  data,
+  setRowRef,
+  onActivate,
+  focusRoleSelect,
+}: Props) {
   return (
     <div
       ref={(el) => setRowRef?.(uid, el)}
       tabIndex={0}
       data-userfocus="row"
       data-uid={uid}
+      onKeyDown={(e) => {
+        // Space focuses dropdown; otherwise don't interfere
+        if ((e.key === " " || e.code === "Space") && focusRoleSelect) {
+          e.preventDefault();
+          focusRoleSelect(uid);
+        }
+      }}
       onClick={(e) => {
         const t = e.target as HTMLElement | null;
         if (t?.closest("button,a,input,select,textarea,[role='button']"))

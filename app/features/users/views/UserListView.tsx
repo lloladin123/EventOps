@@ -3,19 +3,17 @@
 import * as React from "react";
 import type { UserDoc } from "@/lib/firestore/users.client";
 import type { SystemRole } from "@/types/systemRoles";
-import { isSystemAdmin, isSystemStaff } from "@/types/systemRoles";
+import { isSystemAdmin, SYSTEM_ROLE } from "@/types/systemRoles";
 
 import GroupedList from "@/components/ui/patterns/GroupedList";
 import { UsersViewState } from "./UsersViewState";
 import { usersGroupMeta } from "../config/UsersGroupMeta";
 
 import { useFlashUid } from "../hooks/useFlashUid";
-import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";
 import { useUserHotkeys } from "../hooks/useUserHotkeys";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 import { useUserListRowFocus } from "../hooks/useUserListRowFocus";
 import { useUserListRenderRow } from "../hooks/useUserListRenderRow";
-import { useFlashFocus } from "../hooks/useFlashFocus";
 import { UserHotkeysHint } from "./UserHotkeysHint";
 import { getAuth } from "firebase/auth";
 
@@ -25,13 +23,11 @@ type Props = {
 
   systemRoles: readonly SystemRole[];
 
-  // ✅ prefer this (new)
   setUserSystemRole?: (
     uid: string,
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
 
-  // ✅ fallback (temporary) if parent still passes old prop name
   setUserRole?: (
     uid: string,
     nextRole: SystemRole | null,
@@ -61,29 +57,19 @@ export default function UserListView({
 
   const visibleUsers = React.useMemo(() => {
     // 🚫 Never show Superadmins in this list
-    const withoutSuperadmins = users.filter(
-      (u) => u.data.systemRole !== "Superadmin",
+    const base = users.filter(
+      (u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin,
     );
 
-    // Non-admins also shouldn't see staff
-    if (!isSystemAdmin(currentSystemRole)) {
-      return withoutSuperadmins.filter(
-        (u) => !isSystemStaff(u.data.systemRole ?? null),
-      );
-    }
-
-    return withoutSuperadmins;
+    // No "staff" concept anymore — admins and non-admins see the same base list
+    // (keeping this check is harmless, but it no longer changes filtering)
+    if (isSystemAdmin(currentSystemRole)) return base;
+    return base;
   }, [users, currentSystemRole]);
 
   const { flashUid, flash } = useFlashUid(2200);
 
   const { setRowRef, setRoleRef, focusRoleSelect } = useUserListRowFocus();
-  const focusRoleSelectFlash = useFlashFocus(flash, focusRoleSelect);
-
-  const { focusMissingRelative } = useMissingRoleNavigator({
-    visibleUsers,
-    focusRole: focusRoleSelectFlash,
-  });
 
   useUserHotkeys({
     enabled: true,
@@ -92,14 +78,12 @@ export default function UserListView({
     confirmDelete: (_label, row) => confirmDeleteUser(row.uid, row.data),
   });
 
-  // ✅ normalize handler to avoid runtime "not a function"
   const setRole = setUserSystemRole ?? setUserRole ?? (async () => {});
 
   const renderRow = useUserListRenderRow({
     systemRoles,
     setUserSystemRole: setRole,
     deleteUser,
-    focusMissingRelative,
     flashUid,
     flash,
     focusRoleSelect,
