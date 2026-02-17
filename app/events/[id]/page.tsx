@@ -183,7 +183,7 @@ export default function EventDetailPage() {
       unauthorizedRedirectTo="/events"
       description="Du har ikke adgang til denne kamp."
       eventId={id} // ✅ REQUIRED if LoginRedirect uses RSVP gating
-      allowedRsvpRoles={[ROLE.Logfører, ROLE.Sikkerhedsledelse]}
+      allowedRsvpRoles={[ROLE.Logfører, ROLE.Sikkerhedschef]}
     >
       {shouldBlock ? (
         <main className="mx-auto max-w-4xl p-6">
