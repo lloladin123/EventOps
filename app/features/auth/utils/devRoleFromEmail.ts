@@ -8,10 +8,6 @@ function normEmail(v: string | undefined | null) {
 
 const DEV_ROLE_RULES = [
   {
-    email: process.env.NEXT_PUBLIC_TEST_ADMIN_EMAIL,
-    value: { role: ROLE.Admin, subRole: null },
-  },
-  {
     email: process.env.NEXT_PUBLIC_TEST_LOG_EMAIL,
     value: { role: ROLE.Logfører, subRole: null },
   },
