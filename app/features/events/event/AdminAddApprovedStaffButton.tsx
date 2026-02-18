@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase/client";
 
 import { useAuth } from "@/features/auth/provider/AuthProvider";

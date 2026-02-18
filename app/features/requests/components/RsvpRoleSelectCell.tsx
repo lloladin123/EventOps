@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 import {
