@@ -7,7 +7,7 @@ import { db } from "@/app/lib/firebase/client";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { isSystemAdmin } from "@/types/systemRoles";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
-import { ROLES, ROLE, CREW_SUBROLES } from "@/types/rsvp";
+import { ROLES, ROLE, CREW_SUBROLES, KONTROLLØR_SUBROLES } from "@/types/rsvp";
 
 type Props = { eventId: string };
 
@@ -55,15 +55,18 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
   const [subRole, setSubRole] = React.useState<string>("");
   const [comment, setComment] = React.useState<string>("");
 
+  const isCrew = role === ROLE.Crew;
+  const isKontrollør = role === ROLE.Kontrollør;
+  const supportsSubRole = isCrew || isKontrollør;
+
   const roleOptions = React.useMemo(() => normalizeOptions(ROLES), []);
-  const subRoleOptions = React.useMemo(
-    () => normalizeOptions(CREW_SUBROLES),
-    [],
-  );
+  const subRoleOptions = React.useMemo(() => {
+    if (isCrew) return normalizeOptions(CREW_SUBROLES);
+    if (isKontrollør) return normalizeOptions(KONTROLLØR_SUBROLES);
+    return normalizeOptions([]);
+  }, [isCrew, isKontrollør]);
 
   if (!allowed) return null;
-
-  const isCrew = role === ROLE.Crew;
 
   const reset = () => {
     setName("");
@@ -79,9 +82,6 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
     const cleanName = name.trim();
     if (!cleanName) return alert("Skriv et navn 🙂");
     if (!role) return alert("Vælg en rolle 🙂");
-    if (role === ROLE.Crew && !subRole)
-      return alert("Vælg en crew subrolle 🙂");
-
     try {
       setSaving(true);
 
@@ -103,7 +103,7 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
           approvedByUid: adminUid,
 
           rsvpRole: role || null,
-          rsvpSubRole: isCrew ? subRole || null : null,
+          rsvpSubRole: supportsSubRole ? subRole || null : null,
 
           comment: comment.trim() || "",
           updatedAt: serverTimestamp(),
@@ -125,12 +125,7 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
     }
   };
 
-  const hint =
-    role === ""
-      ? "Vælg en rolle"
-      : role === ROLE.Crew && subRole === ""
-        ? "Vælg crew subrolle"
-        : "Klar ✅";
+  const hint = role === "" ? "Vælg en rolle" : "Klar ✅";
 
   return (
     <div className="w-full">
@@ -222,7 +217,7 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
                 onChange={(e) => {
                   const next = e.target.value;
                   setRole(next);
-                  if (next !== ROLE.Crew) setSubRole("");
+                  setSubRole(""); // simplest + avoids invalid values between roles
                 }}
               >
                 {roleOptions.map((o) => (
@@ -242,14 +237,13 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
                 htmlFor={LABEL_ID.subRole}
                 className="mb-1 block text-xs font-medium text-slate-600"
               >
-                Crew subrolle{" "}
-                {isCrew ? <span className="text-rose-500">*</span> : null}
+                Subrolle{" "}
               </label>
               <select
                 id={LABEL_ID.subRole}
                 className="h-9 w-full rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-900 disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-slate-200"
                 value={subRole}
-                disabled={saving || !isCrew}
+                disabled={saving || !supportsSubRole}
                 onChange={(e) => setSubRole(e.target.value)}
               >
                 {subRoleOptions.map((o) => (
@@ -258,9 +252,9 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
                   </option>
                 ))}
               </select>
-              {!isCrew ? (
+              {!supportsSubRole ? (
                 <div className="mt-1 text-[11px] text-slate-400">
-                  Kun relevant hvis rolle = Crew
+                  Kun relevant hvis rolle = Crew eller Kontrollør
                 </div>
               ) : null}
             </div>

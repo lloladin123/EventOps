@@ -12,11 +12,12 @@ import {
   setRsvpAttendance,
   subscribeMyRsvp,
   type RsvpDoc,
+  setRsvpRole,
 } from "@/lib/firestore/rsvps";
 import { isSystemAdmin } from "@/types/systemRoles";
 
 // Same role enums you use elsewhere
-import { ROLES, ROLE, CREW_SUBROLES } from "@/types/rsvp";
+import { ROLES, ROLE, CREW_SUBROLES, KONTROLLØR_SUBROLES } from "@/types/rsvp";
 
 type Props = { eventId: string; className?: string };
 
@@ -48,14 +49,20 @@ export default function AdminAddApprovedStaffButton({
   const [loading, setLoading] = React.useState(false);
   const [myRsvp, setMyRsvp] = React.useState<RsvpDoc | null>(null);
 
-  // role UI state
-  const roleOptions = React.useMemo(() => normalizeOptions(ROLES), []);
-  const subRoleOptions = React.useMemo(
-    () => normalizeOptions(CREW_SUBROLES),
-    [],
-  );
   const [selectedRole, setSelectedRole] = React.useState<string>("");
   const [selectedSubRole, setSelectedSubRole] = React.useState<string>("");
+
+  // role UI state
+  const roleOptions = React.useMemo(() => normalizeOptions(ROLES), []);
+  const isCrew = selectedRole === ROLE.Crew;
+  const isKontrollør = selectedRole === ROLE.Kontrollør;
+  const supportsSubRole = isCrew || isKontrollør;
+
+  const subRoleOptions = React.useMemo(() => {
+    if (isCrew) return normalizeOptions(CREW_SUBROLES);
+    if (isKontrollør) return normalizeOptions(KONTROLLØR_SUBROLES);
+    return normalizeOptions([]);
+  }, [isCrew, isKontrollør]);
 
   const uid = user?.uid ?? null;
   const allowed = !!uid && isSystemAdmin(systemRole);
@@ -113,8 +120,6 @@ export default function AdminAddApprovedStaffButton({
 
   if (effectiveDecision === DECISION.Approved) return null;
 
-  const isCrew = selectedRole === ROLE.Crew;
-
   const stop = (e: React.SyntheticEvent) => e.stopPropagation();
 
   const handleClick = async () => {
@@ -125,39 +130,27 @@ export default function AdminAddApprovedStaffButton({
       alert("Vælg en rolle 🙂");
       return;
     }
-    if (selectedRole === ROLE.Crew && !selectedSubRole) {
-      alert("Vælg en crew subrolle 🙂");
-      return;
-    }
 
     try {
       setLoading(true);
 
-      // 1) create/update RSVP using shared lib fields
       await setRsvpAttendance(eventId, uid, RSVP_ATTENDANCE.Yes, {
         userDisplayName: displayName,
-        role: selectedRole || null,
-        subRole: isCrew ? selectedSubRole || null : null,
       });
 
-      // 2) ensure role fields exist on the doc (your extra fields block)
-      const ref = doc(db, "events", eventId, "rsvps", uid);
-      await updateDoc(ref, {
-        rsvpRole: selectedRole || null,
-        rsvpSubRole: isCrew ? selectedSubRole || null : null,
-        updatedAt: serverTimestamp(),
-      });
+      await setRsvpRole(
+        eventId,
+        uid,
+        selectedRole || null,
+        selectedSubRole || null,
+      );
 
-      // 3) approve
       await setRsvpDecision(eventId, uid, DECISION.Approved, {
         decidedByUid: uid,
       });
 
       window.dispatchEvent(new Event("requests-changed"));
       window.dispatchEvent(new Event("events-changed"));
-    } catch (err) {
-      console.error("Failed to approve RSVP:", err);
-      alert(err instanceof Error ? err.message : "Kunne ikke godkende");
     } finally {
       setLoading(false);
     }
@@ -177,7 +170,7 @@ export default function AdminAddApprovedStaffButton({
           onChange={(e) => {
             const next = e.target.value;
             setSelectedRole(next);
-            if (next !== ROLE.Crew) setSelectedSubRole("");
+            setSelectedSubRole("");
           }}
         >
           {roleOptions.map((o) => (
@@ -190,7 +183,7 @@ export default function AdminAddApprovedStaffButton({
         <select
           className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-800 disabled:opacity-60"
           value={selectedSubRole}
-          disabled={loading || !isCrew}
+          disabled={loading || !supportsSubRole}
           onMouseDown={stop}
           onClick={stop}
           onPointerDown={stop}
