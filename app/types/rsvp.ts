@@ -17,7 +17,7 @@ export const CREW_SUBROLE = {
 } as const;
 
 export const KONTROLLØR_SUBROLE = {
-  Elev: "Elev",
+  Føl: "Føl",
 } as const;
 
 export type CrewSubRole = (typeof CREW_SUBROLE)[keyof typeof CREW_SUBROLE];
