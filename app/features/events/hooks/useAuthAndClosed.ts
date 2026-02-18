@@ -11,7 +11,7 @@ import { subscribeMyRsvp, type RsvpDoc } from "@/app/lib/firestore/rsvps";
 import { ROLE, type Role } from "@/types/rsvp";
 
 const CAN_CLOSE_RSVP = new Set<Role>([
-  ROLE.Logfører,
+  ROLE.Video,
   // add more if you want:
   // ROLE.Sikkerhedsledelse,
 ]);

@@ -10,7 +10,7 @@ type Args = {
 };
 
 // System admins always allowed.
-// Otherwise: Logfører (RSVP role) allowed.
+// Otherwise: Video (RSVP role) allowed.
 // Otherwise: must be approved.
 export function canAccessEventDetails({
   eventId,
@@ -21,8 +21,7 @@ export function canAccessEventDetails({
   if (isSystemAdmin(systemRole)) return true;
 
   // ✅ RSVP-based special access
-  if (rsvpRole === ROLE.Logfører || rsvpRole === ROLE.Sikkerhedschef)
-    return true;
+  if (rsvpRole === ROLE.Video || rsvpRole === ROLE.Sikkerhedschef) return true;
 
   if (!uid) return false;
   return isApproved(eventId, uid);
