@@ -18,6 +18,8 @@ import AdminAddApprovedStaffButton from "../event/AdminAddApprovedStaffButton";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { isSystemAdmin } from "@/types/systemRoles";
 import AdminAddCustomRsvpButton from "../event/AdminAddCustomRsvpButton";
+import { deleteDoc, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase/client";
 
 type Props = { eventId: string };
 
@@ -161,6 +163,27 @@ export default function ApprovedUsers({ eventId }: Props) {
     [eventId, adminUid],
   );
 
+  const onDeleteRsvp = React.useCallback(
+    async (uid: string, name: string) => {
+      const ok = window.confirm(
+        `Slet RSVP for "${name}" helt?\n\nDette kan ikke fortrydes herfra.`,
+      );
+      if (!ok) return;
+
+      try {
+        const ref = doc(db, "events", eventId, "rsvps", uid);
+        await deleteDoc(ref);
+
+        window.dispatchEvent(new Event("requests-changed"));
+        window.dispatchEvent(new Event("events-changed"));
+      } catch (err) {
+        console.error("deleteDoc failed", err);
+        alert(err instanceof Error ? err.message : "Kunne ikke slette RSVP");
+      }
+    },
+    [eventId],
+  );
+
   return (
     <div className="space-y-4 border-t pt-3">
       {/* Godkendte (ja/måske) */}
@@ -242,16 +265,29 @@ export default function ApprovedUsers({ eventId }: Props) {
                       {attendancePill(r.attendance)}
 
                       {canManage ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            onRemoveApproval(r.uid, displayNameFromRow(r))
-                          }
-                          className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                          title="Fjern godkendelse (send tilbage til requests)"
-                        >
-                          Tilbage til anmodninger
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onRemoveApproval(r.uid, displayNameFromRow(r))
+                            }
+                            className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                            title="Fjern godkendelse (send tilbage til requests)"
+                          >
+                            Tilbage til anmodninger
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onDeleteRsvp(r.uid, displayNameFromRow(r))
+                            }
+                            className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+                            title="Slet RSVP helt"
+                          >
+                            Slet
+                          </button>
+                        </div>
                       ) : null}
                     </div>
                   </div>
