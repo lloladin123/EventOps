@@ -2,35 +2,27 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  ROLE,
-  ROLES,
-  CREW_SUBROLES,
-  type Role,
-  type CrewSubRole,
-} from "@/types/rsvp";
+import { SYSTEM_ROLE, type SystemRole } from "@/types/systemRoles";
 import { useLogin } from "../hooks/useLogin";
+
+const SYSTEM_ROLE_OPTIONS: Array<{ value: SystemRole; label: string }> = [
+  { value: SYSTEM_ROLE.User, label: "Bruger" },
+  { value: SYSTEM_ROLE.Admin, label: "Admin" },
+  { value: SYSTEM_ROLE.Superadmin, label: "Superadmin" },
+];
 
 export default function LoginCard() {
   const {
-    role,
-    crewRole,
-    setCrewRole,
-    onChangeRole,
+    systemRole, // <- from hook
+    onChangeSystemRole, // <- from hook
     canLogin,
     login,
     busy,
     error,
   } = useLogin();
 
-  const isCrew = role === ROLE.Crew;
-
   const onRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChangeRole(e.target.value as Role);
-  };
-
-  const onCrewRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setCrewRole(e.target.value as CrewSubRole);
+    onChangeSystemRole(e.target.value as SystemRole);
   };
 
   const disabled = !canLogin || busy;
@@ -47,51 +39,36 @@ export default function LoginCard() {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <h1 className="text-xl font-semibold text-slate-900">Login</h1>
-      <p className="mt-1 text-sm text-slate-600">Vælg rolle for at fortsætte</p>
+      <p className="mt-1 text-sm text-slate-600">
+        Vælg adgangsniveau for at fortsætte
+      </p>
 
-      {/* Role */}
+      {/* System role */}
       <div className="mt-4">
         <label className="block text-sm font-medium text-slate-900">
-          Rolle
+          Systemrolle
         </label>
+
         <select
-          value={role}
+          value={systemRole ?? ""}
           onChange={onRoleChange}
           className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
         >
           <option value="" disabled>
-            Vælg rolle
+            Vælg systemrolle
           </option>
-          {ROLES.map((r) => (
-            <option key={r} value={r}>
-              {r}
+
+          {SYSTEM_ROLE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
             </option>
           ))}
         </select>
-      </div>
 
-      {/* Crew subrole */}
-      {isCrew && (
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-slate-900">
-            Crew-rolle
-          </label>
-          <select
-            value={crewRole}
-            onChange={onCrewRoleChange}
-            className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-          >
-            <option value="" disabled>
-              Vælg crew-rolle
-            </option>
-            {CREW_SUBROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+        <div className="mt-2 text-xs text-slate-500">
+          Bruger = standard · Admin = kan godkende/rette · Superadmin = alt
         </div>
-      )}
+      </div>
 
       <button
         type="button"
@@ -102,7 +79,7 @@ export default function LoginCard() {
         {buttonLabel}
       </button>
 
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
 
       {/* Actions */}
       <div className="mt-4 flex items-center justify-between text-sm">
