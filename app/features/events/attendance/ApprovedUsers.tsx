@@ -166,23 +166,25 @@ export default function ApprovedUsers({ eventId }: Props) {
       {/* Godkendte (ja/måske) */}
       <div>
         {/* Admin controls ABOVE the list header */}
-        <div className="mb-3 flex justify-center">
-          <div className="w-full max-w-3xl space-y-2">
-            <div className="text-center text-xs font-medium text-slate-500">
-              Admin handling
-            </div>
+        {canManage ? (
+          <div className="mb-3 flex justify-center">
+            <div className="w-full max-w-3xl space-y-2">
+              <div className="text-center text-xs font-medium text-slate-500">
+                Admin handling
+              </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
-              <div className="flex flex-col items-center gap-2">
-                <AdminAddApprovedStaffButton
-                  eventId={eventId}
-                  className="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 text-xs rounded-md"
-                />
-                <AdminAddCustomRsvpButton eventId={eventId} />
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
+                <div className="flex flex-col items-center gap-2">
+                  <AdminAddApprovedStaffButton
+                    eventId={eventId}
+                    className="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 text-xs rounded-md"
+                  />
+                  <AdminAddCustomRsvpButton eventId={eventId} />
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        ) : null}
 
         {/* Header row: title + copy */}
         <div className="flex items-center justify-between gap-2">

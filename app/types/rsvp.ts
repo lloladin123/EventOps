@@ -4,7 +4,6 @@ import { RSVPAttendance } from "./rsvpIndex";
 export const ROLE = {
   Kontrollør: "Kontrollør",
   Sikkerhedschef: "Sikkerhedschef",
-  Logfører: "Logfører",
   Video: "Video",
   Crew: "Crew",
 } as const;
