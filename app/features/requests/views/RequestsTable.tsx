@@ -7,9 +7,9 @@ import RequestApprovalActions from "../components/RequestApprovalActions";
 import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
 import { requestsGroupMeta } from "../ui/RequestsGroupMeta";
 import { RequestsNoResponsesTable } from "../components/RequestsNoResponsesTable";
-import { attendanceLabel, statusLabel } from "@/features/rsvp/lib/rsvpLabels";
+import { attendanceLabel } from "@/features/rsvp/lib/rsvpLabels";
 import { RequestNameCell } from "../components/RequestNameCell";
-import { statusPillClass, fmtUpdatedAt, updatedAtMs } from "../ui/requestUi";
+import { fmtUpdatedAt, updatedAtMs } from "../ui/requestUi";
 import {
   findNextActionableRow,
   useRequestHotkeys,
