@@ -8,54 +8,46 @@ import {
   browserLocalPersistence,
 } from "firebase/auth";
 
-import { ROLE, type Role, type CrewSubRole } from "@/types/rsvp";
 import { auth } from "@/app/lib/firebase/client";
+import { SYSTEM_ROLE, type SystemRole } from "@/types/systemRoles";
 import { getTestCreds } from "../__dev__/testAccounts";
 
 export function useLogin() {
   const router = useRouter();
 
-  const [role, setRole] = React.useState<Role | "">("");
-  const [crewRole, setCrewRole] = React.useState<CrewSubRole | "">("");
+  const [systemRole, setSystemRole] = React.useState<SystemRole | "">("");
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
 
-  const onChangeRole = (next: Role) => {
-    setRole(next);
+  const onChangeSystemRole = (next: SystemRole) => {
+    setSystemRole(next);
     setError(null);
-    if (next !== ROLE.Crew) setCrewRole("");
   };
 
-  const canLogin = role !== "" && (role !== ROLE.Crew || crewRole !== "");
+  const canLogin = systemRole !== "";
 
   const login = async () => {
     if (!canLogin || busy) return;
 
     // Narrow once so we don't cast later
-    const selectedRole = role; // Role (because canLogin implies role !== "")
-    const selectedCrewRole =
-      selectedRole === ROLE.Crew ? (crewRole as CrewSubRole) : null;
+    const selectedRole = systemRole as SystemRole;
 
     setBusy(true);
     setError(null);
 
     try {
-      if (!auth) {
-        throw new Error("Auth not available");
-      }
+      if (!auth) throw new Error("Auth not available");
 
-      const creds = getTestCreds(selectedRole, selectedCrewRole);
+      const creds = getTestCreds(selectedRole);
 
-      // ✅ persist across refreshes (browser only; auth guard above guarantees it)
       await setPersistence(auth, browserLocalPersistence);
 
       const result = await signInWithEmailAndPassword(
         auth,
         creds.email,
-        creds.password
+        creds.password,
       );
 
-      // ✅ Debug proof
       console.log("SIGNED IN:", result.user.uid, result.user.email);
       console.log("AUTH currentUser after:", auth.currentUser?.uid);
 
@@ -70,13 +62,14 @@ export function useLogin() {
   };
 
   return {
-    role,
-    crewRole,
-    setCrewRole,
-    onChangeRole,
+    systemRole,
+    onChangeSystemRole,
     canLogin,
     login,
     busy,
     error,
+
+    // optional export if you want to render options in UI
+    SYSTEM_ROLE,
   };
 }

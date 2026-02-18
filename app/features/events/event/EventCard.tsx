@@ -17,7 +17,6 @@ import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
 import { isSystemAdmin } from "@/types/systemRoles";
 import { Role } from "@/types/rsvp";
 import { InlineEdit } from "../utils/InlineEdit";
-import { Wrench } from "lucide-react";
 
 type Props = {
   event: Event;
@@ -133,13 +132,12 @@ export default function EventCard({
               <InlineEdit
                 value={event.title}
                 placeholder="Titel"
-                canEdit
+                canEdit={admin}
                 className="text-lg font-semibold text-slate-900"
                 onCommit={async (next) => {
                   await updateEventFields(event.id, { title: next });
                 }}
               />
-              <Wrench className="h-4 w-4 text-slate-400 opacity-70" />
             </span>
           ) : (
             <span className="text-lg font-semibold text-slate-900">

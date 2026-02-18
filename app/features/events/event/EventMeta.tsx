@@ -3,7 +3,6 @@
 import type { Event } from "@/types/event";
 import { formatDateDDMMYYYY } from "@/features/events/lib/eventFormat";
 import { InlineEdit } from "../utils/InlineEdit";
-import { Wrench } from "lucide-react";
 import { normalizeTime } from "../lib/normalizeTime";
 
 type Props = {
@@ -13,20 +12,12 @@ type Props = {
 };
 
 function EditableWrapper({
-  admin,
   children,
 }: {
   admin?: boolean;
   children: React.ReactNode;
 }) {
-  return (
-    <span className="inline-flex items-center gap-1">
-      {children}
-      {admin && (
-        <Wrench className="h-3.5 w-3.5 text-slate-400 opacity-70" aria-hidden />
-      )}
-    </span>
-  );
+  return <span className="inline-flex items-center gap-1">{children}</span>;
 }
 
 export default function EventMeta({ event, admin = false, onPatch }: Props) {
