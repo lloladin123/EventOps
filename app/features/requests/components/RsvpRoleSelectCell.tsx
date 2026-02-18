@@ -1,10 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
-import { ROLES, ROLE, CREW_SUBROLES, type Role } from "@/types/rsvp";
+import {
+  ROLES,
+  ROLE,
+  CREW_SUBROLES,
+  type Role,
+  KONTROLLØR_SUBROLES,
+} from "@/types/rsvp";
+import { setRsvpRole } from "@/lib/firestore/rsvps";
 
 type Option = { value: string; label: string };
 
@@ -49,12 +56,18 @@ export function RsvpRoleSelectCell({
     () => normalizeOptions(options ?? ROLES),
     [options],
   );
-  const subRoleOptions = React.useMemo(
-    () => normalizeOptions(CREW_SUBROLES),
-    [],
-  );
-
   const [selected, setSelected] = React.useState<string>(value ?? "");
+
+  const isCrew = selected === ROLE.Crew;
+  const isKontrollør = selected === ROLE.Kontrollør;
+
+  const supportsSubRole = isCrew || isKontrollør;
+
+  const subRoleOptions = React.useMemo(() => {
+    if (isCrew) return normalizeOptions(CREW_SUBROLES);
+    if (isKontrollør) return normalizeOptions(KONTROLLØR_SUBROLES);
+    return normalizeOptions([]); // just "—"
+  }, [isCrew, isKontrollør]);
 
   React.useEffect(() => {
     if (savingRole) return;
@@ -91,14 +104,13 @@ export function RsvpRoleSelectCell({
     };
   }, [eventId, uid, value]);
 
-  const isCrew = selected === ROLE.Crew;
   const [subSelected, setSubSelected] = React.useState<string>("");
 
   React.useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      if (!isCrew || subSelected !== "") return;
+      if (!supportsSubRole || subSelected !== "") return;
 
       try {
         const ref = doc(db, "events", eventId, "rsvps", uid);
@@ -118,14 +130,15 @@ export function RsvpRoleSelectCell({
     return () => {
       cancelled = true;
     };
-  }, [eventId, uid, isCrew, subSelected]);
+  }, [eventId, uid, supportsSubRole, subSelected]);
 
   const onChangeRole = async (next: string) => {
     if (disabled) return;
 
     const prevSelected = selected;
     setSelected(next);
-    if (next !== ROLE.Crew) setSubSelected("");
+    if (next !== ROLE.Crew && next !== ROLE.Kontrollør) setSubSelected("");
+
     setSavingRole(true);
 
     const ref = doc(db, "events", eventId, "rsvps", uid);
@@ -137,30 +150,20 @@ export function RsvpRoleSelectCell({
       const prevRole = (prev?.rsvpRole ?? "") as string;
       const prevSub = (prev?.rsvpSubRole ?? "") as string;
 
-      await updateDoc(ref, {
-        rsvpRole: next || null,
-        updatedAt: serverTimestamp(),
-      });
+      // inside onChangeRole try block, after prevRole/prevSub read:
+      setSubSelected(""); // always reset on role change
 
-      window.dispatchEvent(new Event("requests-changed"));
-      window.dispatchEvent(new Event("events-changed"));
+      await setRsvpRole(eventId, uid, next || null, null);
 
       push({
         label: "Rolle ændret",
         undo: async () => {
-          await updateDoc(ref, {
-            rsvpRole: prevRole || null,
-            rsvpSubRole: prevSub || null,
-            updatedAt: serverTimestamp(),
-          });
+          await setRsvpRole(eventId, uid, prevRole || null, prevSub || null);
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },
         redo: async () => {
-          await updateDoc(ref, {
-            rsvpRole: next || null,
-            updatedAt: serverTimestamp(),
-          });
+          await setRsvpRole(eventId, uid, next || null, null);
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },
@@ -187,29 +190,17 @@ export function RsvpRoleSelectCell({
       const prev = snap.exists() ? snap.data() : null;
       const prevSub = (prev?.rsvpSubRole ?? "") as string;
 
-      await updateDoc(ref, {
-        rsvpSubRole: next || null,
-        updatedAt: serverTimestamp(),
-      });
-
-      window.dispatchEvent(new Event("requests-changed"));
-      window.dispatchEvent(new Event("events-changed"));
+      await setRsvpRole(eventId, uid, selected || null, next || null);
 
       push({
-        label: "Crew subrolle ændret",
+        label: `${selected} subrolle ændret`,
         undo: async () => {
-          await updateDoc(ref, {
-            rsvpSubRole: prevSub || null,
-            updatedAt: serverTimestamp(),
-          });
+          await setRsvpRole(eventId, uid, selected || null, prevSub || null);
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },
         redo: async () => {
-          await updateDoc(ref, {
-            rsvpSubRole: next || null,
-            updatedAt: serverTimestamp(),
-          });
+          await setRsvpRole(eventId, uid, selected || null, next || null);
           window.dispatchEvent(new Event("requests-changed"));
           window.dispatchEvent(new Event("events-changed"));
         },
@@ -248,7 +239,7 @@ export function RsvpRoleSelectCell({
         <select
           className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-800 disabled:opacity-60"
           value={subSelected}
-          disabled={disabled || busy || !isCrew}
+          disabled={disabled || busy || !supportsSubRole}
           onChange={(e) => onChangeSubRole(e.target.value)}
           onMouseDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}

@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import type { RSVPAttendance } from "@/types/rsvpIndex";
 import { DECISION, type Decision } from "@/types/rsvpIndex";
+import { CREW_SUBROLES, KONTROLLØR_SUBROLES, ROLE } from "@/types/rsvp";
 
 export type RsvpDoc = {
   attendance?: RSVPAttendance;
@@ -172,6 +173,41 @@ export async function setRsvpDecision(
       approvedByUid: meta?.decidedByUid ?? null,
       updatedAt: serverTimestamp(),
     },
+    { merge: true },
+  );
+}
+
+const SUBROLES_BY_ROLE: Record<string, readonly string[]> = {
+  [ROLE.Crew]: CREW_SUBROLES,
+  [ROLE.Kontrollør]: KONTROLLØR_SUBROLES,
+};
+
+function sanitizeSubRole(
+  nextRole: string | null | undefined,
+  subRole: string | null | undefined,
+) {
+  const role = nextRole ?? "";
+  const sub = subRole ?? "";
+  const allowed = SUBROLES_BY_ROLE[role] ?? [];
+  return allowed.includes(sub) ? sub : null;
+}
+
+export async function setRsvpRole(
+  eventId: string,
+  uid: string,
+  role: string | null,
+  subRole?: string | null,
+) {
+  const cleanSub = sanitizeSubRole(role, subRole);
+
+  await setDoc(
+    rsvpRef(eventId, uid),
+    {
+      uid,
+      rsvpRole: role || null,
+      rsvpSubRole: cleanSub, // ✅ auto-clears if invalid for role
+      updatedAt: serverTimestamp(),
+    } as any,
     { merge: true },
   );
 }

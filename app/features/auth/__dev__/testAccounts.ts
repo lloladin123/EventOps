@@ -14,5 +14,6 @@ const BASE: Record<SystemRole, Creds> = {
 export function getTestCreds(systemRole: SystemRole): Creds {
   const creds = BASE[systemRole];
   if (!creds) throw new Error(`Missing creds for systemRole ${systemRole}`);
+
   return creds;
 }

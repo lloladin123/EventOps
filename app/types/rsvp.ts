@@ -16,11 +16,18 @@ export const CREW_SUBROLE = {
   Boldbørn: "Boldbørn",
 } as const;
 
+export const KONTROLLØR_SUBROLE = {
+  Elev: "Elev",
+} as const;
+
 export type CrewSubRole = (typeof CREW_SUBROLE)[keyof typeof CREW_SUBROLE];
+export type KontrollørSubRole =
+  (typeof KONTROLLØR_SUBROLE)[keyof typeof KONTROLLØR_SUBROLE];
 
 // Optional convenience arrays (if you need mapping/iterating in UI)
 export const ROLES = Object.values(ROLE);
 export const CREW_SUBROLES = Object.values(CREW_SUBROLE);
+export const KONTROLLØR_SUBROLES = Object.values(KONTROLLØR_SUBROLE);
 
 export type RSVP = {
   id: string;
@@ -29,6 +36,7 @@ export type RSVP = {
   approved?: boolean;
 
   rsvpRole?: Role;
+  rsvpSubRole?: CrewSubRole | KontrollørSubRole; // 👈 add this if you store it
 
   attendance: RSVPAttendance;
   comment: string;
