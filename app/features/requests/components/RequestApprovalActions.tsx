@@ -26,6 +26,9 @@ type Props = {
   // optional overrides
   onSetDecision?: (next: Decision) => void | Promise<void>;
   onRevokeApproval?: () => void | Promise<void>;
+
+  // ✅ new: delete RSVP (admin-only in parent)
+  onDeleteRsvp?: () => void | Promise<void>;
 };
 
 function btnCls(active: boolean, tone: "neutral" | "good" | "bad") {
@@ -56,14 +59,10 @@ function btnCls(active: boolean, tone: "neutral" | "good" | "bad") {
     );
   }
 
-  if (tone === "good") {
+  if (tone === "good")
     return base + " bg-emerald-600 text-white hover:bg-emerald-600/90";
-  }
-
-  if (tone === "bad") {
+  if (tone === "bad")
     return base + " bg-rose-600 text-white hover:bg-rose-600/90";
-  }
-
   return base + " bg-slate-900 text-white hover:bg-slate-900/90";
 }
 
@@ -78,8 +77,8 @@ export default function RequestApprovalActions({
   onDone,
   onSetDecision,
   onRevokeApproval,
+  onDeleteRsvp,
 }: Props) {
-  // ✅ hooks must be called here (inside component)
   const setRsvpDecision = useSetRsvpDecision();
   const revokeRsvpApproval = useRevokeRsvpApproval();
 
@@ -97,17 +96,15 @@ export default function RequestApprovalActions({
 
       setBusy(true);
       try {
-        if (onSetDecision) {
-          await onSetDecision(next);
-        } else {
-          await setRsvpDecision(eventId, uid, next);
-        }
+        if (onSetDecision) await onSetDecision(next);
+        else await setRsvpDecision(eventId, uid, next);
+
         onDone?.();
       } finally {
         setBusy(false);
       }
     },
-    [busy, disabled, eventId, onDone, onSetDecision, setRsvpDecision, uid]
+    [busy, disabled, eventId, onDone, onSetDecision, setRsvpDecision, uid],
   );
 
   const runRevokeApproval = React.useCallback(async () => {
@@ -115,11 +112,9 @@ export default function RequestApprovalActions({
 
     setBusy(true);
     try {
-      if (onRevokeApproval) {
-        await onRevokeApproval();
-      } else {
-        await revokeRsvpApproval(eventId, uid);
-      }
+      if (onRevokeApproval) await onRevokeApproval();
+      else await revokeRsvpApproval(eventId, uid);
+
       onDone?.();
     } finally {
       setBusy(false);
@@ -133,6 +128,18 @@ export default function RequestApprovalActions({
     revokeRsvpApproval,
     uid,
   ]);
+
+  const runDelete = React.useCallback(async () => {
+    if (disabled || busy || !onDeleteRsvp) return;
+
+    setBusy(true);
+    try {
+      await onDeleteRsvp();
+      onDone?.();
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, disabled, onDeleteRsvp, onDone]);
 
   return (
     <div
@@ -168,7 +175,7 @@ export default function RequestApprovalActions({
             onClick={() => runSetDecision(DECISION.Pending)}
             className={btnCls(
               effectiveDecision === DECISION.Pending,
-              "neutral"
+              "neutral",
             )}
             title="Sæt til afventer"
           >
@@ -188,6 +195,19 @@ export default function RequestApprovalActions({
           Fjern godkendelse
         </button>
       )}
+
+      {/* ✅ Delete RSVP (only shows if parent passes onDeleteRsvp) */}
+      {onDeleteRsvp ? (
+        <button
+          type="button"
+          disabled={disabled || busy}
+          onClick={runDelete}
+          className={btnCls(false, "bad")}
+          title="Slet RSVP"
+        >
+          Slet
+        </button>
+      ) : null}
     </div>
   );
 }

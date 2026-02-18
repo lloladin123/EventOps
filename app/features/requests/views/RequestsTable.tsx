@@ -15,7 +15,14 @@ import {
   useRequestHotkeys,
 } from "../hooks/useRequestsHotkeys";
 import { SortState } from "@/components/ui/patterns/table/types";
-import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 import { useSetRsvpDecision } from "../hooks/useSetRsvpDecision";
@@ -141,6 +148,49 @@ export default function RequestsTable({
     [revokeStrict, pushUndo],
   );
 
+  const withUndoDeleteRsvp = React.useCallback(
+    async (eventId: string, uid: string, label: string) => {
+      const ok = window.confirm(
+        `Slet RSVP for "${label}"?\n\nDette kan fortrydes via Undo.`,
+      );
+
+      if (!ok) return;
+
+      const ref = doc(db, "events", eventId, "rsvps", uid);
+
+      const snap = await getDoc(ref);
+      const prev = snap.exists() ? snap.data() : null;
+
+      // If already deleted, just no-op nicely
+      if (!prev) {
+        await deleteDoc(ref).catch(() => {});
+        window.dispatchEvent(new Event("requests-changed"));
+        window.dispatchEvent(new Event("events-changed"));
+        return;
+      }
+
+      await deleteDoc(ref);
+
+      window.dispatchEvent(new Event("requests-changed"));
+      window.dispatchEvent(new Event("events-changed"));
+
+      pushUndo({
+        label: "RSVP slettet",
+        undo: async () => {
+          await setDoc(ref, { ...prev, updatedAt: serverTimestamp() });
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+        redo: async () => {
+          await deleteDoc(ref);
+          window.dispatchEvent(new Event("requests-changed"));
+          window.dispatchEvent(new Event("events-changed"));
+        },
+      });
+    },
+    [pushUndo],
+  );
+
   const initialSort: SortState<SortKey> = { key: "name", dir: "desc" };
 
   // match what your main table shows (it hides "No")
@@ -235,17 +285,6 @@ export default function RequestsTable({
           ),
         },
         {
-          key: "status",
-          header: "Status",
-          headerTitle: "Sortér efter status",
-          sortValue: (r) => r.decision ?? DECISION.Pending,
-          cell: (r) => (
-            <span className={statusPillClass(r.decision)}>
-              {statusLabel(r.decision)}
-            </span>
-          ),
-        },
-        {
           key: "role",
           header: "Rolle",
           headerTitle: "Sæt RSVP-rolle (event)",
@@ -292,19 +331,28 @@ export default function RequestsTable({
         {
           key: "actions",
           header: "Handlinger",
-          cell: (r) => (
-            <RequestApprovalActions
-              eventId={r.eventId}
-              uid={r.uid}
-              decision={r.decision}
-              approved={r.approved}
-              disabled={approvalsDisabled}
-              onSetDecision={(next) =>
-                withUndoSetDecision(r.eventId, r.uid, next)
-              }
-              onRevokeApproval={() => withUndoRevoke(r.eventId, r.uid)}
-            />
-          ),
+          cell: (r) => {
+            const label =
+              r.userDisplayName?.trim() ||
+              (r.uid.includes("@")
+                ? r.uid
+                : `${r.uid.slice(0, 6)}…${r.uid.slice(-4)}`);
+
+            return (
+              <RequestApprovalActions
+                eventId={r.eventId}
+                uid={r.uid}
+                decision={r.decision}
+                approved={r.approved}
+                disabled={approvalsDisabled}
+                onSetDecision={(next) =>
+                  withUndoSetDecision(r.eventId, r.uid, next)
+                }
+                onRevokeApproval={() => withUndoRevoke(r.eventId, r.uid)}
+                onDeleteRsvp={() => withUndoDeleteRsvp(r.eventId, r.uid, label)}
+              />
+            );
+          },
         },
       ]}
     />
