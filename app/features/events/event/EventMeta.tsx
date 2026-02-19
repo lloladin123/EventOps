@@ -4,6 +4,8 @@ import type { Event } from "@/types/event";
 import { formatDateDDMMYYYY } from "@/features/events/lib/eventFormat";
 import { InlineEdit } from "../utils/InlineEdit";
 import { normalizeTime } from "../lib/normalizeTime";
+import { isSystemAdmin } from "@/types/systemRoles";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
 
 type Props = {
   event: Event;
@@ -22,6 +24,8 @@ function EditableWrapper({
 
 export default function EventMeta({ event, admin = false, onPatch }: Props) {
   const patch = (p: Partial<Event>) => onPatch?.(p);
+
+  const { systemRole } = useAuth();
 
   return (
     <div className="mt-2 grid grid-cols-1 gap-2 text-sm text-slate-700 sm:grid-cols-2">
@@ -92,6 +96,23 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
           />
         </EditableWrapper>
       </div>
+      {(event.description || isSystemAdmin(systemRole)) && (
+        <div className="truncate">
+          <span className="font-medium text-slate-900">Beskrivelse:</span>{" "}
+          <EditableWrapper admin={admin}>
+            <InlineEdit
+              value={event.description ?? ""}
+              placeholder="Beskrivelse"
+              canEdit={admin}
+              className="text-slate-700"
+              inputClassName="h-7 text-sm font-normal"
+              onCommit={(next) => {
+                return patch({ description: next });
+              }}
+            />
+          </EditableWrapper>
+        </div>
+      )}
     </div>
   );
 }
