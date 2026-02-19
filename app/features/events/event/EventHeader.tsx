@@ -112,7 +112,7 @@ export default function EventHeader({
           </div>
         </div>
         {(event.description || isSystemAdmin(systemRole)) && (
-          <div className="flex flex-wrap items-baseline gap-2">
+          <div className="flex flex-col gap-1">
             <span className="font-medium text-slate-900">Beskrivelse:</span>
             <InlineEdit
               value={event.description ?? ""}
@@ -120,8 +120,8 @@ export default function EventHeader({
                 isSystemAdmin(systemRole) ? "Tilføj en beskrivelse..." : ""
               }
               canEdit={canEdit}
-              className="text-sm"
-              inputClassName="text-sm font-medium"
+              className="text-sm whitespace-pre-wrap break-words"
+              inputClassName="w-full text-sm font-medium"
               onCommit={(next) => updateField("description", next)}
             />
           </div>

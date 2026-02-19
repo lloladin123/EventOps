@@ -97,7 +97,7 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
         </EditableWrapper>
       </div>
       {(event.description || isSystemAdmin(systemRole)) && (
-        <div className="truncate">
+        <div className="sm:col-span-2 break-words">
           <span className="font-medium text-slate-900">Beskrivelse:</span>{" "}
           <EditableWrapper admin={admin}>
             <InlineEdit
