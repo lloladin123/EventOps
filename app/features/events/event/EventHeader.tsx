@@ -26,7 +26,12 @@ export default function EventHeader({
     async (
       field: keyof Pick<
         Event,
-        "title" | "location" | "date" | "meetingTime" | "startTime"
+        | "title"
+        | "location"
+        | "date"
+        | "meetingTime"
+        | "startTime"
+        | "description"
       >,
       next: string,
     ) => {
@@ -106,6 +111,21 @@ export default function EventHeader({
             />
           </div>
         </div>
+        {(event.description || isSystemAdmin(systemRole)) && (
+          <div className="flex flex-wrap items-baseline gap-2">
+            <span className="font-medium text-slate-900">Beskrivelse:</span>
+            <InlineEdit
+              value={event.description ?? ""}
+              placeholder={
+                isSystemAdmin(systemRole) ? "Tilføj en beskrivelse..." : ""
+              }
+              canEdit={canEdit}
+              className="text-sm"
+              inputClassName="text-sm font-medium"
+              onCommit={(next) => updateField("description", next)}
+            />
+          </div>
+        )}
 
         {!eventId ? (
           <div className="mt-2 text-xs text-rose-600">
