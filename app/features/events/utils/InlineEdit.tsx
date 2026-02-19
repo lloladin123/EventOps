@@ -22,6 +22,10 @@ type InlineEditProps = {
   normalize?: (s: string) => string; // default: trim
   validate?: (s: string) => string | null; // return error msg, or null if ok
 
+  /** NEW: allow textarea editing */
+  multiline?: boolean;
+  rows?: number;
+
   onCommit: (next: string) => void | Promise<void>;
 };
 
@@ -36,6 +40,8 @@ export function InlineEdit({
   iconClassName,
   normalize = (s) => s.trim(),
   validate,
+  multiline = false,
+  rows = 3,
   onCommit,
 }: InlineEditProps) {
   const [editing, setEditing] = React.useState(false);
@@ -44,6 +50,7 @@ export function InlineEdit({
   const [error, setError] = React.useState<string | null>(null);
 
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const textAreaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   React.useEffect(() => {
     if (!editing) {
@@ -54,11 +61,13 @@ export function InlineEdit({
 
   React.useEffect(() => {
     if (editing) {
-      // wait a tick so autoFocus + ref both behave
-      const t = window.setTimeout(() => inputRef.current?.focus(), 0);
+      const t = window.setTimeout(() => {
+        if (multiline) textAreaRef.current?.focus();
+        else inputRef.current?.focus();
+      }, 0);
       return () => window.clearTimeout(t);
     }
-  }, [editing]);
+  }, [editing, multiline]);
 
   const cancel = () => {
     setDraft(value ?? "");
@@ -69,7 +78,6 @@ export function InlineEdit({
   const commit = async () => {
     const next = normalize(draft);
 
-    // Validate (keep editing open if invalid)
     const msg = validate ? validate(next) : null;
     if (msg) {
       setError(msg);
@@ -79,7 +87,6 @@ export function InlineEdit({
     setError(null);
     setEditing(false);
 
-    // no-op if unchanged (compare normalized)
     const prev = normalize(value ?? "");
     if (next === prev) return;
 
@@ -102,37 +109,65 @@ export function InlineEdit({
 
   // Admin editing view
   if (editing) {
-    return (
-      <div className={cn("w-full max-w-[520px]", className)}>
-        <input
-          ref={inputRef}
-          value={draft}
-          placeholder={placeholder}
-          disabled={busy}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => void commit()}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void commit();
-            if (e.key === "Escape") cancel();
-          }}
-          aria-invalid={!!error}
-          className={cn(
-            "h-8 w-full rounded-lg border bg-white px-2 text-lg font-semibold text-slate-900 outline-none focus:ring-2 disabled:opacity-60",
-            error
-              ? "border-rose-300 focus:ring-rose-100"
-              : "border-slate-200 focus:ring-slate-200",
-            inputClassName,
-          )}
-        />
+    const baseFieldClasses = cn(
+      "w-full rounded-lg border bg-white px-2 text-lg font-semibold text-slate-900 outline-none focus:ring-2 disabled:opacity-60",
+      error
+        ? "border-rose-300 focus:ring-rose-100"
+        : "border-slate-200 focus:ring-slate-200",
+      inputClassName,
+    );
 
-        {/* Tiny inline error (optional) */}
+    return (
+      <div className={cn("w-full", className)}>
+        {multiline ? (
+          <textarea
+            ref={textAreaRef}
+            value={draft}
+            placeholder={placeholder}
+            disabled={busy}
+            rows={rows}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => void commit()}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") cancel();
+              // Save with Cmd/Ctrl + Enter (Enter alone should make a newline)
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                void commit();
+              }
+            }}
+            aria-invalid={!!error}
+            className={cn(
+              "min-h-[80px] py-1.5 leading-relaxed",
+              baseFieldClasses,
+            )}
+          />
+        ) : (
+          <input
+            ref={inputRef}
+            value={draft}
+            placeholder={placeholder}
+            disabled={busy}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => void commit()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void commit();
+              if (e.key === "Escape") cancel();
+            }}
+            aria-invalid={!!error}
+            className={cn("h-8", baseFieldClasses)}
+          />
+        )}
+
         {error ? (
           <div className="mt-1 text-[11px] font-medium text-rose-600">
             {error}
           </div>
         ) : (
           <div className="mt-1 text-[11px] text-slate-400">
-            Enter = gem · Esc = annuller
+            {multiline
+              ? "Ctrl/Cmd + Enter = gem · Esc = annuller"
+              : "Enter = gem · Esc = annuller"}
           </div>
         )}
       </div>
@@ -148,7 +183,10 @@ export function InlineEdit({
       }}
       disabled={busy}
       className={cn(
-        "group inline-flex items-center gap-1 text-left underline-offset-4 hover:underline",
+        multiline
+          ? "group flex w-full items-start gap-1 text-left"
+          : "group inline-flex items-center gap-1 text-left underline-offset-4 hover:underline",
+        multiline && "rounded-lg p-1 -m-1 hover:bg-slate-50",
         busy && "opacity-60 cursor-not-allowed",
         className,
       )}
@@ -162,7 +200,6 @@ export function InlineEdit({
         <Wrench
           aria-hidden
           className={cn(
-            // scales nicely with text size
             "h-[0.9em] w-[0.9em] text-slate-400 transition",
             iconClassName,
           )}

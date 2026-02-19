@@ -116,12 +116,12 @@ export default function EventHeader({
             <span className="font-medium text-slate-900">Beskrivelse:</span>
             <InlineEdit
               value={event.description ?? ""}
-              placeholder={
-                isSystemAdmin(systemRole) ? "Tilføj en beskrivelse..." : ""
-              }
+              placeholder="Tilføj en beskrivelse..."
               canEdit={canEdit}
+              multiline
+              rows={5}
               className="text-sm whitespace-pre-wrap break-words"
-              inputClassName="w-full text-sm font-medium"
+              inputClassName="text-sm font-normal"
               onCommit={(next) => updateField("description", next)}
             />
           </div>

@@ -97,20 +97,22 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
         </EditableWrapper>
       </div>
       {(event.description || isSystemAdmin(systemRole)) && (
-        <div className="sm:col-span-2 break-words">
-          <span className="font-medium text-slate-900">Beskrivelse:</span>{" "}
-          <EditableWrapper admin={admin}>
-            <InlineEdit
-              value={event.description ?? ""}
-              placeholder="Beskrivelse"
-              canEdit={admin}
-              className="text-slate-700"
-              inputClassName="h-7 text-sm font-normal"
-              onCommit={(next) => {
-                return patch({ description: next });
-              }}
-            />
-          </EditableWrapper>
+        <div className="sm:col-span-2">
+          <div className="flex flex-col gap-1">
+            <span className="font-medium text-slate-900">Beskrivelse:</span>
+            <div className="w-full">
+              <InlineEdit
+                value={event.description ?? ""}
+                placeholder="Beskrivelse"
+                canEdit={admin}
+                multiline
+                rows={5}
+                className="w-full text-slate-700 whitespace-pre-wrap break-words"
+                inputClassName="w-full text-sm font-normal"
+                onCommit={(next) => patch({ description: next })}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
