@@ -2,16 +2,16 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { SystemRole } from "@/types/systemRoles";
-import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { doc, onSnapshot } from "firebase/firestore";
 
 import GuardCard from "./GuardCard";
 import { Button } from "@/components/ui/primitives/button";
 
+import type { Action } from "@/features/auth/lib/permissions";
+import { useAccess } from "@/features/auth/hooks/useAccess";
+
 import { db } from "@/app/lib/firebase/client";
-import { doc, onSnapshot } from "firebase/firestore";
 import type { Role } from "@/types/rsvp";
-import { isSystemAdmin } from "@/types/systemRoles";
 
 type Props = {
   children: React.ReactNode;
@@ -19,10 +19,9 @@ type Props = {
   description?: string;
   redirectTo?: string;
 
-  // ✅ system role gate (global)
-  allowedSystemRoles?: readonly SystemRole[];
+  action: Action;
 
-  // ✅ optional RSVP gate (event-scoped)
+  // ✅ RSVP gate (optional)
   eventId?: string;
   allowedRsvpRoles?: readonly Role[];
   requireApprovedRsvp?: boolean;
@@ -43,7 +42,7 @@ export default function LoginRedirect({
   description = "Log ind for at fortsætte.",
   redirectTo = "/login",
 
-  allowedSystemRoles,
+  action,
 
   eventId,
   allowedRsvpRoles,
@@ -54,16 +53,15 @@ export default function LoginRedirect({
   unauthorizedRedirectTo = "/events",
 }: Props) {
   const router = useRouter();
-  const { user, systemRole, loading } = useAuth();
+  const access = useAccess();
 
-  const uid = user?.uid ?? null;
-
-  // 🔎 RSVP state (only if RSVP gating is used)
-  const [myRsvp, setMyRsvp] = React.useState<MyRsvpMini | null>(null);
-  const [rsvpLoading, setRsvpLoading] = React.useState(false);
+  const uid = access.user?.uid ?? null;
 
   const needsRsvpGate =
     !!eventId && (!!allowedRsvpRoles?.length || requireApprovedRsvp);
+
+  const [myRsvp, setMyRsvp] = React.useState<MyRsvpMini | null>(null);
+  const [rsvpLoading, setRsvpLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (!needsRsvpGate) {
@@ -99,12 +97,12 @@ export default function LoginRedirect({
     return () => unsub();
   }, [needsRsvpGate, eventId, uid]);
 
-  // ✅ still loading auth or RSVP
-  if (loading) return null;
+  // loading gates
+  if (access.loading) return null;
   if (needsRsvpGate && rsvpLoading) return null;
 
-  // ❌ Not logged in
-  if (!user) {
+  // not logged in
+  if (!access.user) {
     return (
       <GuardCard
         title={title}
@@ -116,8 +114,8 @@ export default function LoginRedirect({
     );
   }
 
-  // ⏳ Logged in but no system role yet
-  if (!systemRole) {
+  // logged in but not accepted
+  if (!access.systemRole) {
     return (
       <GuardCard
         title="Afventer systemrolle"
@@ -144,23 +142,20 @@ export default function LoginRedirect({
     );
   }
 
-  // ✅ system role gate: if provided, user must match
-  const systemRoleOk =
-    !allowedSystemRoles || allowedSystemRoles.includes(systemRole);
+  // ✅ system permission (admin path)
+  const systemAllowed = access.canAccess(action);
 
-  // ✅ RSVP gate: passes if role matches OR approved (when required)
+  // ✅ RSVP gate (event path)
   const rsvpRoleOk =
     !allowedRsvpRoles?.length ||
     (myRsvp?.rsvpRole != null && allowedRsvpRoles.includes(myRsvp.rsvpRole));
 
   const rsvpApprovedOk = !requireApprovedRsvp || myRsvp?.approved === true;
 
-  const rsvpOk = !needsRsvpGate || (rsvpRoleOk && rsvpApprovedOk);
+  const rsvpAllowed = !needsRsvpGate || (rsvpRoleOk && rsvpApprovedOk);
 
-  // If you want: admins always bypass RSVP gates (usually desirable)
-  const adminBypass = isSystemAdmin(systemRole);
-
-  const allowed = (systemRoleOk && rsvpOk) || adminBypass;
+  // ✅ final decision: admin OR RSVP allowed
+  const allowed = systemAllowed || rsvpAllowed;
 
   if (!allowed) {
     const detailBits: string[] = [];
@@ -170,7 +165,7 @@ export default function LoginRedirect({
       if (requireApprovedRsvp)
         detailBits.push(`godkendt: ${myRsvp?.approved ? "ja" : "nej"}`);
     } else {
-      detailBits.push(`${systemRole}`);
+      detailBits.push(`${access.systemRole}`);
     }
 
     return (

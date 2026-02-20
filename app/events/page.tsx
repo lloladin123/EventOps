@@ -2,18 +2,21 @@
 
 import LoginRedirect from "@/components/layout/LoginRedirect/LoginRedirect";
 import EventList from "@/features/events/event/EventList";
-import { useAuth } from "@/features/auth/provider/AuthProvider";
 import AddEventForm from "@/features/events/add/AddEventForm";
-import { isSystemAdmin } from "@/types/systemRoles";
+import { PERMISSION } from "@/features/auth/lib/permissions";
+import { useAccess } from "@/features/auth/hooks/useAccess";
 
 export default function EventsPage() {
-  const { user, systemRole, loading } = useAuth();
-  const ready = !loading;
+  const access = useAccess();
+  const canManageEvents = access.canAccess(PERMISSION.events.view);
 
   return (
-    <LoginRedirect description="Vælg en rolle for at kunne tilmelde dig og skrive kommentarer.">
+    <LoginRedirect
+      action={PERMISSION.events.view}
+      description="Kræver en bruger for at tilgå events."
+    >
       <main className="mx-auto max-w-4xl space-y-6 p-6">
-        {ready && user && isSystemAdmin(systemRole) && <AddEventForm />}
+        {canManageEvents && <AddEventForm />}
 
         <EventList />
       </main>

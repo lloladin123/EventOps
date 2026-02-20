@@ -2,8 +2,6 @@
 
 import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/features/auth/provider/AuthProvider";
-
 import AdminNavLink from "./AdminNavLink";
 import Badge from "../Badge";
 import KbdHint from "./KbdHint";
@@ -11,21 +9,22 @@ import KbdHint from "./KbdHint";
 import { useAdminRsvpRequestsCount } from "./hooks/useAdminRsvpRequestsCount";
 import { useAdminNavKeybindings } from "./hooks/useAdminNavKeybindings";
 import { cn } from "@/components/ui/utils/cn";
-import { isSystemAdmin, isSystemSuperAdmin } from "@/types/systemRoles";
+import { useAccess } from "@/features/auth/hooks/useAccess";
+import { PERMISSION } from "@/features/auth/lib/permissions";
 
 type AdminNavProps = {
   className?: string;
 };
 
 export default function AdminNav({ className }: AdminNavProps) {
-  const { systemRole } = useAuth();
-  const admin = isSystemAdmin(systemRole);
-  const superAdmin = isSystemSuperAdmin(systemRole);
+  const access = useAccess();
+  const viewRequests = access.canAccess(PERMISSION.requests.dashboard.view);
+  const viewUsers = access.canAccess(PERMISSION.users.dashboard.view);
   const router = useRouter();
 
-  const newRequestsCount = useAdminRsvpRequestsCount(admin);
+  const newRequestsCount = useAdminRsvpRequestsCount(viewRequests);
 
-  useAdminNavKeybindings(admin, router.push);
+  useAdminNavKeybindings(viewRequests, router.push);
 
   return (
     <nav
@@ -44,7 +43,7 @@ export default function AdminNav({ className }: AdminNavProps) {
           </span>
         }
       />
-      {superAdmin && (
+      {viewUsers && (
         <AdminNavLink
           href="/users"
           label={
@@ -61,7 +60,7 @@ export default function AdminNav({ className }: AdminNavProps) {
         label={
           <span className="group inline-flex items-center">
             Anmodninger
-            {admin && <Badge count={newRequestsCount} tone="amber" />}
+            {viewRequests && <Badge count={newRequestsCount} tone="amber" />}
             <KbdHint>g a</KbdHint>
           </span>
         }

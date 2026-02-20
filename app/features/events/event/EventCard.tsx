@@ -8,15 +8,15 @@ import EventComment from "./EventComment";
 import AttendanceButtons from "../attendance/AttendanceButtons";
 import { cn } from "@/components/ui/utils/cn";
 import { setEventOpen, updateEventFields } from "@/app/lib/firestore/events";
-import { useAuth } from "@/features/auth/provider/AuthProvider";
 
 import { RSVP_ATTENDANCE, type RSVPAttendance } from "@/types/rsvpIndex";
-import { canAccessEventDetails } from "@/features/events/lib/eventAccess";
 import EventCardMembers from "./EventCardMembers";
 import OpenCloseButton from "@/components/ui/patterns/OpenCloseButton";
-import { isSystemAdmin } from "@/types/systemRoles";
 import { Role } from "@/types/rsvp";
 import { InlineEdit } from "../utils/InlineEdit";
+
+import { useAccess } from "@/features/auth/hooks/useAccess";
+import { PERMISSION } from "@/features/auth/lib/permissions";
 
 type Props = {
   event: Event;
@@ -50,7 +50,7 @@ function requestBadge(attendance?: RSVPAttendance, approved?: boolean) {
   }
   return {
     text: "Afventer godkendelse",
-    cls: "bg-amber-50 text-amber-900 ring-amber-200",
+    cls: "bg-amber-50 text-amber-900 ring-1 ring-amber-200",
   };
 }
 
@@ -64,28 +64,16 @@ export default function EventCard({
   onChangeComment,
   onDelete,
 }: Props) {
-  const { user, systemRole, loading } = useAuth();
-  const admin = isSystemAdmin(systemRole);
-
+  const access = useAccess();
   const badge = requestBadge(attendanceValue, approved);
 
-  console.log("EventCard access inputs", {
-    eventId: event.id,
-    uid: user?.uid,
-    systemRole,
-    rsvpRole,
-    approved,
-  });
+  const canEditEvent = access.canAccess(PERMISSION.events.update);
+  const canDeleteEvent = access.canAccess(PERMISSION.events.delete);
+  const canToggleOpen = access.canAccess(PERMISSION.events.openToggle);
 
-  const canOpenDetails =
-    !!user &&
-    !loading &&
-    canAccessEventDetails({
-      eventId: event.id,
-      uid: user.uid,
-      systemRole,
-      rsvpRole,
-    });
+  const canOpenDetails = access.canAccess(PERMISSION.events.details.view, {
+    rsvpRole,
+  });
 
   const closeNow = async () => {
     await setEventOpen(event.id, false);
@@ -112,7 +100,7 @@ export default function EventCard({
 
   return (
     <div className="relative flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-stretch">
-      {admin && onDelete && (
+      {canDeleteEvent && onDelete && (
         <button
           type="button"
           onClick={() => onDelete(event)}
@@ -126,13 +114,12 @@ export default function EventCard({
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Title (editable for admins, plain for users) */}
-          {admin ? (
+          {canEditEvent ? (
             <span className="inline-flex items-center gap-1">
               <InlineEdit
                 value={event.title}
                 placeholder="Titel"
-                canEdit={admin}
+                canEdit={canEditEvent}
                 className="text-lg font-semibold text-slate-900"
                 onCommit={async (next) => {
                   await updateEventFields(event.id, { title: next });
@@ -145,7 +132,6 @@ export default function EventCard({
             </span>
           )}
 
-          {/* Dedicated details link (safe, no edit conflicts) */}
           {canOpenDetails && (
             <Link
               href={`/events/${event.id}`}
@@ -155,7 +141,7 @@ export default function EventCard({
             </Link>
           )}
 
-          {!admin && (
+          {!canEditEvent && (
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ring-1",
@@ -174,12 +160,11 @@ export default function EventCard({
           )}
         </div>
 
-        {/* ✅ Make EVERY meta field editable inside EventMeta */}
-        <EventMeta event={event} admin={admin} onPatch={commitPatch} />
+        <EventMeta event={event} admin={canEditEvent} onPatch={commitPatch} />
 
-        {!admin && <EventCardMembers eventId={event.id} max={6} />}
+        {!canEditEvent && <EventCardMembers eventId={event.id} max={6} />}
 
-        {!admin && (
+        {!canEditEvent && (
           <EventComment
             eventId={event.id}
             value={commentValue}
@@ -189,7 +174,7 @@ export default function EventCard({
         )}
       </div>
 
-      {admin ? (
+      {canToggleOpen ? (
         <div className="flex shrink-0 flex-col justify-center gap-2 sm:items-end">
           {event.open ? (
             <OpenCloseButton
