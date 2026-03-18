@@ -4,38 +4,47 @@ import type { Event } from "@/types/event";
 import { formatDateDDMMYYYY } from "@/features/events/lib/eventFormat";
 import { InlineEdit } from "../utils/InlineEdit";
 import { normalizeTime } from "../lib/normalizeTime";
-import { isSystemAdmin } from "@/types/systemRoles";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { canWith, PERMISSION } from "@/features/auth/lib/permissions";
 
 type Props = {
   event: Event;
-  admin?: boolean;
+  canEdit?: boolean;
   onPatch?: (patch: Partial<Event>) => void | Promise<void>;
 };
 
 function EditableWrapper({
   children,
 }: {
-  admin?: boolean;
+  canEdit?: boolean;
   children: React.ReactNode;
 }) {
   return <span className="inline-flex items-center gap-1">{children}</span>;
 }
 
-export default function EventMeta({ event, admin = false, onPatch }: Props) {
+export default function EventMeta({ event, canEdit = false, onPatch }: Props) {
   const patch = (p: Partial<Event>) => onPatch?.(p);
 
-  const { systemRole } = useAuth();
+  const { user, systemRole } = useAuth();
+  const authCtx = { user, systemRole };
+
+  // permission-based edit access
+  const canEditEvent = canEdit || canWith(PERMISSION.events.update, authCtx);
+
+  // permission-based access to extra event details
+  const canViewEventDetails = canWith(PERMISSION.events.details.view, authCtx);
+
+  const hasDescription = Boolean(event.description?.trim());
 
   return (
     <div className="mt-2 grid grid-cols-1 gap-2 text-sm text-slate-700 sm:grid-cols-2">
       <div className="truncate">
         <span className="font-medium text-slate-900">Lokation:</span>{" "}
-        <EditableWrapper admin={admin}>
+        <EditableWrapper canEdit={canEditEvent}>
           <InlineEdit
             value={event.location ?? ""}
             placeholder="Lokation"
-            canEdit={admin}
+            canEdit={canEditEvent}
             className="text-slate-700"
             inputClassName="h-7 text-sm font-normal"
             onCommit={(next) => patch({ location: next })}
@@ -45,8 +54,8 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
 
       <div className="truncate">
         <span className="font-medium text-slate-900">Dato:</span>{" "}
-        <EditableWrapper admin={admin}>
-          {admin ? (
+        <EditableWrapper canEdit={canEditEvent}>
+          {canEditEvent ? (
             <InlineEdit
               value={event.date ?? ""}
               placeholder="YYYY-MM-DD"
@@ -63,16 +72,16 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
 
       <div className="truncate">
         <span className="font-medium text-slate-900">Mødetid:</span>{" "}
-        <EditableWrapper admin={admin}>
+        <EditableWrapper canEdit={canEditEvent}>
           <InlineEdit
             value={event.meetingTime ?? ""}
             placeholder="HH:mm"
-            canEdit={admin}
+            canEdit={canEditEvent}
             className="text-slate-700"
             inputClassName="h-7 text-sm font-normal"
             onCommit={(next) => {
               const t = normalizeTime(next);
-              if (!t) return; // invalid time -> ignore (or show toast if you want)
+              if (!t) return;
               return patch({ meetingTime: t });
             }}
           />
@@ -81,11 +90,11 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
 
       <div className="truncate">
         <span className="font-medium text-slate-900">Start:</span>{" "}
-        <EditableWrapper admin={admin}>
+        <EditableWrapper canEdit={canEditEvent}>
           <InlineEdit
             value={event.startTime ?? ""}
             placeholder="HH:mm"
-            canEdit={admin}
+            canEdit={canEditEvent}
             className="text-slate-700"
             inputClassName="h-7 text-sm font-normal"
             onCommit={(next) => {
@@ -96,7 +105,8 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
           />
         </EditableWrapper>
       </div>
-      {(event.description || isSystemAdmin(systemRole)) && (
+
+      {(hasDescription || canViewEventDetails) && (
         <div className="sm:col-span-2">
           <div className="flex flex-col gap-1">
             <span className="font-medium text-slate-900">Beskrivelse:</span>
@@ -104,10 +114,10 @@ export default function EventMeta({ event, admin = false, onPatch }: Props) {
               <InlineEdit
                 value={event.description ?? ""}
                 placeholder="Beskrivelse"
-                canEdit={admin}
+                canEdit={canEditEvent}
                 multiline
                 rows={5}
-                className="w-full text-slate-700 whitespace-pre-wrap break-words"
+                className="w-full whitespace-pre-wrap break-words text-slate-700"
                 inputClassName="w-full text-sm font-normal"
                 onCommit={(next) => patch({ description: next })}
               />

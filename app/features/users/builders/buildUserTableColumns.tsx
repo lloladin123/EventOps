@@ -23,20 +23,26 @@ type Params = {
   setRowRef: (uid: string, el: HTMLElement | null) => void;
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
 
-  focusRoleSelect: (uid: string) => void; // ✅ add
+  focusRoleSelect: (uid: string) => void;
   focusMissingRelative: (fromUid: string | null, dir: 1 | -1) => void;
 
   flashUid: string | null;
   flash: (uid: string) => void;
+
+  canEditRoles: boolean;
+  canManageUsers: boolean;
 };
 
 export function buildUserTableColumns({
+  systemRoles,
   setUserSystemRole,
   deleteUser,
   setRowRef,
   setRoleRef,
   focusRoleSelect,
   flash,
+  canEditRoles,
+  canManageUsers,
 }: Params) {
   const columns = [
     {
@@ -51,7 +57,7 @@ export function buildUserTableColumns({
           data={r.data}
           setRowRef={setRowRef}
           onActivate={() => flash(r.uid)}
-          focusRoleSelect={focusRoleSelect} // ✅ add
+          focusRoleSelect={focusRoleSelect}
         />
       ),
     },
@@ -71,8 +77,10 @@ export function buildUserTableColumns({
         <RoleSelectCell
           uid={r.uid}
           role={(r.data.systemRole ?? null) as SystemRole | null}
+          systemRoles={systemRoles}
           setRoleRef={setRoleRef}
           setUserSystemRole={setUserSystemRole}
+          disabled={!canEditRoles}
         />
       ),
     },
@@ -80,14 +88,15 @@ export function buildUserTableColumns({
       key: "actions",
       header: " ",
       align: "right" as const,
-      cell: (r: Row) => (
-        <DeleteUserButton
-          uid={r.uid}
-          data={r.data}
-          deleteUser={deleteUser}
-          confirmDelete={confirmDeleteUser}
-        />
-      ),
+      cell: (r: Row) =>
+        canManageUsers ? (
+          <DeleteUserButton
+            uid={r.uid}
+            data={r.data}
+            deleteUser={deleteUser}
+            confirmDelete={confirmDeleteUser}
+          />
+        ) : null,
     },
   ];
 

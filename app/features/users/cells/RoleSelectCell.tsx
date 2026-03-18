@@ -6,24 +6,29 @@ import type { SystemRole } from "@/types/systemRoles";
 
 import { roleSelectClass } from "../config/userSelectStyles";
 import { RoleOptions } from "../config/RoleOptions";
-import { updateUserSystemRole } from "@/lib/firestore/users.client";
 
 type Props = {
   uid: string;
   role: SystemRole | null;
-
+  systemRoles: readonly SystemRole[];
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
-
   setUserSystemRole: (
     uid: string,
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
+  disabled?: boolean;
 };
 
-export function RoleSelectCell({ uid, role, setRoleRef }: Props) {
+export function RoleSelectCell({
+  uid,
+  role,
+  systemRoles,
+  setRoleRef,
+  setUserSystemRole,
+  disabled = false,
+}: Props) {
   const [selected, setSelected] = React.useState<SystemRole | "">(role ?? "");
   const [saving, setSaving] = React.useState(false);
-  const systemRoles = Object.values(SYSTEM_ROLE) as SystemRole[];
 
   React.useEffect(() => {
     if (saving) return;
@@ -37,8 +42,10 @@ export function RoleSelectCell({ uid, role, setRoleRef }: Props) {
       className={roleSelectClass(false)}
       value={selected}
       tabIndex={-1}
-      disabled={saving}
+      disabled={disabled || saving}
       onKeyDown={(e) => {
+        if (disabled) return;
+
         if (e.key === "Escape") {
           e.preventDefault();
           (e.currentTarget as HTMLSelectElement).blur();
@@ -49,6 +56,8 @@ export function RoleSelectCell({ uid, role, setRoleRef }: Props) {
         }
       }}
       onChange={async (e) => {
+        if (disabled) return;
+
         const row = (e.currentTarget as HTMLElement).closest(
           "[data-uid]",
         ) as HTMLElement | null;
@@ -63,19 +72,18 @@ export function RoleSelectCell({ uid, role, setRoleRef }: Props) {
         setSaving(true);
 
         try {
-          await Promise.resolve(updateUserSystemRole(uid, nextRole));
+          await Promise.resolve(setUserSystemRole(uid, nextRole));
         } catch (err) {
           console.error("Failed to set systemRole", err);
           setSelected(prev);
         } finally {
           setSaving(false);
-          // ✅ give hotkeys control back immediately
           requestAnimationFrame(() => row?.focus());
         }
       }}
       onPointerDownCapture={(e) => {
         e.stopPropagation();
-        e.currentTarget.focus();
+        if (!disabled) e.currentTarget.focus();
       }}
     >
       <RoleOptions roles={systemRoles} value={selected} />

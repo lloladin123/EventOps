@@ -6,15 +6,9 @@ import {
   isEventClosed,
   setEventClosed,
 } from "@/features/events/lib/eventStatus";
-import { isSystemAdmin } from "@/types/systemRoles";
 import { subscribeMyRsvp, type RsvpDoc } from "@/app/lib/firestore/rsvps";
-import { ROLE, type Role } from "@/types/rsvp";
-
-const CAN_CLOSE_RSVP = new Set<Role>([
-  ROLE.Video,
-  // add more if you want:
-  // ROLE.Sikkerhedsledelse,
-]);
+import { canWith, PERMISSION } from "@/features/auth/lib/permissions";
+import type { Role } from "@/types/rsvp";
 
 export function useAuthAndClosed(eventId: string) {
   const authAny = useAuth() as any;
@@ -29,7 +23,6 @@ export function useAuthAndClosed(eventId: string) {
     isEventClosed(eventId),
   );
 
-  // ✅ get my RSVP doc for this event so we can read rsvpRole
   const [myRsvp, setMyRsvp] = React.useState<RsvpDoc | null>(null);
 
   React.useEffect(() => {
@@ -37,14 +30,17 @@ export function useAuthAndClosed(eventId: string) {
       setMyRsvp(null);
       return;
     }
+
     return subscribeMyRsvp(eventId, uid, (doc) => setMyRsvp(doc));
   }, [eventId, uid]);
 
   React.useEffect(() => {
     const sync = () => setClosedState(isEventClosed(eventId));
+
     sync();
     window.addEventListener("storage", sync);
     window.addEventListener("events-changed", sync);
+
     return () => {
       window.removeEventListener("storage", sync);
       window.removeEventListener("events-changed", sync);
@@ -65,12 +61,18 @@ export function useAuthAndClosed(eventId: string) {
       ? ""
       : profileDisplayName?.trim() || user.displayName?.trim() || "";
 
-  const myRsvpRole = (myRsvp as any)?.rsvpRole as Role | undefined;
+  const myRsvpRole = ((myRsvp as any)?.rsvpRole ??
+    (myRsvp as any)?.role ??
+    null) as Role | null;
 
-  const canClose =
-    !loading &&
-    (isSystemAdmin(systemRole) ||
-      (!!myRsvpRole && CAN_CLOSE_RSVP.has(myRsvpRole)));
+  const canClose = !loading
+    ? canWith(PERMISSION.events.openToggle, {
+        user,
+        systemRole,
+        rsvpRole: myRsvpRole,
+        rsvpApproved: myRsvp?.approved,
+      })
+    : false;
 
   return { loggedBy, closed, setClosed, canClose };
 }

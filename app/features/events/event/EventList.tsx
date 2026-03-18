@@ -20,18 +20,30 @@ import { useEventBuckets } from "../hooks/useEventBuckets";
 import { useEventUndoConfigs } from "../hooks/useEventUndoConfigs";
 import { useScrollToEvent } from "../hooks/useScrollToEvent";
 import EventUndoStack from "../state/EventUndoStack/EventUndoStack";
-import { isSystemAdmin } from "@/types/systemRoles";
+import { canWith, PERMISSION } from "@/features/auth/lib/permissions";
+
+// ✅ replace role-based check with permission-based check
 
 export default function EventList() {
   const searchParams = useSearchParams();
 
-  const { systemRole, loading: authLoading } = useAuth();
-  const admin = isSystemAdmin(systemRole);
+  const { user, systemRole, loading: authLoading } = useAuth();
 
   const [openMinimized, setOpenMinimized] = useUiToggle("openMinimized");
   const [closedMinimized, setClosedMinimized] = useUiToggle("closedMinimized");
 
-  const enabled = !authLoading;
+  // ✅ page-level permissions
+  const canViewEvents = canWith(PERMISSION.events.view, { user, systemRole });
+  const canManageEvents = canWith(PERMISSION.events.update, {
+    user,
+    systemRole,
+  });
+  const canDeleteEvents = canWith(PERMISSION.events.delete, {
+    user,
+    systemRole,
+  });
+
+  const enabled = !authLoading && canViewEvents;
 
   const { onChangeAttendance, onChangeComment, myRsvpFor } = useRsvps({
     enabled,
@@ -49,7 +61,7 @@ export default function EventList() {
 
   useScrollToEvent({
     searchParams,
-    admin,
+    admin: canManageEvents, // ✅ old admin flag replaced
     openEvents,
     closedEvents,
     setOpenMinimized,
@@ -66,7 +78,24 @@ export default function EventList() {
 
   if (authLoading || eventsLoading) return null;
 
-  const totalCount = admin
+  if (!canViewEvents) {
+    return (
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Kampe</h2>
+            <p className="text-sm text-slate-600">Ingen adgang</p>
+          </div>
+        </header>
+
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-700">
+          Du har ikke adgang til at se events.
+        </div>
+      </section>
+    );
+  }
+
+  const totalCount = canManageEvents
     ? openEvents.length + closedEvents.length
     : openEvents.length;
 
@@ -97,7 +126,7 @@ export default function EventList() {
       </header>
 
       <div className="mt-4 space-y-8">
-        {admin ? (
+        {canManageEvents ? (
           <div className="sticky top-3 z-30 -mx-4 px-4 pb-2">
             <div className="space-y-2">
               <EventUndoStack visible={true} config={deletedUndoConfig} />
@@ -107,7 +136,7 @@ export default function EventList() {
           </div>
         ) : null}
 
-        {!admin ? (
+        {!canManageEvents ? (
           openEvents.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-600">
               Ingen kampe lige nu.
@@ -116,6 +145,7 @@ export default function EventList() {
             <div className="space-y-3">
               {openEvents.map((event) => {
                 const my = myRsvpFor(event.id);
+
                 return (
                   <div
                     key={event.id}
@@ -155,6 +185,7 @@ export default function EventList() {
               ) : (
                 openEvents.map((event) => {
                   const my = myRsvpFor(event.id);
+
                   return (
                     <div
                       key={event.id}
@@ -170,7 +201,7 @@ export default function EventList() {
                         commentValue={my?.comment ?? ""}
                         onChangeAttendance={onChangeAttendance}
                         onChangeComment={onChangeComment}
-                        onDelete={onDeleteEvent}
+                        onDelete={canDeleteEvents ? onDeleteEvent : undefined}
                       />
                     </div>
                   );
@@ -208,7 +239,7 @@ export default function EventList() {
                         commentValue={my?.comment ?? ""}
                         onChangeAttendance={onChangeAttendance}
                         onChangeComment={onChangeComment}
-                        onDelete={onDeleteEvent}
+                        onDelete={canDeleteEvents ? onDeleteEvent : undefined}
                       />
                     </div>
                   );

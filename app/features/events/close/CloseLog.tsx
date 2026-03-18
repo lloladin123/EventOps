@@ -3,13 +3,12 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { setEventOpen } from "@/app/lib/firestore/events";
-import { isSystemAdmin } from "@/types/systemRoles";
 
 type Props = {
   eventId: string;
   open: boolean; // ✅ source of truth comes from Firestore snapshot
+  canToggle: boolean;
   disabled?: boolean;
   onClosed?: () => void;
   onReopened?: () => void;
@@ -20,13 +19,12 @@ const WAIT_SECONDS = 5;
 export default function CloseLog({
   eventId,
   open,
+  canToggle,
   disabled,
   onClosed,
   onReopened,
 }: Props) {
   const router = useRouter();
-  const { systemRole, loading } = useAuth();
-
   const closed = !open;
 
   const [openCloseModal, setOpenCloseModal] = React.useState(false);
@@ -51,6 +49,13 @@ export default function CloseLog({
 
     return () => clearInterval(interval);
   }, [openCloseModal]);
+
+  React.useEffect(() => {
+    if (!canToggle) {
+      setOpenCloseModal(false);
+      setOpenReopenModal(false);
+    }
+  }, [canToggle]);
 
   const canConfirmClose = secondsLeft === 0;
 
@@ -82,8 +87,6 @@ export default function CloseLog({
     }
   };
 
-  const showReopen = !loading && closed && isSystemAdmin(systemRole);
-
   return (
     <>
       <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -100,11 +103,14 @@ export default function CloseLog({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {!closed && (
+            {!closed && canToggle && (
               <button
                 type="button"
                 disabled={disabled || saving}
-                onClick={() => setOpenCloseModal(true)}
+                onClick={() => {
+                  setOpenReopenModal(false);
+                  setOpenCloseModal(true);
+                }}
                 className={[
                   "mt-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm sm:mt-0",
                   disabled || saving
@@ -116,11 +122,14 @@ export default function CloseLog({
               </button>
             )}
 
-            {showReopen && (
+            {closed && canToggle && (
               <button
                 type="button"
                 disabled={saving}
-                onClick={() => setOpenReopenModal(true)}
+                onClick={() => {
+                  setOpenCloseModal(false);
+                  setOpenReopenModal(true);
+                }}
                 className={[
                   "mt-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50 sm:mt-0",
                   saving ? "cursor-not-allowed opacity-60" : "",
@@ -194,7 +203,10 @@ export default function CloseLog({
                 <button
                   type="button"
                   disabled={saving}
-                  onClick={() => setOpenCloseModal(false)}
+                  onClick={() => {
+                    setOpenCloseModal(false);
+                    setSecondsLeft(WAIT_SECONDS);
+                  }}
                   className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Annuller

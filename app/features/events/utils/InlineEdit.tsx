@@ -8,7 +8,6 @@ type InlineEditProps = {
   value: string;
   placeholder?: string;
 
-  /** Pass your isSystemAdmin(...) result here */
   canEdit?: boolean;
   className?: string;
   inputClassName?: string;
@@ -98,7 +97,6 @@ export function InlineEdit({
     }
   };
 
-  // Non-admin: plain text (no wrench)
   if (!canEdit) {
     return (
       <span className={className}>
@@ -107,7 +105,6 @@ export function InlineEdit({
     );
   }
 
-  // Admin editing view
   if (editing) {
     const baseFieldClasses = cn(
       "w-full rounded-lg border bg-white px-2 text-lg font-semibold text-slate-900 outline-none focus:ring-2 disabled:opacity-60",
@@ -174,7 +171,6 @@ export function InlineEdit({
     );
   }
 
-  // Admin display view (button with wrench)
   return (
     <button
       type="button"

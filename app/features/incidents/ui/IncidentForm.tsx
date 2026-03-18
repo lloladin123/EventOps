@@ -166,7 +166,7 @@ export default function IncidentForm({
 
       {canClose ? (
         <div className="w-full">
-          <CloseLog eventId={eventId} open={eventOpen} />
+          <CloseLog eventId={eventId} open={eventOpen} canToggle={canClose} />
         </div>
       ) : null}
     </>
