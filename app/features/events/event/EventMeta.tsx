@@ -107,18 +107,18 @@ export default function EventMeta({ event, canEdit = false, onPatch }: Props) {
       </div>
 
       {(hasDescription || canViewEventDetails) && (
-        <div className="sm:col-span-2">
-          <div className="flex flex-col gap-1">
+        <div className="min-w-0 sm:col-span-2">
+          <div className="flex min-w-0 flex-col gap-1">
             <span className="font-medium text-slate-900">Beskrivelse:</span>
-            <div className="w-full">
+            <div className="min-w-0 w-full">
               <InlineEdit
                 value={event.description ?? ""}
                 placeholder="Beskrivelse"
                 canEdit={canEditEvent}
                 multiline
                 rows={5}
-                className="w-full whitespace-pre-wrap break-words text-slate-700"
-                inputClassName="w-full text-sm font-normal"
+                className="block w-full max-w-full whitespace-pre-wrap break-words text-slate-700"
+                inputClassName="w-full max-w-full text-sm font-normal"
                 onCommit={(next) => patch({ description: next })}
               />
             </div>

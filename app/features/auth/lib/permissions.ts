@@ -1,5 +1,3 @@
-"use client";
-
 import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { ROLE, Role } from "@/types/rsvp";
 import { SYSTEM_ROLE, type SystemRole } from "@/types/systemRoles";

@@ -54,6 +54,30 @@ function requestBadge(attendance?: RSVPAttendance, approved?: boolean) {
   };
 }
 
+function getWeekNumber(date: Date) {
+  const d = new Date(
+    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+  );
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
+
+function getEventWeek(event: Event) {
+  // Adjust this field if your event date lives somewhere else:
+  // e.g. event.startDate, event.startAt, event.date, etc.
+  const rawDate =
+    (event as any).startAt ?? (event as any).startDate ?? (event as any).date;
+
+  if (!rawDate) return null;
+
+  const date = new Date(rawDate);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return getWeekNumber(date);
+}
+
 export default function EventCard({
   event,
   attendanceValue,
@@ -66,6 +90,7 @@ export default function EventCard({
 }: Props) {
   const access = useAccess();
   const badge = requestBadge(attendanceValue, approved);
+  const week = getEventWeek(event);
 
   const canEditEvent = access.canAccess(PERMISSION.events.update);
   const canDeleteEvent = access.canAccess(PERMISSION.events.delete);
@@ -112,6 +137,19 @@ export default function EventCard({
         </button>
       )}
 
+      {week && (
+        <div className="flex shrink-0 items-center justify-center sm:w-24">
+          <div className="flex w-full flex-col items-center justify-center rounded-xl bg-slate-50 px-3 py-4 text-center ring-1 ring-slate-200">
+            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Uge
+            </span>
+            <span className="text-3xl font-black leading-none text-slate-900 sm:text-4xl">
+              {week}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           {canEditEvent ? (
@@ -135,7 +173,7 @@ export default function EventCard({
           {canOpenDetails && (
             <Link
               href={`/events/${event.id}`}
-              className="inline-flex items-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition"
+              className="inline-flex items-center rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 hover:text-slate-900"
             >
               Se detaljer →
             </Link>
@@ -160,7 +198,7 @@ export default function EventCard({
           )}
         </div>
 
-        <EventMeta event={event} admin={canEditEvent} onPatch={commitPatch} />
+        <EventMeta event={event} onPatch={commitPatch} />
 
         {!canEditEvent && <EventCardMembers eventId={event.id} max={6} />}
 

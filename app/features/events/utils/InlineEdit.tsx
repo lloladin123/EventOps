@@ -99,7 +99,7 @@ export function InlineEdit({
 
   if (!canEdit) {
     return (
-      <span className={className}>
+      <span className="block min-w-0 max-w-full whitespace-pre-wrap break-words">
         {value || <span className="text-slate-400">{placeholder ?? "—"}</span>}
       </span>
     );
@@ -180,7 +180,7 @@ export function InlineEdit({
       disabled={busy}
       className={cn(
         multiline
-          ? "group flex w-full items-start gap-1 text-left"
+          ? "group flex w-full min-w-0 items-center gap-1 text-left"
           : "group inline-flex items-center gap-1 text-left underline-offset-4 hover:underline",
         multiline && "rounded-lg p-1 -m-1 hover:bg-slate-50",
         busy && "opacity-60 cursor-not-allowed",
@@ -188,19 +188,19 @@ export function InlineEdit({
       )}
       title={title}
     >
-      <span>
+      <span className="block min-w-0 flex-1 whitespace-pre-wrap break-words">
         {value || <span className="text-slate-400">{placeholder ?? "—"}</span>}
       </span>
 
-      {showIcon ? (
+      {showIcon && (
         <Wrench
           aria-hidden
           className={cn(
-            "h-[0.9em] w-[0.9em] text-slate-400 transition",
+            "h-[0.9em] w-[0.9em] shrink-0 text-slate-400 transition",
             iconClassName,
           )}
         />
-      ) : null}
+      )}
     </button>
   );
 }
