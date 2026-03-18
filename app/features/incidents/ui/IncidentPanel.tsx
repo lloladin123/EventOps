@@ -3,13 +3,13 @@
 import * as React from "react";
 import type { Incident } from "@/types/incident";
 import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { canWith, PERMISSION } from "@/features/auth/lib/permissions";
 
 import IncidentTable from "./IncidentTable";
 import IncidentListView from "./IncidentListView";
 import ViewModeToggle, {
   ViewMode,
 } from "@/components/ui/patterns/ViewModeToggle";
-import { isSystemAdmin } from "@/types/systemRoles";
 
 type Props = {
   eventId: string;
@@ -68,23 +68,24 @@ export default function IncidentPanel({
 }: Props) {
   const safeIncidents: Incident[] = Array.isArray(incidents) ? incidents : [];
 
-  const { systemRole, user } = useAuth();
-  const admin = isSystemAdmin(systemRole);
+  const { user, systemRole } = useAuth();
   const uid = user?.uid ?? null;
+
+  const authCtx = { user, systemRole };
+  const canManageIncidents = canWith(
+    PERMISSION.events.incidents.manage,
+    authCtx,
+  );
 
   const [view, setView] = React.useState<ViewMode>(() => getInitialView());
 
-  // No persistence: refresh/new tab/new device always starts locked.
   const [editableMap, setEditableMap] = React.useState<Record<string, boolean>>(
     {},
   );
 
   const timersRef = React.useRef<Record<string, number>>({});
-
-  // 🔒 Session gate: anything created before this page-load is NEVER editable.
   const sessionStartRef = React.useRef<number>(Date.now());
 
-  // Cleanup timers on unmount only
   React.useEffect(() => {
     return () => {
       for (const t of Object.values(timersRef.current)) window.clearTimeout(t);
@@ -96,7 +97,6 @@ export default function IncidentPanel({
     const now = Date.now();
     const incidentIds = new Set(safeIncidents.map((i) => i.id));
 
-    // Clear timers for incidents that no longer exist
     for (const id of Object.keys(timersRef.current)) {
       if (!incidentIds.has(id)) {
         window.clearTimeout(timersRef.current[id]);
@@ -107,7 +107,6 @@ export default function IncidentPanel({
     setEditableMap((prev) => {
       let changed = false;
 
-      // Keep only keys for current incidents
       const next: Record<string, boolean> = {};
       for (const i of safeIncidents) {
         if (prev[i.id] !== undefined) next[i.id] = prev[i.id];
@@ -119,7 +118,6 @@ export default function IncidentPanel({
 
         const created = getCreatedMs(i);
 
-        // No timestamp => locked
         if (created == null) {
           next[i.id] = false;
           changed = true;
@@ -127,9 +125,6 @@ export default function IncidentPanel({
         }
 
         const expiresAt = created + EDIT_WINDOW_MS;
-
-        // ✅ THE FIX:
-        // Only allow edits for incidents created AFTER this page session started.
         const stillEditable =
           created >= sessionStartRef.current && now < expiresAt;
 
@@ -139,8 +134,9 @@ export default function IncidentPanel({
         if (stillEditable) {
           const delay = expiresAt - now;
 
-          if (timersRef.current[i.id])
+          if (timersRef.current[i.id]) {
             window.clearTimeout(timersRef.current[i.id]);
+          }
 
           timersRef.current[i.id] = window.setTimeout(() => {
             setEditableMap((m) =>
@@ -162,9 +158,13 @@ export default function IncidentPanel({
   }, [view]);
 
   const canEditIncident = React.useCallback(
-    (i: Incident) => admin || (isOwner(i, uid) && editableMap[i.id] === true),
-    [admin, uid, editableMap],
+    (incident: Incident) =>
+      canManageIncidents ||
+      (isOwner(incident, uid) && editableMap[incident.id] === true),
+    [canManageIncidents, uid, editableMap],
   );
+
+  const canDeleteIncident = canManageIncidents;
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -189,7 +189,7 @@ export default function IncidentPanel({
             eventId={eventId}
             incidents={safeIncidents}
             canEditIncident={canEditIncident}
-            canDeleteIncident={admin}
+            canDeleteIncident={canDeleteIncident}
             onEdit={onEdit}
             onDelete={onDelete}
           />
@@ -200,7 +200,7 @@ export default function IncidentPanel({
             eventId={eventId}
             incidents={safeIncidents}
             canEditIncident={canEditIncident}
-            canDeleteIncident={admin}
+            canDeleteIncident={canDeleteIncident}
             onEdit={onEdit}
             onDelete={onDelete}
           />

@@ -20,6 +20,9 @@ type Params = {
 
   setRowRef: (uid: string, el: HTMLElement | null) => void;
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
+
+  canEditRoles: boolean;
+  canManageUsers: boolean;
 };
 
 export function useUserListRenderRow({
@@ -31,6 +34,8 @@ export function useUserListRenderRow({
   focusRoleSelect,
   setRowRef,
   setRoleRef,
+  canEditRoles,
+  canManageUsers,
 }: Params) {
   return React.useMemo(
     () =>
@@ -43,6 +48,8 @@ export function useUserListRenderRow({
         focusRoleSelect,
         setRowRef,
         setRoleRef,
+        canEditRoles,
+        canManageUsers,
         confirmDeleteUser,
       }),
     [
@@ -54,6 +61,8 @@ export function useUserListRenderRow({
       focusRoleSelect,
       setRowRef,
       setRoleRef,
+      canEditRoles,
+      canManageUsers,
     ],
   );
 }

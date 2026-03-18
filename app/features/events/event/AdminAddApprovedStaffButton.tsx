@@ -1,10 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/app/lib/firebase/client";
 
-import { useAuth } from "@/features/auth/provider/AuthProvider";
 import { useUserDisplay } from "@/features/auth/hooks/useUserDisplay";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import {
@@ -14,12 +11,15 @@ import {
   type RsvpDoc,
   setRsvpRole,
 } from "@/lib/firestore/rsvps";
-import { isSystemAdmin } from "@/types/systemRoles";
 
 // Same role enums you use elsewhere
 import { ROLES, ROLE, CREW_SUBROLES, KONTROLLØR_SUBROLES } from "@/types/rsvp";
+import { useAccess } from "@/features/auth/hooks/useAccess";
 
-type Props = { eventId: string; className?: string };
+type Props = {
+  eventId: string;
+  className?: string;
+};
 
 type Option = { value: string; label: string };
 
@@ -43,8 +43,9 @@ export default function AdminAddApprovedStaffButton({
   eventId,
   className,
 }: Props) {
-  const { user, systemRole } = useAuth();
   const { name: displayName } = useUserDisplay();
+  const access = useAccess();
+  const uid = access.user?.uid ?? null;
 
   const [loading, setLoading] = React.useState(false);
   const [myRsvp, setMyRsvp] = React.useState<RsvpDoc | null>(null);
@@ -64,8 +65,7 @@ export default function AdminAddApprovedStaffButton({
     return normalizeOptions([]);
   }, [isCrew, isKontrollør]);
 
-  const uid = user?.uid ?? null;
-  const allowed = !!uid && isSystemAdmin(systemRole);
+  if (loading) return;
 
   React.useEffect(() => {
     if (!uid || !eventId) return;
@@ -79,39 +79,15 @@ export default function AdminAddApprovedStaffButton({
     );
   }, [eventId, uid]);
 
-  // preload role/subrole from existing doc (nice UX)
   React.useEffect(() => {
-    if (!uid || !eventId) return;
+    if (!myRsvp) return;
 
-    let cancelled = false;
+    const role = (myRsvp as any).rsvpRole ?? "";
+    const sub = (myRsvp as any).rsvpSubRole ?? "";
 
-    const run = async () => {
-      try {
-        const ref = doc(db, "events", eventId, "rsvps", uid);
-        const snap = await getDoc(ref);
-        if (cancelled) return;
-
-        const data = snap.exists() ? snap.data() : null;
-        const role = (data?.rsvpRole ?? "") as string;
-        const sub = (data?.rsvpSubRole ?? "") as string;
-
-        setSelectedRole((curr) => (curr === "" ? role : curr));
-        setSelectedSubRole((curr) => (curr === "" ? sub : curr));
-      } catch (e) {
-        console.warn(
-          "[AdminAddApprovedStaffButton] preload role/subrole failed",
-          e,
-        );
-      }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [eventId, uid]);
-
-  if (!allowed) return null;
+    setSelectedRole((curr) => (curr === "" ? role : curr));
+    setSelectedSubRole((curr) => (curr === "" ? sub : curr));
+  }, [myRsvp]);
 
   // ✅ IMPORTANT: only treat legacy `approved` as fallback when `decision` is missing
   const effectiveDecision: string =

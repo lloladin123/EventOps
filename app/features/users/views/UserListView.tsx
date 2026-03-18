@@ -3,7 +3,7 @@
 import * as React from "react";
 import type { UserDoc } from "@/lib/firestore/users.client";
 import type { SystemRole } from "@/types/systemRoles";
-import { isSystemAdmin, SYSTEM_ROLE } from "@/types/systemRoles";
+import { SYSTEM_ROLE } from "@/types/systemRoles";
 
 import GroupedList from "@/components/ui/patterns/GroupedList";
 import { UsersViewState } from "./UsersViewState";
@@ -15,7 +15,9 @@ import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 import { useUserListRowFocus } from "../hooks/useUserListRowFocus";
 import { useUserListRenderRow } from "../hooks/useUserListRenderRow";
 import { UserHotkeysHint } from "./UserHotkeysHint";
-import { getAuth } from "firebase/auth";
+
+import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { canWith, PERMISSION } from "@/features/auth/lib/permissions";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
@@ -47,32 +49,27 @@ export default function UserListView({
   setUserRole,
   deleteUser,
 }: Props) {
-  const uid = getAuth().currentUser?.uid ?? null;
+  const { user, systemRole } = useAuth();
 
-  const currentSystemRole = React.useMemo(() => {
-    if (!uid) return null;
-    return (users.find((u) => u.uid === uid)?.data.systemRole ??
-      null) as SystemRole | null;
-  }, [users, uid]);
+  const authCtx = { user, systemRole };
+
+  const canViewUsers = canWith(PERMISSION.users.dashboard.view, authCtx);
+  const canManageUsers = canWith(PERMISSION.users.manage, authCtx);
+  const canEditRoles = canWith(PERMISSION.users.rolesEdit, authCtx);
 
   const visibleUsers = React.useMemo(() => {
-    // 🚫 Never show Superadmins in this list
-    const base = users.filter(
-      (u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin,
-    );
+    if (!canViewUsers) return [];
 
-    // No "staff" concept anymore — admins and non-admins see the same base list
-    // (keeping this check is harmless, but it no longer changes filtering)
-    if (isSystemAdmin(currentSystemRole)) return base;
-    return base;
-  }, [users, currentSystemRole]);
+    // Never show Superadmins in this list
+    return users.filter((u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin);
+  }, [users, canViewUsers]);
 
   const { flashUid, flash } = useFlashUid(2200);
 
   const { setRowRef, setRoleRef, focusRoleSelect } = useUserListRowFocus();
 
   useUserHotkeys({
-    enabled: true,
+    enabled: canManageUsers,
     users: visibleUsers,
     onDeleteUser: deleteUser,
     confirmDelete: (_label, row) => confirmDeleteUser(row.uid, row.data),
@@ -89,6 +86,8 @@ export default function UserListView({
     focusRoleSelect,
     setRowRef,
     setRoleRef,
+    canEditRoles,
+    canManageUsers,
   });
 
   return (

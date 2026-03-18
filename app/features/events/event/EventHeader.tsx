@@ -5,9 +5,9 @@ import type { Event } from "@/types/event";
 import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "@/app/lib/firebase/client";
 
-import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isSystemAdmin } from "@/types/systemRoles";
 import { InlineEdit } from "../utils/InlineEdit";
+import { PERMISSION } from "@/features/auth/lib/permissions";
+import { useAccess } from "@/features/auth/hooks/useAccess";
 
 export default function EventHeader({
   event,
@@ -16,8 +16,8 @@ export default function EventHeader({
   event: Event;
   children?: React.ReactNode;
 }) {
-  const { systemRole } = useAuth();
-  const canEdit = isSystemAdmin(systemRole);
+  const access = useAccess();
+  const canEdit = access.canAccess(PERMISSION.events.update);
 
   // ✅ assumes event.id exists. If not, pass eventId prop instead.
   const eventId = (event as any).id as string | undefined;
@@ -111,7 +111,7 @@ export default function EventHeader({
             />
           </div>
         </div>
-        {(event.description || isSystemAdmin(systemRole)) && (
+        {(event.description || canEdit) && (
           <div className="flex flex-col gap-1">
             <span className="font-medium text-slate-900">Beskrivelse:</span>
             <InlineEdit

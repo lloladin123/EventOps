@@ -1,15 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, serverTimestamp, setDoc, collection } from "firebase/firestore";
 import { db } from "@/app/lib/firebase/client";
 
-import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isSystemAdmin } from "@/types/systemRoles";
 import { DECISION, RSVP_ATTENDANCE } from "@/types/rsvpIndex";
 import { ROLES, ROLE, CREW_SUBROLES, KONTROLLØR_SUBROLES } from "@/types/rsvp";
 
-type Props = { eventId: string };
+type Props = {
+  eventId: string;
+  /** The uid performing the action (used for createdBy/approvedBy fields) */
+  actorUid: string | null;
+};
 
 type Option = { value: string; label: string };
 
@@ -27,8 +29,9 @@ function normalizeOptions(input?: string[] | Option[]): Option[] {
   ];
 }
 
-function makeCustomId() {
-  return `custom_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+function newRsvpId(eventId: string) {
+  // Firestore-generated id (collision-safe)
+  return doc(collection(db, "events", eventId, "rsvps")).id;
 }
 
 const LABEL_ID = {
@@ -39,11 +42,7 @@ const LABEL_ID = {
   comment: "custom_rsvp_comment",
 } as const;
 
-export default function AdminAddCustomRsvpButton({ eventId }: Props) {
-  const { user, systemRole } = useAuth();
-  const allowed = !!user?.uid && isSystemAdmin(systemRole);
-  const adminUid = user?.uid ?? null;
-
+export default function AdminAddCustomRsvpButton({ eventId, actorUid }: Props) {
   const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
 
@@ -66,8 +65,6 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
     return normalizeOptions([]);
   }, [isCrew, isKontrollør]);
 
-  if (!allowed) return null;
-
   const reset = () => {
     setName("");
     setAttendance(RSVP_ATTENDANCE.Yes);
@@ -77,22 +74,21 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
   };
 
   const onCreate = async () => {
-    if (!adminUid) return;
-
     const cleanName = name.trim();
     if (!cleanName) return alert("Skriv et navn 🙂");
     if (!role) return alert("Vælg en rolle 🙂");
+
     try {
       setSaving(true);
 
-      const id = makeCustomId();
+      const id = newRsvpId(eventId);
       const ref = doc(db, "events", eventId, "rsvps", id);
 
       await setDoc(
         ref,
         {
           isCustom: true,
-          customCreatedByUid: adminUid,
+          customCreatedByUid: actorUid,
 
           uid: id,
           userDisplayName: cleanName,
@@ -100,7 +96,7 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
           decision: DECISION.Approved,
           approved: true,
           approvedAt: null,
-          approvedByUid: adminUid,
+          approvedByUid: actorUid,
 
           rsvpRole: role || null,
           rsvpSubRole: supportsSubRole ? subRole || null : null,
@@ -129,13 +125,14 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
 
   return (
     <div className="w-full">
-      <div className="flex justify-center mb-2">
+      <div className="mb-2 flex justify-center">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           aria-expanded={open}
           aria-controls="custom-rsvp-panel"
+          disabled={saving}
         >
           {open ? "Luk ekstern" : "Tilføj ekstern"}
         </button>
@@ -217,7 +214,7 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
                 onChange={(e) => {
                   const next = e.target.value;
                   setRole(next);
-                  setSubRole(""); // simplest + avoids invalid values between roles
+                  setSubRole("");
                 }}
               >
                 {roleOptions.map((o) => (
@@ -237,7 +234,7 @@ export default function AdminAddCustomRsvpButton({ eventId }: Props) {
                 htmlFor={LABEL_ID.subRole}
                 className="mb-1 block text-xs font-medium text-slate-600"
               >
-                Subrolle{" "}
+                Subrolle
               </label>
               <select
                 id={LABEL_ID.subRole}

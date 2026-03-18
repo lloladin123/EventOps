@@ -17,7 +17,6 @@ type Params = {
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 
-  // ui helpers
   flashUid: string | null;
   flash: (uid: string) => void;
   focusRoleSelect: (uid: string) => void;
@@ -25,7 +24,9 @@ type Params = {
   setRowRef: (uid: string, el: HTMLElement | null) => void;
   setRoleRef: (uid: string, el: HTMLSelectElement | null) => void;
 
-  // confirm
+  canEditRoles: boolean;
+  canManageUsers: boolean;
+
   confirmDeleteUser: (uid: string, data: UserDoc) => boolean;
 };
 
@@ -35,6 +36,7 @@ function SystemRolePicker({
   systemRoles,
   setRoleRef,
   setUserSystemRole,
+  disabled = false,
 }: {
   uid: string;
   role: SystemRole | null;
@@ -44,6 +46,7 @@ function SystemRolePicker({
     uid: string,
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
+  disabled?: boolean;
 }) {
   const [selected, setSelected] = React.useState<SystemRole | "">(role ?? "");
   const [saving, setSaving] = React.useState(false);
@@ -59,6 +62,7 @@ function SystemRolePicker({
   const currentAsRole: SystemRole | null = role ?? null;
 
   const commit = async (next: SystemRole | null) => {
+    if (disabled) return;
     if (next === SYSTEM_ROLE.Superadmin) return;
 
     const prev = selected;
@@ -83,26 +87,30 @@ function SystemRolePicker({
       data-uid={uid}
       className={roleSelectClass(false)}
       value={selected}
-      disabled={saving}
+      disabled={disabled || saving}
       onChange={(e) => {
         setSelected((e.target.value as SystemRole) ?? "");
       }}
       onKeyDown={(e) => {
+        if (disabled) return;
+
         if (e.key === "Enter") {
           e.preventDefault();
-          if (selectedAsRole !== currentAsRole) commit(selectedAsRole);
+          if (selectedAsRole !== currentAsRole) void commit(selectedAsRole);
         }
+
         if (e.key === "Escape") {
           setSelected(role ?? "");
           (e.currentTarget as HTMLSelectElement).blur();
         }
       }}
       onBlur={() => {
-        if (selectedAsRole !== currentAsRole) commit(selectedAsRole);
+        if (disabled) return;
+        if (selectedAsRole !== currentAsRole) void commit(selectedAsRole);
       }}
       onPointerDownCapture={(e) => {
         e.stopPropagation();
-        e.currentTarget.focus();
+        if (!disabled) e.currentTarget.focus();
       }}
     >
       <option value="" disabled>
@@ -129,6 +137,8 @@ export function buildUserListRenderRow({
   focusRoleSelect,
   setRowRef,
   setRoleRef,
+  canEditRoles,
+  canManageUsers,
   confirmDeleteUser,
 }: Params) {
   return function renderRow(r: Row) {
@@ -144,8 +154,9 @@ export function buildUserListRenderRow({
         data-uid={r.uid}
         onClick={(e) => {
           const t = e.target as HTMLElement | null;
-          if (t?.closest("button,a,input,select,textarea,[role='button']"))
+          if (t?.closest("button,a,input,select,textarea,[role='button']")) {
             return;
+          }
 
           flash(r.uid);
           (e.currentTarget as HTMLElement).focus();
@@ -154,19 +165,19 @@ export function buildUserListRenderRow({
           const t = e.target as HTMLElement | null;
           if (t && t !== e.currentTarget) return;
 
-          if (e.key === " " || e.code === "Space") {
+          if ((e.key === " " || e.code === "Space") && canEditRoles) {
             e.preventDefault();
             focusRoleSelect(r.uid);
             return;
           }
 
-          if (e.key === "Enter") {
+          if (e.key === "Enter" && canEditRoles) {
             e.preventDefault();
             focusRoleSelect(r.uid);
           }
         }}
         className={[
-          "flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between transition-colors duration-150",
+          "flex flex-col gap-3 p-4 transition-colors duration-150 sm:flex-row sm:items-start sm:justify-between",
           "focus:bg-amber-100 focus:outline-none",
           flashUid === r.uid ? "bg-amber-100" : "",
         ]
@@ -179,7 +190,7 @@ export function buildUserListRenderRow({
           </div>
 
           <dl className="mt-2 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               <dt className="font-semibold text-slate-500">Email</dt>
               <dd className="truncate text-slate-700">{email}</dd>
             </div>
@@ -205,24 +216,27 @@ export function buildUserListRenderRow({
               systemRoles={systemRoles}
               setRoleRef={setRoleRef}
               setUserSystemRole={setUserSystemRole}
+              disabled={!canEditRoles}
             />
           </div>
         </div>
 
-        <div className="shrink-0 sm:pt-0.5">
-          <button
-            type="button"
-            onClick={async () => {
-              if (!confirmDeleteUser(r.uid, r.data)) return;
-              await deleteUser(r.uid);
-            }}
-            className="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 active:scale-[0.99]"
-            title="Slet bruger"
-            aria-label="Slet bruger"
-          >
-            Slet
-          </button>
-        </div>
+        {canManageUsers ? (
+          <div className="shrink-0 sm:pt-0.5">
+            <button
+              type="button"
+              onClick={async () => {
+                if (!confirmDeleteUser(r.uid, r.data)) return;
+                await deleteUser(r.uid);
+              }}
+              className="inline-flex items-center justify-center rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 active:scale-[0.99]"
+              title="Slet bruger"
+              aria-label="Slet bruger"
+            >
+              Slet
+            </button>
+          </div>
+        ) : null}
       </div>
     );
   };

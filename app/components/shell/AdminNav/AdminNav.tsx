@@ -18,13 +18,17 @@ type AdminNavProps = {
 
 export default function AdminNav({ className }: AdminNavProps) {
   const access = useAccess();
-  const viewRequests = access.canAccess(PERMISSION.requests.dashboard.view);
-  const viewUsers = access.canAccess(PERMISSION.users.dashboard.view);
+  const canAccessViewRequestsCount = access.canAccess(
+    PERMISSION.requests.dashboard.view,
+  );
+  const canAccessViewUsers = access.canAccess(PERMISSION.users.dashboard.view);
   const router = useRouter();
 
-  const newRequestsCount = useAdminRsvpRequestsCount(viewRequests);
+  const newRequestsCount = useAdminRsvpRequestsCount(
+    canAccessViewRequestsCount,
+  );
 
-  useAdminNavKeybindings(viewRequests, router.push);
+  useAdminNavKeybindings(canAccessViewRequestsCount, router.push);
 
   return (
     <nav
@@ -43,7 +47,7 @@ export default function AdminNav({ className }: AdminNavProps) {
           </span>
         }
       />
-      {viewUsers && (
+      {canAccessViewUsers && (
         <AdminNavLink
           href="/users"
           label={
@@ -60,7 +64,9 @@ export default function AdminNav({ className }: AdminNavProps) {
         label={
           <span className="group inline-flex items-center">
             Anmodninger
-            {viewRequests && <Badge count={newRequestsCount} tone="amber" />}
+            {canAccessViewRequestsCount && (
+              <Badge count={newRequestsCount} tone="amber" />
+            )}
             <KbdHint>g a</KbdHint>
           </span>
         }

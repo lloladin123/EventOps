@@ -15,11 +15,11 @@ import {
   type Decision,
 } from "@/types/rsvpIndex";
 import AdminAddApprovedStaffButton from "../event/AdminAddApprovedStaffButton";
-import { useAuth } from "@/features/auth/provider/AuthProvider";
-import { isSystemAdmin } from "@/types/systemRoles";
 import AdminAddCustomRsvpButton from "../event/AdminAddCustomRsvpButton";
 import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
+import { useAccess } from "@/features/auth/hooks/useAccess";
+import { PERMISSION } from "@/features/auth/lib/permissions";
 
 type Props = { eventId: string };
 
@@ -136,19 +136,24 @@ export default function ApprovedUsers({ eventId }: Props) {
     window.setTimeout(() => setCopied(false), 900);
   };
 
-  const { systemRole, user } = useAuth();
-  const canManage = isSystemAdmin(systemRole);
-
-  const adminUid = user?.uid ?? null;
+  const access = useAccess();
+  const uid = access.user?.uid ?? null;
+  const canUpdate = access.canAccess(PERMISSION.events.rsvps.update);
+  const canDelete = access.canAccess(PERMISSION.events.rsvps.delete);
+  const canCreateCustom = access.canAccess(
+    PERMISSION.events.rsvps.createCustom,
+  );
+  const canAddSelfApproved =
+    !!uid && access.canAccess(PERMISSION.events.rsvps.addSelfApproved);
 
   const onRemoveApproval = React.useCallback(
-    async (uid: string, name: string) => {
+    async (targetUid: string, name: string) => {
       const ok = window.confirm(`Fjern godkendelse for ${name}?`);
       if (!ok) return;
 
       try {
-        await setRsvpDecision(eventId, uid, DECISION.Pending, {
-          decidedByUid: adminUid,
+        await setRsvpDecision(eventId, targetUid, DECISION.Pending, {
+          decidedByUid: uid, // the logged-in admin uid
         });
 
         window.dispatchEvent(new Event("requests-changed"));
@@ -160,7 +165,7 @@ export default function ApprovedUsers({ eventId }: Props) {
         );
       }
     },
-    [eventId, adminUid],
+    [eventId, uid],
   );
 
   const onDeleteRsvp = React.useCallback(
@@ -189,7 +194,7 @@ export default function ApprovedUsers({ eventId }: Props) {
       {/* Godkendte (ja/måske) */}
       <div>
         {/* Admin controls ABOVE the list header */}
-        {canManage ? (
+        {canAddSelfApproved || canCreateCustom ? (
           <div className="mb-3 flex justify-center">
             <div className="w-full max-w-3xl space-y-2">
               <div className="text-center text-xs font-medium text-slate-500">
@@ -198,11 +203,18 @@ export default function ApprovedUsers({ eventId }: Props) {
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
                 <div className="flex flex-col items-center gap-2">
-                  <AdminAddApprovedStaffButton
-                    eventId={eventId}
-                    className="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 text-xs rounded-md"
-                  />
-                  <AdminAddCustomRsvpButton eventId={eventId} />
+                  {canAddSelfApproved ? (
+                    <AdminAddApprovedStaffButton
+                      eventId={eventId}
+                      className="bg-slate-900 hover:bg-slate-800 text-white px-3 py-1.5 text-xs rounded-md"
+                    />
+                  ) : null}
+                  {canCreateCustom ? (
+                    <AdminAddCustomRsvpButton
+                      eventId={eventId}
+                      actorUid={uid}
+                    />
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -263,30 +275,33 @@ export default function ApprovedUsers({ eventId }: Props) {
 
                     <div className="flex items-center gap-2">
                       {attendancePill(r.attendance)}
-
-                      {canManage ? (
+                      {canUpdate || canDelete ? (
                         <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onRemoveApproval(r.uid, displayNameFromRow(r))
-                            }
-                            className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100"
-                            title="Fjern godkendelse (send tilbage til requests)"
-                          >
-                            Tilbage til anmodninger
-                          </button>
+                          {canUpdate ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onRemoveApproval(r.uid, displayNameFromRow(r))
+                              }
+                              className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-100"
+                              title="Fjern godkendelse (send tilbage til requests)"
+                            >
+                              Tilbage til anmodninger
+                            </button>
+                          ) : null}
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onDeleteRsvp(r.uid, displayNameFromRow(r))
-                            }
-                            className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                            title="Slet RSVP helt"
-                          >
-                            Slet
-                          </button>
+                          {canDelete ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onDeleteRsvp(r.uid, displayNameFromRow(r))
+                              }
+                              className="rounded-md border border-rose-200 bg-white px-2 py-1 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+                              title="Slet RSVP helt"
+                            >
+                              Slet
+                            </button>
+                          ) : null}
                         </div>
                       ) : null}
                     </div>

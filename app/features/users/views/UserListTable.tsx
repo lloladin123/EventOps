@@ -4,7 +4,6 @@ import * as React from "react";
 import type { UserDoc } from "@/lib/firestore/users.client";
 import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
 import { SortState } from "@/components/ui/patterns/table/types";
-import { getAuth } from "firebase/auth";
 
 import { UsersViewState } from "./UsersViewState";
 import { usersGroupMeta } from "../config/UsersGroupMeta";
@@ -17,24 +16,20 @@ import { useMissingRoleNavigator } from "../hooks/useMissingRoleNavigator";
 import { useFlashFocus } from "../hooks/useFlashFocus";
 import { confirmDeleteUser } from "../utils/confirmDeleteUser";
 
-import {
-  SYSTEM_ROLE,
-  type SystemRole,
-  isSystemAdmin,
-} from "@/types/systemRoles";
+import { useAuth } from "@/features/auth/provider/AuthProvider";
+import { canWith, PERMISSION } from "@/features/auth/lib/permissions";
+import { SYSTEM_ROLE, type SystemRole } from "@/types/systemRoles";
 
 import { buildUserTableColumns } from "../builders/buildUserTableColumns";
 
 type Props = {
   users: Array<{ uid: string; data: UserDoc }>;
   busy: boolean;
-
   systemRoles: readonly SystemRole[];
   setUserSystemRole: (
     uid: string,
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
-
   deleteUser: (uid: string) => void | Promise<void>;
 };
 
@@ -51,24 +46,20 @@ export default function UserListTable({
   setUserSystemRole,
   deleteUser,
 }: Props) {
-  const uid = getAuth().currentUser?.uid ?? null;
+  const { user, systemRole } = useAuth();
 
-  const currentSystemRole = React.useMemo(() => {
-    if (!uid) return null;
-    return (users.find((u) => u.uid === uid)?.data.systemRole ??
-      null) as SystemRole | null;
-  }, [users, uid]);
+  const authCtx = { user, systemRole };
+
+  const canViewUsers = canWith(PERMISSION.users.dashboard.view, authCtx);
+  const canManageUsers = canWith(PERMISSION.users.manage, authCtx);
+  const canEditRoles = canWith(PERMISSION.users.rolesEdit, authCtx);
 
   const visibleUsers = React.useMemo(() => {
-    // 🚫 Never show Superadmins in this list
-    const base = users.filter(
-      (u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin,
-    );
+    if (!canViewUsers) return [];
 
-    // No "staff" concept anymore — admins and non-admins see the same base list
-    if (isSystemAdmin(currentSystemRole)) return base;
-    return base;
-  }, [users, currentSystemRole]);
+    // Never show Superadmins in this list
+    return users.filter((u) => u.data.systemRole !== SYSTEM_ROLE.Superadmin);
+  }, [users, canViewUsers]);
 
   const { flashUid, flash } = useFlashUid(2200);
 
@@ -92,6 +83,8 @@ export default function UserListTable({
         flashUid,
         flash,
         focusMissingRelative,
+        canEditRoles,
+        canManageUsers,
       }),
     [
       systemRoles,
@@ -99,21 +92,31 @@ export default function UserListTable({
       deleteUser,
       setRowRef,
       setRoleRef,
-      flashUid,
       focusRoleSelect,
+      flashUid,
       flash,
       focusMissingRelative,
+      canEditRoles,
+      canManageUsers,
     ],
   );
 
   useUserHotkeys({
-    enabled: true,
+    enabled: canManageUsers,
     users: visibleUsers,
     onDeleteUser: deleteUser,
     confirmDelete: (_label, row) => confirmDeleteUser(row.uid, row.data),
   });
 
   const initialSort: SortState<SortKey> = { key: "user", dir: "asc" };
+
+  if (!canViewUsers) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white text-sm text-slate-600">
+        Du har ikke adgang til brugere.
+      </div>
+    );
+  }
 
   if (busy) {
     return (

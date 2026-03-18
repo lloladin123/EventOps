@@ -48,7 +48,10 @@ export const PERMISSION = {
     openToggle: "events.openToggle",
     rsvps: {
       selfWrite: "events.rsvps.self.write",
-      adminManage: "events.rsvps.admin.manage",
+      update: "events.rsvps.update",
+      delete: "events.rsvps.delete",
+      addSelfApproved: "events.rsvps.addSelfApproved",
+      createCustom: "events.rsvps.createCustom",
     },
 
     incidents: { manage: "events.incidents.manage" },
@@ -93,10 +96,16 @@ const PERMISSIONS: Record<Action, Rule> = {
   [PERMISSION.events.create]: { system: ADMIN },
   [PERMISSION.events.update]: { system: ADMIN },
   [PERMISSION.events.delete]: { system: ADMIN },
-  [PERMISSION.events.openToggle]: { system: ADMIN },
+  [PERMISSION.events.openToggle]: {
+    system: ADMIN,
+    rsvpRoles: [ROLE.Video, ROLE.Sikkerhedschef],
+  },
 
   [PERMISSION.events.incidents.manage]: { system: ADMIN },
-  [PERMISSION.events.rsvps.adminManage]: { system: ADMIN },
+  [PERMISSION.events.rsvps.delete]: { system: ADMIN },
+  [PERMISSION.events.rsvps.update]: { system: ADMIN },
+  [PERMISSION.events.rsvps.createCustom]: { system: ADMIN },
+  [PERMISSION.events.rsvps.addSelfApproved]: { system: ADMIN },
 
   // users
   [PERMISSION.users.manage]: { system: ADMIN },
