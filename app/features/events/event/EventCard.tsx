@@ -54,16 +54,7 @@ function requestBadge(attendance?: RSVPAttendance, approved?: boolean) {
   };
 }
 
-function getWeekOfMonth(date: Date) {
-  const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
-
-  // Monday=0 ... Sunday=6
-  const firstWeekday = (firstDayOfMonth.getDay() + 6) % 7;
-
-  return Math.ceil((date.getDate() + firstWeekday) / 7);
-}
-
-function getEventWeek(event: Event) {
+function getEventWeekday(event: Event) {
   const rawDate =
     (event as any).startAt ?? (event as any).startDate ?? (event as any).date;
 
@@ -72,7 +63,9 @@ function getEventWeek(event: Event) {
   const date = new Date(rawDate);
   if (Number.isNaN(date.getTime())) return null;
 
-  return getWeekOfMonth(date);
+  return new Intl.DateTimeFormat("da-DK", {
+    weekday: "long",
+  }).format(date);
 }
 
 export default function EventCard({
@@ -87,7 +80,7 @@ export default function EventCard({
 }: Props) {
   const access = useAccess();
   const badge = requestBadge(attendanceValue, approved);
-  const week = getEventWeek(event);
+  const weekday = getEventWeekday(event);
 
   const canEditEvent = access.canAccess(PERMISSION.events.update);
   const canDeleteEvent = access.canAccess(PERMISSION.events.delete);
@@ -134,14 +127,11 @@ export default function EventCard({
         </button>
       )}
 
-      {week && (
+      {weekday && (
         <div className="flex shrink-0 items-center justify-center sm:w-24">
           <div className="flex w-full flex-col items-center justify-center rounded-xl bg-slate-50 px-3 py-4 text-center ring-1 ring-slate-200">
-            <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Uge
-            </span>
-            <span className="text-3xl font-black leading-none text-slate-900 sm:text-4xl">
-              {week}
+            <span className="text-lg font-black leading-tight text-slate-900 sm:text-xl capitalize">
+              {weekday}
             </span>
           </div>
         </div>
