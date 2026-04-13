@@ -36,6 +36,7 @@ type Props = {
   ) => void | Promise<void>;
 
   deleteUser: (uid: string) => void | Promise<void>;
+  pendingDeleteUids?: string[];
 };
 
 type Row = { uid: string; data: UserDoc };
@@ -48,6 +49,7 @@ export default function UserListView({
   setUserSystemRole,
   setUserRole,
   deleteUser,
+  pendingDeleteUids = [],
 }: Props) {
   const { user, systemRole } = useAuth();
 
@@ -88,11 +90,13 @@ export default function UserListView({
     setRoleRef,
     canEditRoles,
     canManageUsers,
+    pendingDeleteUids,
   });
 
   return (
     <UsersViewState busy={busy} isEmpty={visibleUsers.length === 0}>
       <GroupedList<Row, GroupId>
+        key={pendingDeleteUids.join("|")}
         rows={visibleUsers}
         getGroupId={() => "all"}
         getGroupMeta={usersGroupMeta}

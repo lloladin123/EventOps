@@ -23,6 +23,7 @@ type Params = {
 
   canEditRoles: boolean;
   canManageUsers: boolean;
+  pendingDeleteUids: string[];
 };
 
 export function useUserListRenderRow({
@@ -36,6 +37,7 @@ export function useUserListRenderRow({
   setRoleRef,
   canEditRoles,
   canManageUsers,
+  pendingDeleteUids,
 }: Params) {
   return React.useMemo(
     () =>
@@ -51,6 +53,7 @@ export function useUserListRenderRow({
         canEditRoles,
         canManageUsers,
         confirmDeleteUser,
+        pendingDeleteUids,
       }),
     [
       systemRoles,
@@ -63,6 +66,7 @@ export function useUserListRenderRow({
       setRoleRef,
       canEditRoles,
       canManageUsers,
+      pendingDeleteUids,
     ],
   );
 }

@@ -31,6 +31,7 @@ type Params = {
 
   canEditRoles: boolean;
   canManageUsers: boolean;
+  pendingDeleteUids: string[];
 };
 
 export function buildUserTableColumns({
@@ -43,6 +44,7 @@ export function buildUserTableColumns({
   flash,
   canEditRoles,
   canManageUsers,
+  pendingDeleteUids,
 }: Params) {
   const columns = [
     {
@@ -95,6 +97,7 @@ export function buildUserTableColumns({
             data={r.data}
             deleteUser={deleteUser}
             confirmDelete={confirmDeleteUser}
+            deleting={pendingDeleteUids.includes(r.uid)}
           />
         ) : null,
     },

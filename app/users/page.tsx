@@ -1,17 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { useAuth } from "@/features/auth/provider/AuthProvider";
+import LoginRedirect from "@/components/layout/LoginRedirect/LoginRedirect";
 import { useUsersAdmin } from "@/features/users/hooks/useUsersAdmin";
 
 import UserListTable from "@/features/users/views/UserListTable";
 import UserListView from "@/features/users/views/UserListView";
 
-import {
-  isSystemSuperAdmin,
-  SYSTEM_ROLE,
-  type SystemRole,
-} from "@/types/systemRoles";
+import { SYSTEM_ROLE, type SystemRole } from "@/types/systemRoles";
+import { PERMISSION } from "@/features/auth/lib/permissions";
 
 import { deleteDoc, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { db } from "../lib/firebase/client";
@@ -22,24 +19,23 @@ import ViewModeToggle, {
 import { useUndoStack } from "@/features/users/hooks/useUndoStack";
 import { UserDoc } from "@/lib/firestore/users.client";
 
-export default function UsersPage() {
+function UsersPageContent() {
   type UserDocWithSystemRole = UserDoc & {
     systemRole?: SystemRole | null;
   };
 
-  const { systemRole, loading } = useAuth();
-  const isAllowed = isSystemSuperAdmin(systemRole);
+  const [pendingDeleteUids, setPendingDeleteUids] = React.useState<string[]>(
+    [],
+  );
 
-  const { users, busy } = useUsersAdmin(isAllowed);
+  const { users, busy } = useUsersAdmin(true);
   const { push: pushUndo } = useUndoStack();
 
-  // Helper to read current snapshot for a user from already-loaded list
   const getUserSnapshot = React.useCallback(
     (uid: string) => users.find((u) => u.uid === uid)?.data ?? null,
     [users],
   );
 
-  // ✅ Apply system role
   const applySystemRole = React.useCallback(
     async (uid: string, next: SystemRole | null) => {
       await updateDoc(doc(db, "users", uid), {
@@ -50,7 +46,6 @@ export default function UsersPage() {
     [],
   );
 
-  // ✅ SYSTEM ROLE change with undo/redo
   const setUserRole = React.useCallback(
     async (uid: string, nextRole: SystemRole | null) => {
       const prev = getUserSnapshot(uid) as UserDocWithSystemRole | null;
@@ -71,18 +66,19 @@ export default function UsersPage() {
     [applySystemRole, getUserSnapshot, pushUndo],
   );
 
-  // ✅ system roles don’t have subRole; keep a no-op so the table compiles
-  const setUserSubRole = React.useCallback(async () => {}, []);
-
-  // ✅ DELETE with grace period + undo/redo
   const pendingDeletesRef = React.useRef(new Map<string, number>());
 
   const deleteUser = React.useCallback(
     async (uid: string) => {
       if (pendingDeletesRef.current.has(uid)) return;
 
+      setPendingDeleteUids((prev) =>
+        prev.includes(uid) ? prev : [...prev, uid],
+      );
+
       const timeoutId = window.setTimeout(async () => {
         pendingDeletesRef.current.delete(uid);
+        setPendingDeleteUids((prev) => prev.filter((x) => x !== uid));
         await deleteDoc(doc(db, "users", uid));
       }, 7000);
 
@@ -95,13 +91,19 @@ export default function UsersPage() {
           if (t != null) {
             window.clearTimeout(t);
             pendingDeletesRef.current.delete(uid);
+            setPendingDeleteUids((prev) => prev.filter((x) => x !== uid));
           }
         },
         redo: async () => {
           if (pendingDeletesRef.current.has(uid)) return;
 
+          setPendingDeleteUids((prev) =>
+            prev.includes(uid) ? prev : [...prev, uid],
+          );
+
           const t2 = window.setTimeout(async () => {
             pendingDeletesRef.current.delete(uid);
+            setPendingDeleteUids((prev) => prev.filter((x) => x !== uid));
             await deleteDoc(doc(db, "users", uid));
           }, 7000);
 
@@ -112,7 +114,6 @@ export default function UsersPage() {
     [pushUndo],
   );
 
-  // 🔁 view mode (persisted)
   const [view, setView] = React.useState<ViewMode>(() => {
     if (typeof window === "undefined") return "table";
     return (localStorage.getItem("users:view") as ViewMode) ?? "table";
@@ -122,28 +123,14 @@ export default function UsersPage() {
     localStorage.setItem("users:view", view);
   }, [view]);
 
-  // ✅ options for dropdown
   const selectableSystemRoles = React.useMemo<SystemRole[]>(
     () => Object.values(SYSTEM_ROLE),
     [],
   );
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-6xl px-6 py-6 text-sm text-slate-600">
-        Loading…
-      </div>
-    );
-  }
-
-  if (!isAllowed) {
-    return (
-      <div className="mx-auto max-w-6xl px-6 py-6">
-        <h1 className="text-lg font-semibold text-slate-900">Users</h1>
-        <p className="mt-2 text-sm text-slate-600">No access.</p>
-      </div>
-    );
-  }
+  React.useEffect(() => {
+    console.log("pendingDeleteUids", pendingDeleteUids);
+  }, [pendingDeleteUids]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 px-6 py-6">
@@ -159,19 +146,30 @@ export default function UsersPage() {
           systemRoles={selectableSystemRoles}
           setUserSystemRole={setUserRole}
           deleteUser={deleteUser}
+          pendingDeleteUids={pendingDeleteUids}
         />
       ) : (
         <UserListView
           users={users}
           busy={busy}
-          // @ts-expect-error migrating: view expects RSVP Role strings, but it’s just a string list in UI
-          roles={selectableSystemRoles}
-          crewSubRoles={[]}
-          setUserRole={setUserRole}
-          setUserSubRole={setUserSubRole}
+          systemRoles={selectableSystemRoles}
+          setUserSystemRole={setUserRole}
           deleteUser={deleteUser}
+          pendingDeleteUids={pendingDeleteUids}
         />
       )}
     </div>
+  );
+}
+
+export default function UsersPage() {
+  return (
+    <LoginRedirect
+      action={PERMISSION.users.dashboard.view}
+      unauthorizedRedirectTo="/login"
+      description="Du har ikke adgang til Users."
+    >
+      <UsersPageContent />
+    </LoginRedirect>
   );
 }

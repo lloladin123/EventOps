@@ -31,6 +31,7 @@ type Props = {
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
+  pendingDeleteUids?: string[];
 };
 
 type Row = { uid: string; data: UserDoc };
@@ -45,6 +46,7 @@ export default function UserListTable({
   systemRoles,
   setUserSystemRole,
   deleteUser,
+  pendingDeleteUids = [],
 }: Props) {
   const { user, systemRole } = useAuth();
 
@@ -85,6 +87,7 @@ export default function UserListTable({
         focusMissingRelative,
         canEditRoles,
         canManageUsers,
+        pendingDeleteUids,
       }),
     [
       systemRoles,
@@ -98,6 +101,7 @@ export default function UserListTable({
       focusMissingRelative,
       canEditRoles,
       canManageUsers,
+      pendingDeleteUids,
     ],
   );
 
