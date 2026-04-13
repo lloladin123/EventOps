@@ -13,6 +13,55 @@ const CARD = {
   afterCard: 20,
 };
 
+function isLongTextField(label: string): boolean {
+  return label === "Hændelse" || label === "Løsning";
+}
+
+function wrapText(
+  ctx: RenderCtx,
+  text: string,
+  maxWidth: number,
+  fontSize: number,
+): string[] {
+  const value = safeStr(text);
+  if (!value) return ["—"];
+
+  const words = value.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    const width = ctx.font.widthOfTextAtSize(test, fontSize);
+
+    if (width <= maxWidth) {
+      current = test;
+    } else {
+      if (current) lines.push(current);
+
+      // handle one very long word
+      if (ctx.font.widthOfTextAtSize(word, fontSize) <= maxWidth) {
+        current = word;
+      } else {
+        let chunk = "";
+        for (const ch of word) {
+          const testChunk = chunk + ch;
+          if (ctx.font.widthOfTextAtSize(testChunk, fontSize) <= maxWidth) {
+            chunk = testChunk;
+          } else {
+            if (chunk) lines.push(chunk);
+            chunk = ch;
+          }
+        }
+        current = chunk;
+      }
+    }
+  }
+
+  if (current) lines.push(current);
+  return lines.length ? lines : ["—"];
+}
+
 function getMetaPairs(i: IncidentPayload): Array<[string, string]> {
   return [
     ["Type", safeStr(i.type)],
@@ -46,20 +95,32 @@ function calcImagesHeight(innerW: number, urlCount: number): number {
 }
 
 function calcCardHeight(
+  ctx: RenderCtx,
   metaPairs: Array<[string, string]>,
   innerW: number,
   urlCount: number,
 ): number {
-  const metaHeight = metaPairs.length * CARD.LINE;
+  const fontSize = 10;
+
+  let metaHeight = 0;
+
+  for (const [k, v] of metaPairs) {
+    if (isLongTextField(k)) {
+      const lines = wrapText(ctx, v || "—", innerW, fontSize);
+      metaHeight += CARD.LINE; // label
+      metaHeight += lines.length * CARD.LINE; // value below
+    } else {
+      const label = `${k}:`;
+      const labelWidth = ctx.fontBold.widthOfTextAtSize(label, fontSize);
+      const valueWidth = innerW - labelWidth - 6;
+      const lines = wrapText(ctx, v || "—", valueWidth, fontSize);
+      metaHeight += lines.length * CARD.LINE; // inline row(s)
+    }
+  }
+
   const imagesHeight = calcImagesHeight(innerW, urlCount);
 
-  return (
-    CARD.pad +
-    CARD.titleGap + // title
-    metaHeight +
-    imagesHeight +
-    20
-  );
+  return CARD.pad + CARD.titleGap + metaHeight + imagesHeight + 20;
 }
 
 export async function drawIncidentCard(
@@ -77,7 +138,7 @@ export async function drawIncidentCard(
   const metaPairs = getMetaPairs(i);
   const urls = getUrls(i);
 
-  const cardHeight = calcCardHeight(metaPairs, innerW, urls.length);
+  const cardHeight = calcCardHeight(ctx, metaPairs, innerW, urls.length);
   ctx.ensureSpace(cardHeight);
 
   // background
@@ -99,8 +160,34 @@ export async function drawIncidentCard(
 
   // meta
   for (const [k, v] of metaPairs) {
-    ctx.drawText(`${k}: ${v || "—"}`, cardX + CARD.pad, cy, 10);
-    cy -= CARD.LINE;
+    const label = `${k}:`;
+
+    if (isLongTextField(k)) {
+      ctx.drawText(label, cardX + CARD.pad, cy, 10, true);
+      cy -= CARD.LINE;
+
+      const lines = wrapText(ctx, v || "—", innerW, 10);
+      for (const line of lines) {
+        ctx.drawText(line, cardX + CARD.pad, cy, 10);
+        cy -= CARD.LINE;
+      }
+    } else {
+      const labelWidth = ctx.fontBold.widthOfTextAtSize(label, 10);
+      const valueX = cardX + CARD.pad + labelWidth + 6;
+      const valueWidth = innerW - labelWidth - 6;
+
+      const lines = wrapText(ctx, v || "—", valueWidth, 10);
+
+      for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        if (lineIdx === 0) {
+          ctx.drawText(label, cardX + CARD.pad, cy, 10, true);
+          ctx.drawText(lines[lineIdx], valueX, cy, 10);
+        } else {
+          ctx.drawText(lines[lineIdx], valueX, cy, 10);
+        }
+        cy -= CARD.LINE;
+      }
+    }
   }
 
   // images
