@@ -65,6 +65,8 @@ export default function AdminAddApprovedStaffButton({
     return normalizeOptions([]);
   }, [isCrew, isKontrollør]);
 
+  //test
+
   React.useEffect(() => {
     if (!uid || !eventId) return;
 
