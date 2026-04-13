@@ -1,4 +1,4 @@
-import type { SystemRole } from "@/types/systemRoles";
+import { SYSTEM_ROLE, type SystemRole } from "@/types/systemRoles";
 import type { UserDoc } from "@/lib/firestore/users.client";
 
 import { UserIdentityCell } from "../cells/UserIdentityCell";
@@ -12,8 +12,22 @@ function asText(v: unknown) {
   return (v ?? "").toString().trim().toLowerCase();
 }
 
+function canManageTargetUser(
+  currentSystemRole: SystemRole | null,
+  targetSystemRole: SystemRole | null,
+) {
+  if (currentSystemRole === SYSTEM_ROLE.Superadmin) return true;
+
+  return (
+    targetSystemRole !== SYSTEM_ROLE.Admin &&
+    targetSystemRole !== SYSTEM_ROLE.Superadmin
+  );
+}
+
 type Params = {
   systemRoles: readonly SystemRole[];
+  currentSystemRole: SystemRole | null;
+
   setUserSystemRole: (
     uid: string,
     nextRole: SystemRole | null,
@@ -36,6 +50,7 @@ type Params = {
 
 export function buildUserTableColumns({
   systemRoles,
+  currentSystemRole,
   setUserSystemRole,
   deleteUser,
   setRowRef,
@@ -46,6 +61,13 @@ export function buildUserTableColumns({
   canManageUsers,
   pendingDeleteUids,
 }: Params) {
+  const assignableRoles =
+    currentSystemRole === SYSTEM_ROLE.Superadmin
+      ? systemRoles
+      : systemRoles.filter(
+          (r) => r !== SYSTEM_ROLE.Admin && r !== SYSTEM_ROLE.Superadmin,
+        );
+
   const columns = [
     {
       key: "user",
@@ -75,23 +97,37 @@ export function buildUserTableColumns({
       header: "System rolle",
       headerTitle: "Sortér efter systemrolle",
       sortValue: (r: Row) => asText(r.data.systemRole ?? ""),
-      cell: (r: Row) => (
-        <RoleSelectCell
-          uid={r.uid}
-          role={(r.data.systemRole ?? null) as SystemRole | null}
-          systemRoles={systemRoles}
-          setRoleRef={setRoleRef}
-          setUserSystemRole={setUserSystemRole}
-          disabled={!canEditRoles}
-        />
-      ),
+      cell: (r: Row) => {
+        const targetRole = (r.data.systemRole ?? null) as SystemRole | null;
+        const canManageThisUser = canManageTargetUser(
+          currentSystemRole,
+          targetRole,
+        );
+
+        return (
+          <RoleSelectCell
+            uid={r.uid}
+            role={targetRole}
+            systemRoles={assignableRoles}
+            setRoleRef={setRoleRef}
+            setUserSystemRole={setUserSystemRole}
+            disabled={!canEditRoles || !canManageThisUser}
+          />
+        );
+      },
     },
     {
       key: "actions",
       header: " ",
       align: "right" as const,
-      cell: (r: Row) =>
-        canManageUsers ? (
+      cell: (r: Row) => {
+        const targetRole = (r.data.systemRole ?? null) as SystemRole | null;
+        const canManageThisUser = canManageTargetUser(
+          currentSystemRole,
+          targetRole,
+        );
+
+        return canManageUsers && canManageThisUser ? (
           <DeleteUserButton
             uid={r.uid}
             data={r.data}
@@ -99,7 +135,8 @@ export function buildUserTableColumns({
             confirmDelete={confirmDeleteUser}
             deleting={pendingDeleteUids.includes(r.uid)}
           />
-        ) : null,
+        ) : null;
+      },
     },
   ];
 

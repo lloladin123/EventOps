@@ -14,6 +14,8 @@ type Params = {
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
 
+  currentSystemRole: SystemRole | null;
+
   flashUid: string | null;
   flash: (uid: string) => void;
   focusRoleSelect: (uid: string) => void;
@@ -30,6 +32,7 @@ export function useUserListRenderRow({
   systemRoles,
   setUserSystemRole,
   deleteUser,
+  currentSystemRole,
   flashUid,
   flash,
   focusRoleSelect,
@@ -45,6 +48,7 @@ export function useUserListRenderRow({
         systemRoles,
         setUserSystemRole,
         deleteUser,
+        currentSystemRole,
         flashUid,
         flash,
         focusRoleSelect,

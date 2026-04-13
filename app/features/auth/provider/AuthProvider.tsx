@@ -82,19 +82,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const safeEmail = typeof u.email === "string" ? u.email : null;
           const nameFromAuth = cleanName(u.displayName);
 
-          // ✅ decide system role seed
-          // If your devRoleFromEmail returns Admin, treat that as system admin.
-          // Otherwise default to "user".
-          const seededSystemRole: SystemRole =
-            seeded?.role === ("Admin" as any)
-              ? SYSTEM_ROLE.Admin
-              : SYSTEM_ROLE.User;
+          const seededSystemRole: SystemRole | null =
+            seeded?.role === ("Admin" as any) ? SYSTEM_ROLE.Admin : null;
 
           await setDoc(
             ref,
             {
-              systemRole: seededSystemRole,
-
+              ...(seededSystemRole ? { systemRole: seededSystemRole } : {}),
               email: safeEmail,
               displayName: nameFromAuth,
               createdAt: serverTimestamp(),
@@ -103,18 +97,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             { merge: true },
           );
 
-          // expose immediately
           setSystemRole(seededSystemRole);
-
           setDisplayName(nameFromAuth);
           setLoading(false);
           return;
         }
-
         const data = snap.data() as UserDoc;
 
         // ✅ system role is authoritative for permissions
-        setSystemRole(data.systemRole ?? SYSTEM_ROLE.User);
+        setSystemRole(data.systemRole ?? null);
 
         // displayName: prefer doc, fallback auth
         const nameFromDoc = cleanName(data.displayName);
