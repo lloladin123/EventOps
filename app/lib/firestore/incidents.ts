@@ -32,27 +32,24 @@ const clean = (v: any) => JSON.parse(JSON.stringify(v));
 export async function createIncidentFirestore(
   eventId: string,
   incident: Incident,
-  opts?: { createdByUid?: string | null; createdByRole?: string | null }
+  opts?: { createdByUid?: string | null; createdByRole?: string | null },
 ) {
   const ref = doc(collection(db, "events", eventId, "incidents"), incident.id);
 
-  const nowMs = Date.now();
+  const createdAt = incident.createdAt ?? new Date().toISOString();
+  const createdAtMs = new Date(createdAt).getTime();
 
   const payload: DocumentData = {
     ...incident,
     eventId,
 
-    // ✅ store uploaded file metadata (NOT File objects)
     files: Array.isArray(incident.files) ? incident.files : [],
 
-    // ✅ IMPORTANT: store ownership on the doc
-    // Prefer incident.createdByUid if present, otherwise opts
     createdByUid: incident.createdByUid ?? opts?.createdByUid ?? null,
     createdByRole: incident.createdByRole ?? opts?.createdByRole ?? null,
 
-    // ✅ canonical timestamps
-    createdAt: serverTimestamp(),
-    createdAtMs: nowMs,
+    createdAt,
+    createdAtMs: Number.isNaN(createdAtMs) ? Date.now() : createdAtMs,
   };
 
   await setDoc(ref, clean(payload), { merge: false });
@@ -60,7 +57,7 @@ export async function createIncidentFirestore(
 
 export async function deleteIncidentFirestore(
   eventId: string,
-  incidentId: string
+  incidentId: string,
 ) {
   await deleteDoc(doc(db, "events", eventId, "incidents", incidentId));
 }
@@ -68,25 +65,25 @@ export async function deleteIncidentFirestore(
 export async function updateIncidentFirestore(
   eventId: string,
   incidentId: string,
-  patch: Partial<Incident>
+  patch: Partial<Incident>,
 ) {
   await updateDoc(
     doc(db, "events", eventId, "incidents", incidentId),
     clean({
       ...patch,
       updatedAt: serverTimestamp(),
-    })
+    }),
   );
 }
 
 export function subscribeIncidents(
   eventId: string,
   onData: (incidents: Incident[]) => void,
-  onError?: (err: unknown) => void
+  onError?: (err: unknown) => void,
 ) {
   const q = query(
     collection(db, "events", eventId, "incidents"),
-    orderBy("createdAtMs", "desc")
+    orderBy("createdAtMs", "desc"),
   );
 
   return onSnapshot(
@@ -123,6 +120,6 @@ export function subscribeIncidents(
 
       onData(rows);
     },
-    (err) => onError?.(err)
+    (err) => onError?.(err),
   );
 }
