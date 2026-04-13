@@ -18,6 +18,8 @@ function getMetaPairs(i: IncidentPayload): Array<[string, string]> {
     ["Type", safeStr(i.type)],
     ["Modtaget fra", safeStr(i.modtagetFra)],
     ["Logget af", safeStr(i.loggetAf)],
+    ["Hændelse", safeStr(i.haendelse)],
+    ["Løsning", safeStr(i.loesning)],
     ["Politi involveret", boolMark(i.politiInvolveret)],
     ["Beredskab involveret", boolMark(i.beredskabInvolveret)],
   ];
