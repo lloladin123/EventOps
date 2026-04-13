@@ -81,10 +81,6 @@ function SystemRolePicker({
     }
   };
 
-  const effectiveRoles = systemRoles?.length
-    ? systemRoles
-    : (Object.values(SYSTEM_ROLE) as SystemRole[]);
-
   const assignableRoles =
     currentSystemRole === SYSTEM_ROLE.Superadmin
       ? systemRoles
