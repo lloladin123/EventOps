@@ -111,7 +111,7 @@ export default function IncidentListView({
                     <span className="font-medium">Hændelse:</span>{" "}
                     {incidentText ? (
                       <span
-                        className="text-slate-700"
+                        className="text-slate-700 inline-block max-w-[520px] truncate"
                         title={String(incidentText)}
                       >
                         {String(incidentText)}
