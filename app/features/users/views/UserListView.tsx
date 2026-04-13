@@ -82,6 +82,7 @@ export default function UserListView({
   const renderRow = useUserListRenderRow({
     systemRoles,
     setUserSystemRole: setRole,
+    currentSystemRole: systemRole,
     deleteUser,
     flashUid,
     flash,

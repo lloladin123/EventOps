@@ -107,7 +107,7 @@ const PERMISSIONS: Record<Action, Rule> = {
 
   // users
   [PERMISSION.users.manage]: { system: ADMIN },
-  [PERMISSION.users.rolesEdit]: { system: [Superadmin] },
+  [PERMISSION.users.rolesEdit]: { system: [Superadmin, Admin] },
   [PERMISSION.users.dashboard.view]: { system: ADMIN },
 
   // config / uploadSlots

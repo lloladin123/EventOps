@@ -16,6 +16,7 @@ type Params = {
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
   deleteUser: (uid: string) => void | Promise<void>;
+  currentSystemRole: SystemRole | null;
 
   flashUid: string | null;
   flash: (uid: string) => void;
@@ -36,6 +37,7 @@ function SystemRolePicker({
   role,
   systemRoles,
   setRoleRef,
+  currentSystemRole,
   setUserSystemRole,
   disabled = false,
 }: {
@@ -48,6 +50,7 @@ function SystemRolePicker({
     nextRole: SystemRole | null,
   ) => void | Promise<void>;
   disabled?: boolean;
+  currentSystemRole: SystemRole | null;
 }) {
   const [selected, setSelected] = React.useState<SystemRole | "">(role ?? "");
   const [saving, setSaving] = React.useState(false);
@@ -78,9 +81,12 @@ function SystemRolePicker({
     }
   };
 
-  const effectiveRoles = systemRoles?.length
-    ? systemRoles
-    : (Object.values(SYSTEM_ROLE) as SystemRole[]);
+  const assignableRoles =
+    currentSystemRole === SYSTEM_ROLE.Superadmin
+      ? systemRoles
+      : systemRoles.filter(
+          (r) => r !== SYSTEM_ROLE.Admin && r !== SYSTEM_ROLE.Superadmin,
+        );
 
   return (
     <select
@@ -118,13 +124,11 @@ function SystemRolePicker({
         Select system role…
       </option>
 
-      {effectiveRoles
-        .filter((r) => r !== SYSTEM_ROLE.Superadmin)
-        .map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
+      {assignableRoles.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
     </select>
   );
 }
@@ -134,6 +138,7 @@ function UserRow({
   systemRoles,
   setUserSystemRole,
   deleteUser,
+  currentSystemRole,
   flashUid,
   flash,
   focusRoleSelect,
@@ -228,6 +233,7 @@ function UserRow({
           <SystemRolePicker
             uid={r.uid}
             role={systemRole}
+            currentSystemRole={currentSystemRole}
             systemRoles={systemRoles}
             setRoleRef={setRoleRef}
             setUserSystemRole={setUserSystemRole}
@@ -287,6 +293,15 @@ function UserRow({
 
 export function buildUserListRenderRow(params: Params) {
   return function renderRow(r: Row) {
+    const userRole = (r.data.systemRole ?? null) as SystemRole | null;
+
+    const canSeeRow =
+      params.currentSystemRole === SYSTEM_ROLE.Superadmin
+        ? true
+        : userRole !== SYSTEM_ROLE.Admin && userRole !== SYSTEM_ROLE.Superadmin;
+
+    if (!canSeeRow) return null;
+
     return <UserRow key={r.uid} r={r} {...params} />;
   };
 }

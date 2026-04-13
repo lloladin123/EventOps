@@ -78,6 +78,7 @@ export default function UserListTable({
       buildUserTableColumns({
         systemRoles,
         setUserSystemRole,
+        currentSystemRole: systemRole,
         deleteUser,
         setRowRef,
         setRoleRef,
