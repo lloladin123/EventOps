@@ -62,10 +62,21 @@ function wrapText(
   return lines.length ? lines : ["—"];
 }
 
+function formatDate(value?: string): string {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return safeStr(value) || "—";
+
+  return date.toLocaleDateString("da-DK");
+}
+
 function getMetaPairs(i: IncidentPayload): Array<[string, string]> {
   return [
     ["Type", safeStr(i.type)],
     ["Modtaget fra", safeStr(i.modtagetFra)],
+    ["Tidspunkt", safeStr(i.time)],
+    ["Dato", formatDate(safeStr(i.createdAt))],
     ["Logget af", safeStr(i.loggetAf)],
     ["Hændelse", safeStr(i.haendelse)],
     ["Løsning", safeStr(i.loesning)],
