@@ -47,12 +47,11 @@ export async function ensureUserDoc(u: User) {
     return;
   }
 
-  // Optional: keep profile fresh on future logins
+  // Keep profile fresh, but don't overwrite displayName
   await setDoc(
     ref,
     {
       email: safeEmail,
-      displayName: nameFromAuth,
       updatedAt: serverTimestamp(),
     } satisfies UserDoc,
     { merge: true },
