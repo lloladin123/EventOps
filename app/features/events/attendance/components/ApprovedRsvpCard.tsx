@@ -5,6 +5,7 @@ import AttendancePill from "./AttendancePill";
 import type { NormalizedApprovedRsvpRow } from "../hooks/useApprovedRsvps";
 import { displayNameFromRow, roleLabelFromRow } from "../utils/rsvpDisplay";
 import EquipmentAssignmentPanel from "./EquipmentAssignmentPanel";
+import React from "react";
 
 type Props = {
   row: NormalizedApprovedRsvpRow;
@@ -34,6 +35,7 @@ export default function ApprovedRsvpCard({
 }: Props) {
   const name = displayNameFromRow(row);
   const roleLabel = roleLabelFromRow(row);
+  const [expanded, setExpanded] = React.useState(false);
 
   return (
     <div
@@ -45,9 +47,20 @@ export default function ApprovedRsvpCard({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-sm font-medium text-slate-900 break-words">
-            {name}
-          </div>
+          {canManageAttendance ? (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="text-left text-sm font-medium text-slate-900 break-words hover:text-slate-700"
+            >
+              {expanded ? "▼ " : "▶ "}
+              {name}
+            </button>
+          ) : (
+            <div className="text-sm font-medium text-slate-900 break-words">
+              {name}
+            </div>
+          )}
 
           {roleLabel ? (
             <div className="text-xs text-slate-500">{roleLabel}</div>
@@ -98,7 +111,7 @@ export default function ApprovedRsvpCard({
           ) : null}
         </div>
       </div>
-      {canManageAttendance && onSetAssignedEquipment ? (
+      {expanded && canManageAttendance && onSetAssignedEquipment ? (
         <EquipmentAssignmentPanel
           initialItems={row.assignedEquipment}
           onChange={(items) => {
