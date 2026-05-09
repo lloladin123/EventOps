@@ -50,6 +50,7 @@ export const PERMISSION = {
       delete: "events.rsvps.delete",
       addSelfApproved: "events.rsvps.addSelfApproved",
       createCustom: "events.rsvps.createCustom",
+      manageAttendance: "events.rsvps.manageAttendance",
     },
 
     incidents: { manage: "events.incidents.manage" },
@@ -104,6 +105,7 @@ const PERMISSIONS: Record<Action, Rule> = {
   [PERMISSION.events.rsvps.update]: { system: ADMIN },
   [PERMISSION.events.rsvps.createCustom]: { system: ADMIN },
   [PERMISSION.events.rsvps.addSelfApproved]: { system: ADMIN },
+  [PERMISSION.events.rsvps.manageAttendance]: { system: ADMIN },
 
   // users
   [PERMISSION.users.manage]: { system: ADMIN },
