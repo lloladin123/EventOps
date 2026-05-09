@@ -22,9 +22,16 @@ export type RsvpDoc = {
   approvedAt?: unknown;
   approvedByUid?: string | null;
 
+  // Actual attendance / check-in
+  checkedIn?: boolean;
+  checkedInAt?: unknown;
+  checkedInByUid?: string | null;
+
   uid?: string | null;
   role?: string | null;
   subRole?: string | null;
+  rsvpRole?: string | null;
+  rsvpSubRole?: string | null;
   userDisplayName?: string | null;
 
   updatedAt?: unknown;
@@ -73,19 +80,21 @@ export function subscribeEventRsvps(
           approvedAt: data.approvedAt,
           approvedByUid: data.approvedByUid,
 
-          // ✅ legacy fields (keep for now)
-          role: (data as any).role ?? null,
-          subRole: (data as any).subRole ?? null,
+          checkedIn: data.checkedIn ?? false,
+          checkedInAt: data.checkedInAt ?? null,
+          checkedInByUid: data.checkedInByUid ?? null,
 
-          // ✅ NEW RSVP role fields (what your dropdown writes)
-          rsvpRole: (data as any).rsvpRole ?? null,
-          rsvpSubRole: (data as any).rsvpSubRole ?? null,
+          role: data.role ?? null,
+          subRole: data.subRole ?? null,
+
+          rsvpRole: data.rsvpRole ?? null,
+          rsvpSubRole: data.rsvpSubRole ?? null,
 
           userDisplayName: data.userDisplayName,
 
           updatedAt: data.updatedAt,
           createdAt: data.createdAt,
-        } as any;
+        };
       });
 
       onData(rows);
@@ -109,7 +118,6 @@ export async function setRsvpAttendance(
     {
       attendance,
       uid,
-      // ❌ stop assigning role/subRole here
       userDisplayName: meta?.userDisplayName ?? null,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,
@@ -132,7 +140,6 @@ export async function setRsvpComment(
     {
       comment,
       uid,
-      // ❌ stop assigning role/subRole here
       userDisplayName: meta?.userDisplayName ?? null,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,
@@ -172,7 +179,26 @@ export async function setRsvpDecision(
       approvedAt: decision === DECISION.Approved ? serverTimestamp() : null,
       approvedByUid: meta?.decidedByUid ?? null,
       updatedAt: serverTimestamp(),
-    },
+    } satisfies RsvpDoc,
+    { merge: true },
+  );
+}
+
+export async function setRsvpCheckedIn(
+  eventId: string,
+  uid: string,
+  checkedIn: boolean,
+  meta?: { checkedInByUid?: string | null },
+) {
+  await setDoc(
+    rsvpRef(eventId, uid),
+    {
+      uid,
+      checkedIn,
+      checkedInAt: checkedIn ? serverTimestamp() : null,
+      checkedInByUid: checkedIn ? (meta?.checkedInByUid ?? null) : null,
+      updatedAt: serverTimestamp(),
+    } satisfies RsvpDoc,
     { merge: true },
   );
 }
@@ -205,9 +231,9 @@ export async function setRsvpRole(
     {
       uid,
       rsvpRole: role || null,
-      rsvpSubRole: cleanSub, // ✅ auto-clears if invalid for role
+      rsvpSubRole: cleanSub,
       updatedAt: serverTimestamp(),
-    } as any,
+    } satisfies RsvpDoc,
     { merge: true },
   );
 }
