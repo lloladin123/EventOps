@@ -4,7 +4,12 @@
 import * as React from "react";
 import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
-import { setRsvpCheckedIn, setRsvpDecision } from "@/app/lib/firestore/rsvps";
+import {
+  AssignedEquipmentItem,
+  setRsvpAssignedEquipment,
+  setRsvpCheckedIn,
+  setRsvpDecision,
+} from "@/app/lib/firestore/rsvps";
 import { DECISION } from "@/types/rsvpIndex";
 import { useAccess } from "@/features/auth/hooks/useAccess";
 import { PERMISSION } from "@/features/auth/lib/permissions";
@@ -82,6 +87,22 @@ export function useRsvpActions(eventId: string) {
     [eventId, uid],
   );
 
+  const setAssignedEquipment = React.useCallback(
+    async (targetUid: string, assignedEquipment: AssignedEquipmentItem[]) => {
+      try {
+        await setRsvpAssignedEquipment(eventId, targetUid, assignedEquipment);
+
+        window.dispatchEvent(new Event("events-changed"));
+      } catch (err) {
+        console.error("setRsvpAssignedEquipment failed", err);
+        alert(
+          err instanceof Error ? err.message : "Kunne ikke opdatere udstyr",
+        );
+      }
+    },
+    [eventId],
+  );
+
   const canManageAttendance = access.canAccess(
     PERMISSION.events.rsvps.manageAttendance,
   );
@@ -96,5 +117,6 @@ export function useRsvpActions(eventId: string) {
     deleteRsvp,
     setCheckedIn,
     canManageAttendance,
+    setAssignedEquipment,
   };
 }

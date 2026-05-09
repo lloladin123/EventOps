@@ -4,6 +4,7 @@
 import AttendancePill from "./AttendancePill";
 import type { NormalizedApprovedRsvpRow } from "../hooks/useApprovedRsvps";
 import { displayNameFromRow, roleLabelFromRow } from "../utils/rsvpDisplay";
+import EquipmentAssignmentPanel from "./EquipmentAssignmentPanel";
 
 type Props = {
   row: NormalizedApprovedRsvpRow;
@@ -14,6 +15,10 @@ type Props = {
   onDeleteRsvp?: (uid: string, name: string) => void;
   onSetCheckedIn?: (uid: string, checkedIn: boolean) => void;
   canManageAttendance?: boolean;
+  onSetAssignedEquipment?: (
+    uid: string,
+    assignedEquipment: NormalizedApprovedRsvpRow["assignedEquipment"],
+  ) => void;
 };
 
 export default function ApprovedRsvpCard({
@@ -25,6 +30,7 @@ export default function ApprovedRsvpCard({
   onDeleteRsvp,
   onSetCheckedIn,
   canManageAttendance,
+  onSetAssignedEquipment,
 }: Props) {
   const name = displayNameFromRow(row);
   const roleLabel = roleLabelFromRow(row);
@@ -92,6 +98,14 @@ export default function ApprovedRsvpCard({
           ) : null}
         </div>
       </div>
+      {canManageAttendance && onSetAssignedEquipment ? (
+        <EquipmentAssignmentPanel
+          initialItems={row.assignedEquipment}
+          onChange={(items) => {
+            onSetAssignedEquipment(row.uid, items);
+          }}
+        />
+      ) : null}
 
       {row.comment ? (
         <div className="mt-1 text-xs text-slate-600 whitespace-pre-line break-words">

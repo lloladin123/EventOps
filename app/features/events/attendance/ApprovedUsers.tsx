@@ -25,6 +25,7 @@ export default function ApprovedUsers({ eventId }: Props) {
     deleteRsvp,
     setCheckedIn,
     canManageAttendance,
+    setAssignedEquipment,
   } = useRsvpActions(eventId);
 
   const copy = async () => {
@@ -84,6 +85,7 @@ export default function ApprovedUsers({ eventId }: Props) {
                 onRemoveApproval={removeApproval}
                 onDeleteRsvp={deleteRsvp}
                 onSetCheckedIn={setCheckedIn}
+                onSetAssignedEquipment={setAssignedEquipment}
               />
             ))}
           </div>

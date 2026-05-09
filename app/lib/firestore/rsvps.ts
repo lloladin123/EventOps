@@ -27,6 +27,8 @@ export type RsvpDoc = {
   checkedInAt?: unknown;
   checkedInByUid?: string | null;
 
+  assignedEquipment?: AssignedEquipmentItem[];
+
   uid?: string | null;
   role?: string | null;
   subRole?: string | null;
@@ -36,6 +38,12 @@ export type RsvpDoc = {
 
   updatedAt?: unknown;
   createdAt?: unknown;
+};
+
+export type AssignedEquipmentItem = {
+  id: string;
+  label: string;
+  value: string;
 };
 
 function rsvpRef(eventId: string, uid: string) {
@@ -84,6 +92,8 @@ export function subscribeEventRsvps(
           checkedInAt: data.checkedInAt ?? null,
           checkedInByUid: data.checkedInByUid ?? null,
 
+          assignedEquipment: data.assignedEquipment ?? [],
+
           role: data.role ?? null,
           subRole: data.subRole ?? null,
 
@@ -119,6 +129,22 @@ export async function setRsvpAttendance(
       attendance,
       uid,
       userDisplayName: meta?.userDisplayName ?? null,
+      updatedAt: serverTimestamp(),
+    } satisfies RsvpDoc,
+    { merge: true },
+  );
+}
+
+export async function setRsvpAssignedEquipment(
+  eventId: string,
+  uid: string,
+  assignedEquipment: AssignedEquipmentItem[],
+) {
+  await setDoc(
+    rsvpRef(eventId, uid),
+    {
+      uid,
+      assignedEquipment,
       updatedAt: serverTimestamp(),
     } satisfies RsvpDoc,
     { merge: true },
