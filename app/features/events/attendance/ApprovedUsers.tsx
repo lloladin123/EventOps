@@ -7,7 +7,7 @@ import ApprovedRsvpCard from "./components/ApprovedRsvpCard";
 import { useApprovedRsvps } from "./hooks/useApprovedRsvps";
 import { useRsvpActions } from "./hooks/useRsvpActions";
 import { displayNameFromRow } from "./utils/rsvpDisplay";
-import { RSVP_ATTENDANCE, RSVP_ATTENDANCE_LABEL } from "@/types/rsvpIndex";
+import { RSVP_ATTENDANCE_LABEL } from "@/types/rsvpIndex";
 
 type Props = { eventId: string };
 
