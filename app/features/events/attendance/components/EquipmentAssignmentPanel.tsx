@@ -94,7 +94,7 @@ export default function EquipmentAssignmentPanel({
         {items.map((item) => (
           <div
             key={item.id}
-            className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[140px_1fr_auto]"
+            className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[95px_1fr_auto]"
           >
             <input
               type="text"
