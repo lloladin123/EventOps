@@ -91,7 +91,7 @@ export default function EquipmentAssignmentPanel({
       </div>
 
       <div className="space-y-2">
-        {items.map((item, index) => (
+        {items.map((item) => (
           <div
             key={item.id}
             className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[140px_1fr_auto]"
