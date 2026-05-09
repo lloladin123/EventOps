@@ -2,7 +2,11 @@
 "use client";
 
 import * as React from "react";
-import { subscribeEventRsvps, type RsvpDoc } from "@/app/lib/firestore/rsvps";
+import {
+  AssignedEquipmentItem,
+  subscribeEventRsvps,
+  type RsvpDoc,
+} from "@/app/lib/firestore/rsvps";
 import {
   DECISION,
   RSVP_ATTENDANCE,
@@ -19,6 +23,7 @@ export type NormalizedApprovedRsvpRow = ApprovedRsvpRow & {
   attendance: RSVPAttendance;
   comment: string;
   checkedIn: boolean;
+  assignedEquipment: AssignedEquipmentItem[];
 };
 
 const ATTENDANCE_ORDER: Record<RSVPAttendance, number> = {
@@ -33,6 +38,7 @@ function normalize(r: ApprovedRsvpRow): NormalizedApprovedRsvpRow {
     attendance: (r.attendance ?? RSVP_ATTENDANCE.Maybe) as RSVPAttendance,
     comment: r.comment ?? "",
     checkedIn: r.checkedIn ?? false,
+    assignedEquipment: r.assignedEquipment ?? [],
   };
 }
 
