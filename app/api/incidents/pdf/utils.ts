@@ -1,5 +1,3 @@
-import { Incident } from "@/types/incident";
-
 export function safeStr(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
