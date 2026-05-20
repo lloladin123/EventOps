@@ -9,9 +9,3 @@ export function boolMark(v: unknown): string {
 export function isHttpUrl(s: string): boolean {
   return /^https?:\/\//i.test(s);
 }
-
-function normalize(value: unknown) {
-  return String(value ?? "")
-    .trim()
-    .toLowerCase();
-}
