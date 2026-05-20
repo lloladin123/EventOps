@@ -51,11 +51,9 @@ const LIMITS = {
 } as const;
 
 function clampText(value: string, max: number) {
-  // Trim only the left side so the user can keep typing naturally
-  const cleaned = value.replace(/\s+/g, " ").trimStart();
+  const cleaned = value.replace(/[ \t]+/g, " ").replace(/^\n+/, "");
   return cleaned.length > max ? cleaned.slice(0, max) : cleaned;
 }
-
 function sanitizeTimeInput(raw: string) {
   // allow only digits and colon, cap length to something reasonable
   const cleaned = raw.replace(/[^\d:]/g, "").slice(0, 5);

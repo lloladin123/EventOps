@@ -107,11 +107,11 @@ export default function IncidentListView({
                   </div>
 
                   {/* Incident text */}
-                  <div className="text-sm text-slate-900">
-                    <span className="font-medium">Hændelse:</span>{" "}
+                  <div className="flex items-start gap-1 text-sm text-slate-900">
+                    <span className="shrink-0 font-medium">Hændelse:</span>
                     {incidentText ? (
                       <span
-                        className="text-slate-700 inline-block max-w-[520px] truncate"
+                        className="min-w-0 max-w-[520px] whitespace-pre-wrap break-words text-slate-700"
                         title={String(incidentText)}
                       >
                         {String(incidentText)}
@@ -122,11 +122,11 @@ export default function IncidentListView({
                   </div>
 
                   {/* ✅ Solution */}
-                  <div className="text-sm text-slate-900">
-                    <span className="font-medium">Løsning:</span>{" "}
+                  <div className="flex items-start gap-1 text-sm text-slate-900">
+                    <span className="shrink-0 font-medium">Løsning:</span>
                     {solutionText ? (
                       <span
-                        className="inline-block max-w-[520px] truncate align-bottom text-slate-700"
+                        className="min-w-0 max-w-[520px] whitespace-pre-wrap break-words text-slate-700"
                         title={String(solutionText)}
                       >
                         {String(solutionText)}

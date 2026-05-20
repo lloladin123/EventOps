@@ -61,7 +61,7 @@ export default function IncidentTable({
   onEdit,
   onDelete,
 }: Props) {
-  const initialSort: SortState<SortKey> = { key: "time", dir: "desc" };
+  const initialSort: SortState<SortKey> = { key: "time", dir: "asc" };
 
   if (!incidents.length) {
     return (
@@ -76,7 +76,7 @@ export default function IncidentTable({
       <GroupedTable<Incident, string, ColumnKey, SortKey>
         rows={incidents}
         initialSort={initialSort}
-        tableMinWidthClassName="min-w-[980px]"
+        tableMinWidthClassName="min-w-[1080px]"
         getGroupId={() => eventId}
         disableRowHover={true}
         getGroupMeta={(_gid, rows) => ({
@@ -93,7 +93,7 @@ export default function IncidentTable({
             header: "Tid",
             headerTitle: "Sortér efter tid",
             sortValue: (i) => asText(i.time),
-            className: "w-[90px]",
+            className: "w-[90px] align-top",
             cell: (i) => (
               <span className="whitespace-nowrap text-sm text-slate-600">
                 {i.time ?? "—"}
@@ -105,7 +105,7 @@ export default function IncidentTable({
             header: "Type",
             headerTitle: "Sortér efter type",
             sortValue: (i) => asText(i.type),
-            className: "w-[130px]",
+            className: "w-[130px] align-top",
             cell: (i) => (
               <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium">
                 {i.type ?? "—"}
@@ -117,7 +117,7 @@ export default function IncidentTable({
             header: "Fra",
             headerTitle: "Sortér efter fra",
             sortValue: (i) => asText(i.modtagetFra),
-            className: "w-[160px]",
+            className: "w-[160px] align-top",
             cell: (i) => (
               <span className="text-sm text-slate-800">
                 {i.modtagetFra ?? "—"}
@@ -129,12 +129,11 @@ export default function IncidentTable({
             header: "Hændelse",
             headerTitle: "Sortér efter hændelse",
             sortValue: (i) => asText(i.haendelse),
-            // ✅ hard cap the visual width so table never breaks
-            className: "w-[200px]",
+            className: "w-[240px] align-top",
             cell: (i) =>
               i.haendelse ? (
                 <span
-                  className="block max-w-[200px] truncate text-sm text-slate-800"
+                  className="block max-w-[240px] whitespace-pre-wrap break-words text-sm text-slate-800"
                   title={i.haendelse}
                 >
                   {i.haendelse}
@@ -153,7 +152,7 @@ export default function IncidentTable({
                   (i as any).løsning ??
                   (i as any).solution,
               ),
-            className: "w-[200px]",
+            className: "w-[240px] align-top",
             cell: (i) => {
               const value =
                 (i as any).loesning ??
@@ -163,7 +162,7 @@ export default function IncidentTable({
 
               return value ? (
                 <span
-                  className="block max-w-[200px] truncate text-sm text-slate-800"
+                  className="block max-w-[240px] whitespace-pre-wrap break-words text-sm text-slate-800"
                   title={String(value)}
                 >
                   {String(value)}
@@ -173,13 +172,12 @@ export default function IncidentTable({
               );
             },
           },
-
           {
             key: "loggedBy",
             header: "Logget af",
             headerTitle: "Sortér efter logget af",
             sortValue: (i) => asText(i.loggetAf),
-            className: "w-[160px]",
+            className: "w-[160px] align-top",
             cell: (i) => (
               <span className="text-sm text-slate-600">
                 {i.loggetAf ?? "—"}
@@ -189,9 +187,9 @@ export default function IncidentTable({
           {
             key: "police",
             header: "Politi",
-            headerTitle: "Sortér efter politi (ja/nej)",
+            headerTitle: "Sortér efter politi",
             sortValue: (i) => (i.politiInvolveret ? 1 : 0),
-            className: "w-[130px]",
+            className: "w-[130px] align-top",
             cell: (i) => (
               <div className="text-center">
                 {i.politiInvolveret ? (
@@ -205,9 +203,9 @@ export default function IncidentTable({
           {
             key: "preparedness",
             header: "Beredskab",
-            headerTitle: "Sortér efter beredskab (ja/nej)",
+            headerTitle: "Sortér efter beredskab",
             sortValue: (i) => (i.beredskabInvolveret ? 1 : 0),
-            className: "w-[150px]",
+            className: "w-[150px] align-top",
             cell: (i) => (
               <div className="text-center">
                 {i.beredskabInvolveret ? (
@@ -223,9 +221,10 @@ export default function IncidentTable({
             header: "Billeder",
             headerTitle: "Sortér efter antal billeder",
             sortValue: (i) => imgCount(i),
-            className: "w-[120px]",
+            className: "w-[120px] align-top",
             cell: (i) => {
               const n = imgCount(i);
+
               return (
                 <div className="text-center">
                   {n > 0 ? (
@@ -242,7 +241,7 @@ export default function IncidentTable({
           {
             key: "actions",
             header: "Handlinger",
-            className: "w-[170px]",
+            className: "w-[170px] align-top",
             cell: (i) => {
               const canEdit = canEditIncident(i);
 
