@@ -2,6 +2,7 @@
 
 import type { Incident } from "@/types/incident";
 import GroupedList from "@/components/ui/patterns/GroupedList";
+import { sortIncidentsNewestFirst } from "./utils/sortIncidents";
 
 type Props = {
   eventId: string; // kept for consistency with parent; not used here
@@ -57,14 +58,16 @@ export default function IncidentListView({
   const note =
     "Update er kun muligt i 5 min efter oprettelse for den der oprettede hændelsen (Admin altid).";
 
+  const sortedIncidents = sortIncidentsNewestFirst(incidents);
+
   return (
     <div className="mt-4">
       <GroupedList<Incident, "incidents">
-        rows={incidents}
+        rows={sortedIncidents}
         getGroupId={() => "incidents"}
         getGroupMeta={() => ({
           title: "Hændelser",
-          subtitle: `${incidents.length} stk`,
+          subtitle: `${sortedIncidents.length} stk`,
           right: (
             <span className="text-xs text-slate-500 hidden sm:inline">
               {note}

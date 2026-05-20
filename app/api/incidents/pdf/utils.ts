@@ -1,3 +1,5 @@
+import { Incident } from "@/types/incident";
+
 export function safeStr(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
@@ -8,4 +10,10 @@ export function boolMark(v: unknown): string {
 
 export function isHttpUrl(s: string): boolean {
   return /^https?:\/\//i.test(s);
+}
+
+function normalize(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase();
 }
