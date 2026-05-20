@@ -4,6 +4,7 @@ import type { Incident } from "@/types/incident";
 
 import GroupedTable from "@/components/ui/patterns/table/GroupedTable";
 import { SortState } from "@/components/ui/patterns/table/types";
+import { sortIncidentsNewestFirst } from "./utils/sortIncidents";
 
 type Props = {
   eventId: string;
@@ -61,7 +62,8 @@ export default function IncidentTable({
   onEdit,
   onDelete,
 }: Props) {
-  const initialSort: SortState<SortKey> = { key: "time", dir: "asc" };
+  const initialSort: SortState<SortKey> = { key: "time", dir: "desc" };
+  const sortedIncidents = sortIncidentsNewestFirst(incidents);
 
   if (!incidents.length) {
     return (
@@ -74,7 +76,7 @@ export default function IncidentTable({
   return (
     <div className="mt-4 space-y-3">
       <GroupedTable<Incident, string, ColumnKey, SortKey>
-        rows={incidents}
+        rows={sortedIncidents}
         initialSort={initialSort}
         tableMinWidthClassName="min-w-[1080px]"
         getGroupId={() => eventId}
