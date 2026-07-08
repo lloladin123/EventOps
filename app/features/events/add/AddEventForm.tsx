@@ -51,7 +51,7 @@ export default function AddEventForm({ onAdded }: Props) {
 
         <div>
           <label className="block text-sm font-medium text-slate-900">
-            Mødetid (hvornår I møder)
+            Tiden i skal være klar til briefing
           </label>
           <TimeInput
             value={f.meetingTime}
