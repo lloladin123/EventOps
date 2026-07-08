@@ -1,21 +1,22 @@
 // components/ApprovedRsvpCard.tsx
 "use client";
 
+import React from "react";
 import AttendancePill from "./AttendancePill";
 import type { NormalizedApprovedRsvpRow } from "../hooks/useApprovedRsvps";
 import { displayNameFromRow, roleLabelFromRow } from "../utils/rsvpDisplay";
 import EquipmentAssignmentPanel from "./EquipmentAssignmentPanel";
-import React from "react";
 
 type Props = {
   row: NormalizedApprovedRsvpRow;
   muted?: boolean;
   canUpdate?: boolean;
   canDelete?: boolean;
+  canManageAttendance?: boolean;
+  canManageEquipment?: boolean;
   onRemoveApproval?: (uid: string, name: string) => void;
   onDeleteRsvp?: (uid: string, name: string) => void;
   onSetCheckedIn?: (uid: string, checkedIn: boolean) => void;
-  canManageAttendance?: boolean;
   onSetAssignedEquipment?: (
     uid: string,
     assignedEquipment: NormalizedApprovedRsvpRow["assignedEquipment"],
@@ -27,15 +28,19 @@ export default function ApprovedRsvpCard({
   muted = false,
   canUpdate = false,
   canDelete = false,
+  canManageAttendance = false,
+  canManageEquipment = false,
   onRemoveApproval,
   onDeleteRsvp,
   onSetCheckedIn,
-  canManageAttendance,
   onSetAssignedEquipment,
 }: Props) {
   const name = displayNameFromRow(row);
   const roleLabel = roleLabelFromRow(row);
   const [expanded, setExpanded] = React.useState(false);
+
+  const showEquipmentPanel =
+    !muted && canManageEquipment && onSetAssignedEquipment;
 
   return (
     <div
@@ -47,7 +52,7 @@ export default function ApprovedRsvpCard({
     >
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          {canManageAttendance ? (
+          {showEquipmentPanel ? (
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
@@ -70,7 +75,7 @@ export default function ApprovedRsvpCard({
         <div className="flex items-center gap-2">
           <AttendancePill attendance={row.attendance} />
 
-          {!muted && (canUpdate || canDelete) ? (
+          {!muted && (canUpdate || canDelete || canManageAttendance) ? (
             <div className="flex items-center gap-2">
               {canUpdate && onRemoveApproval ? (
                 <button
@@ -111,7 +116,8 @@ export default function ApprovedRsvpCard({
           ) : null}
         </div>
       </div>
-      {expanded && canManageAttendance && onSetAssignedEquipment ? (
+
+      {expanded && showEquipmentPanel ? (
         <EquipmentAssignmentPanel
           initialItems={row.assignedEquipment}
           onChange={(items) => {

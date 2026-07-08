@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import { deleteDoc, doc } from "firebase/firestore";
+import { deleteDoc, doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 import {
   AssignedEquipmentItem,
@@ -11,13 +11,45 @@ import {
   setRsvpDecision,
 } from "@/app/lib/firestore/rsvps";
 import { DECISION } from "@/types/rsvpIndex";
+import type { Role } from "@/types/rsvp";
 import { useAccess } from "@/features/auth/hooks/useAccess";
 import { PERMISSION } from "@/features/auth/lib/permissions";
+
+type CurrentUserRsvp = {
+  rsvpRole?: Role | null;
+  decision?: string | null;
+};
+
+function useCurrentUserRsvp(eventId: string, uid: string | null) {
+  const [rsvp, setRsvp] = React.useState<CurrentUserRsvp | null>(null);
+
+  React.useEffect(() => {
+    if (!eventId || !uid) {
+      setRsvp(null);
+      return;
+    }
+
+    const ref = doc(db, "events", eventId, "rsvps", uid);
+
+    return onSnapshot(ref, (snap) => {
+      if (!snap.exists()) {
+        setRsvp(null);
+        return;
+      }
+
+      const data = snap.data() as CurrentUserRsvp;
+      setRsvp(data);
+    });
+  }, [eventId, uid]);
+
+  return rsvp;
+}
 
 export function useRsvpActions(eventId: string) {
   const access = useAccess();
 
   const uid = access.user?.uid ?? null;
+  const currentUserRsvp = useCurrentUserRsvp(eventId, uid);
 
   const canUpdate = access.canAccess(PERMISSION.events.rsvps.update);
   const canDelete = access.canAccess(PERMISSION.events.rsvps.delete);
@@ -27,6 +59,17 @@ export function useRsvpActions(eventId: string) {
   const canAddSelfApproved =
     !!uid && access.canAccess(PERMISSION.events.rsvps.addSelfApproved);
 
+  const canManageAttendance = access.canAccess(
+    PERMISSION.events.rsvps.manageAttendance,
+  );
+
+  const canManageEquipment = access.canAccess(
+    PERMISSION.events.rsvps.manageEquipment,
+    {
+      rsvpRole: currentUserRsvp?.rsvpRole ?? null,
+      rsvpApproved: currentUserRsvp?.decision === DECISION.Approved,
+    },
+  );
   const removeApproval = React.useCallback(
     async (targetUid: string, name: string) => {
       const ok = window.confirm(`Fjern godkendelse for ${name}?`);
@@ -103,10 +146,6 @@ export function useRsvpActions(eventId: string) {
     [eventId],
   );
 
-  const canManageAttendance = access.canAccess(
-    PERMISSION.events.rsvps.manageAttendance,
-  );
-
   return {
     uid,
     canUpdate,
@@ -117,6 +156,7 @@ export function useRsvpActions(eventId: string) {
     deleteRsvp,
     setCheckedIn,
     canManageAttendance,
+    canManageEquipment,
     setAssignedEquipment,
   };
 }
