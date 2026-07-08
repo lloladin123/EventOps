@@ -15,6 +15,7 @@ export default function ApprovedUsers({ eventId }: Props) {
   const [copied, setCopied] = React.useState(false);
 
   const { approvedYesMaybe, approvedNo } = useApprovedRsvps(eventId);
+
   const {
     uid,
     canUpdate,
@@ -25,6 +26,7 @@ export default function ApprovedUsers({ eventId }: Props) {
     deleteRsvp,
     setCheckedIn,
     canManageAttendance,
+    canManageEquipment,
     setAssignedEquipment,
   } = useRsvpActions(eventId);
 
@@ -82,6 +84,7 @@ export default function ApprovedUsers({ eventId }: Props) {
                 canUpdate={canUpdate}
                 canDelete={canDelete}
                 canManageAttendance={canManageAttendance}
+                canManageEquipment={canManageEquipment}
                 onRemoveApproval={removeApproval}
                 onDeleteRsvp={deleteRsvp}
                 onSetCheckedIn={setCheckedIn}
