@@ -8,7 +8,7 @@ import { useAccess } from "@/features/auth/hooks/useAccess";
 
 export default function EventsPage() {
   const access = useAccess();
-  const canManageEvents = access.canAccess(PERMISSION.events.view);
+  const canCreateEvents = access.canAccess(PERMISSION.events.create);
 
   return (
     <LoginRedirect
@@ -16,7 +16,7 @@ export default function EventsPage() {
       description="Kræver en bruger for at tilgå events."
     >
       <main className="mx-auto max-w-4xl space-y-6 p-6">
-        {canManageEvents && <AddEventForm />}
+        {canCreateEvents && <AddEventForm />}
 
         <EventList />
       </main>
