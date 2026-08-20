@@ -10,9 +10,9 @@ import {
   subscribeMyRsvp,
   type RsvpDoc,
   setRsvpRole,
-  setRsvpComment,
 } from "@/lib/firestore/rsvps";
 
+// Same role enums you use elsewhere
 import { ROLES, ROLE, CREW_SUBROLES, KONTROLLØR_SUBROLES } from "@/types/rsvp";
 import { useAccess } from "@/features/auth/hooks/useAccess";
 
@@ -33,7 +33,6 @@ function normalizeOptions(input?: string[] | Option[]): Option[] {
   }
 
   const list = base as string[];
-
   return [
     { value: "", label: "—" },
     ...list.map((r) => ({ value: r, label: r })),
@@ -53,10 +52,9 @@ export default function AdminAddApprovedStaffButton({
 
   const [selectedRole, setSelectedRole] = React.useState<string>("");
   const [selectedSubRole, setSelectedSubRole] = React.useState<string>("");
-  const [comment, setComment] = React.useState<string>("");
 
+  // role UI state
   const roleOptions = React.useMemo(() => normalizeOptions(ROLES), []);
-
   const isCrew = selectedRole === ROLE.Crew;
   const isKontrollør = selectedRole === ROLE.Kontrollør;
   const supportsSubRole = isCrew || isKontrollør;
@@ -66,6 +64,8 @@ export default function AdminAddApprovedStaffButton({
     if (isKontrollør) return normalizeOptions(KONTROLLØR_SUBROLES);
     return normalizeOptions([]);
   }, [isCrew, isKontrollør]);
+
+  //test
 
   React.useEffect(() => {
     if (!uid || !eventId) return;
@@ -84,14 +84,12 @@ export default function AdminAddApprovedStaffButton({
 
     const role = (myRsvp as any).rsvpRole ?? "";
     const sub = (myRsvp as any).rsvpSubRole ?? "";
-    const existingComment = (myRsvp as any).comment ?? "";
 
     setSelectedRole((curr) => (curr === "" ? role : curr));
     setSelectedSubRole((curr) => (curr === "" ? sub : curr));
-    setComment((curr) => (curr === "" ? existingComment : curr));
   }, [myRsvp]);
 
-  // Only treat legacy `approved` as fallback when `decision` is missing
+  // ✅ IMPORTANT: only treat legacy `approved` as fallback when `decision` is missing
   const effectiveDecision: string =
     myRsvp?.decision ??
     (myRsvp?.approved ? DECISION.Approved : DECISION.Pending);
@@ -103,6 +101,7 @@ export default function AdminAddApprovedStaffButton({
   const handleClick = async () => {
     if (!uid || loading) return;
 
+    // Optional guard — remove if you want role/subrole to be optional
     if (!selectedRole) {
       alert("Vælg en rolle 🙂");
       return;
@@ -122,12 +121,6 @@ export default function AdminAddApprovedStaffButton({
         selectedSubRole || null,
       );
 
-      await setRsvpComment(eventId, uid, comment.trim(), {
-        role: selectedRole || null,
-        subRole: selectedSubRole || null,
-        userDisplayName: displayName,
-      });
-
       await setRsvpDecision(eventId, uid, DECISION.Approved, {
         decidedByUid: uid,
       });
@@ -141,6 +134,7 @@ export default function AdminAddApprovedStaffButton({
 
   return (
     <div className="flex items-center gap-2">
+      {/* Role dropdowns */}
       <div className="flex items-center gap-2">
         <select
           className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-sm text-slate-800 disabled:opacity-60"
@@ -177,20 +171,9 @@ export default function AdminAddApprovedStaffButton({
             </option>
           ))}
         </select>
-
-        <textarea
-          value={comment}
-          disabled={loading}
-          placeholder="Kommentar (valgfri)"
-          rows={3}
-          className="min-w-48 resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 disabled:opacity-60"
-          onMouseDown={stop}
-          onClick={stop}
-          onPointerDown={stop}
-          onChange={(e) => setComment(e.target.value)}
-        />
       </div>
 
+      {/* Button */}
       <button
         type="button"
         onClick={handleClick}
